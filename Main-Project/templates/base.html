@@ -1,0 +1,392 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}বিল ব্যবস্থাপনা সিস্টেম{% endblock %}</title>
+    
+    <!-- Bengali Font Support -->
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    
+    <style>
+        /* Additional inline styles for critical elements */
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-links a:hover,
+        .nav-links a.active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #4144e3be, #1f1663ff);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #FF6B6B, #C44D58);
+        }
+
+
+        
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.9);
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #4ECDC4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.3);
+            background: white;
+        }
+        
+        .messages {
+            margin: 20px 0;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .alert-success {
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            border-left-color: #4CAF50;
+        }
+        
+        .alert-error {
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            border-left-color: #F44336;
+        }
+        
+        .alert-info {
+            background: rgba(33, 150, 243, 0.9);
+            color: white;
+            border-left-color: #2196F3;
+        }
+        
+        .alert-warning {
+            background: rgba(255, 152, 0, 0.9);
+            color: white;
+            border-left-color: #FF9800;
+        }
+        
+        .user-welcome {
+            color: white;
+            margin-right: 15px;
+            font-weight: 500;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                flex-direction: column;
+                padding: 20px;
+                border-radius: 0 0 20px 20px;
+                box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .nav-links a {
+                color: #333;
+                padding: 12px 20px;
+                border-radius: 10px;
+                margin: 5px 0;
+            }
+            
+            .nav-links a:hover {
+                background: rgba(102, 126, 234, 0.1);
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .nav-container {
+                padding: 0 15px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .glass-card {
+                padding: 20px;
+                margin: 15px 0;
+            }
+            
+            .user-welcome {
+                display: none;
+            }
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Footer styles */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            margin-top: 40px;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+            opacity: 0.8;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body style="background: linear-gradient(135deg, rgba(102,126,234,0.6), rgba(118,75,162,0.6)), 
+             url('https://i.postimg.cc/qBhmnzdM/bg.jpg') no-repeat center center fixed; 
+             background-size: cover;">
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{% url 'home' %}" class="logo">বিল ব্যবস্থাপনা</a>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            
+            <div class="nav-links" id="navLinks">
+                <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
+                {% if user.is_authenticated %}
+                    {% comment %} {% if request.user.profile.user_type == 'অফিস সহকারী' %}
+                        <a href="{% url 'all_bills' %}" {% if 'bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                    {% endif %} {% endcomment %}
+                    <a href="{% url 'bill_create' %}" {% if 'create' in request.path %}class="active"{% endif %}>বিল তৈরী</a>
+                    <a href="{% url 'my_bills' %}" {% if 'my-bills' in request.path %}class="active"{% endif %}>আমার বিল</a>
+                    <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                    <span class="user-welcome">স্বাগতম, {{ user.first_name }}</span>
+                    <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                {% else %}
+                    <a href="{% url 'login' %}" {% if 'login' in request.path %}class="active"{% endif %}>লগইন</a>
+                    <a href="{% url 'register' %}" {% if 'register' in request.path %}class="active"{% endif %}>রেজিস্টার</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer class="footer">
+        <p>কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ</p>
+        <p>জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</p>
+        <p>&copy; 2024 বিল ব্যবস্থাপনা সিস্টেম। সকল অধিকার সংরক্ষিত।</p>
+    </footer>
+    
+    <script>
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (mobileMenuBtn && navLinks) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                });
+                
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!event.target.closest('.nav-container')) {
+                        navLinks.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Auto-hide messages after 5 seconds
+            const messages = document.querySelectorAll('.alert');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        if (message.parentElement) {
+                            message.parentElement.removeChild(message);
+                        }
+                    }, 300);
+                }, 5000);
+            });
+            
+            // Add loading state to buttons on form submission
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<span class="loading"></span> প্রক্রিয়া হচ্ছে...';
+                        submitBtn.disabled = true;
+                    }
+                });
+            });
+        });
+        
+        // Utility function to show loading state
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.innerHTML = '<span class="loading"></span> প্রক্রিয়া হচ্ছে...';
+                button.disabled = true;
+            } else {
+                button.innerHTML = button.getAttribute('data-original-text') || button.textContent;
+                button.disabled = false;
+            }
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

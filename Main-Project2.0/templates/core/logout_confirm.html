@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card" style="max-width: 500px; margin: 50px auto; text-align: center;">
+        <h2 style="color: white; margin-bottom: 30px;">লগআউট নিশ্চিতকরণ</h2>
+        <p style="color: white; margin-bottom: 30px; font-size: 1.1em;">
+            আপনি কি নিশ্চিত যে আপনি লগআউট করতে চান?
+        </p>
+        
+        <form method="post" style="display: flex; gap: 15px; justify-content: center;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">হ্যাঁ, লগআউট করুন</button>
+            <a href="{% url 'home' %}" class="btn btn-secondary">বাতিল করুন</a>
+        </form>
+    </div>
+</div>
+
+<style>
+.btn-danger {
+    background: linear-gradient(45deg, #FF6B6B, #C44D58);
+}
+
+.btn-secondary {
+    background: linear-gradient(45deg, #666, #999);
+}
+</style>
+{% endblock %}

@@ -1,3 +1,0 @@
-1. Create Environment
-2. python manage.py collectstatic
-3. Runserver

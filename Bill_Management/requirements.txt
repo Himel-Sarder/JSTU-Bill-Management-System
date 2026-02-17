@@ -1,3 +1,0 @@
-Django==6.0.2
-Requests==2.32.5
-weasyprint==68.1

@@ -265,25 +265,28 @@
             page-break-inside: avoid;
         }
 
-        /* Signature Section */
-        .signature-section {
-            margin-top: 70px;
-            display: flex;
-            justify-content: space-between;
+        .signature-table{
             width: 100%;
+            border-collapse: collapse;
+            margin-top: 70px;
             page-break-inside: avoid;
-            page-break-before: avoid;
         }
-
-        .signature {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 45%;
-            background-color: rgba(255, 255, 255, 0.9);
+        
+        .signature-cell{
+            width: 50%;
+            text-align: center;
+            vertical-align: top;
             padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
             border-radius: 4px;
         }
+        
+        .signature-line{
+            width: 200px;
+            border-top: 1px solid #000;
+            margin: 0 auto 5px auto;
+        }
+
 
         .signature-line {
             width: 200px;
@@ -486,22 +489,25 @@
             {% endif %}
 
             <!-- Signature Section -->
-            <div class="signature-section avoid-footer-overlap">
-                <div class="signature">
-                    <div class="signature-line"></div>
-                    <div class="signature-title bangla-text">
-                        পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
-                    </div>
-                </div>
-
-                <div class="signature">
-                    <div class="signature-line"></div>
-                    <div class="signature-title bangla-text">
-                        বিল পেশকারীর সাক্ষর ও সিল
-                    </div>
-                </div>
-            </div>
+            <table class="signature-table avoid-footer-overlap">
+              <tr>
+                <td class="signature-cell">
+                  <div class="signature-line"></div>
+                  <div class="signature-title bangla-text">
+                    পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
+                  </div>
+                </td>
+            
+                <td class="signature-cell">
+                  <div class="signature-line"></div>
+                  <div class="signature-title bangla-text">
+                    বিল পেশকারীর সাক্ষর ও সিল
+                  </div>
+                </td>
+              </tr>
+            </table>
         </div>
     </div>
 </body>
+
 </html>

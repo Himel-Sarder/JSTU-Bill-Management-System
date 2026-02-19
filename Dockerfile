@@ -34,8 +34,8 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput
 RUN mkdir -p /usr/local/share/fonts/custom \
- && cp -f /app/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
+ && cp -f /core/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
  && fc-cache -f -v
 
-RUN ls -lah /app/static/fonts/ && fc-list | grep -i kalpurush || true
+RUN ls -lah /core/static/fonts/ && fc-list | grep -i kalpurush || true
 CMD gunicorn bill_management.wsgi:application --bind 0.0.0.0:$PORT --timeout 120

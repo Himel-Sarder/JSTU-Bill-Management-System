@@ -1,6 +1,7 @@
 Django
 Requests
-weasyprint
+weasyprint>=61
 gunicorn
 whitenoise
+
 

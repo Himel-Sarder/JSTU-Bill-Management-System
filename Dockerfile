@@ -21,7 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY requirements.txt /app/
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN python -c "import weasyprint; print('WEASYPRINT_VERSION=', weasyprint.__version__)"
+RUN pip show html5lib || true
 
 RUN pip uninstall -y html5lib || true
 
@@ -33,6 +37,7 @@ RUN mkdir -p /usr/local/share/fonts/custom \
  && cp -f /app/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
  && fc-cache -f -v
 
-EXPOSE 8000
+RUN ls -lah /app/static/fonts/ && fc-list | grep -i kalpurush || true
 
+EXPOSE 8000
 CMD sh -c "python manage.py migrate && gunicorn bill_management.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120"

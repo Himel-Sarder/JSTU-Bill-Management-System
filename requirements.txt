@@ -1,4 +1,6 @@
 Django
 Requests
 weasyprint
+gunicorn
+whitenoise
 

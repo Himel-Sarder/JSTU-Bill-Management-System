@@ -1,7 +1,10 @@
 services:
   - type: web
-    name: bill_management
-    env: python
+    name: bill-management
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn bill_management.wsgi:application --workers 3 --threads 2 --timeout 120
     envVars:
@@ -16,3 +19,12 @@ services:
           name: bill_management_db
           property: connectionString
     staticPublishPath: staticfiles
+
+
+services:
+  - type: web
+    name: bill-management
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true

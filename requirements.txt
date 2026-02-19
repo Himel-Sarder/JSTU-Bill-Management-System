@@ -1,7 +1,5 @@
-Django
-Requests
+Django>=4.2,<5.0
+requests
 weasyprint>=61
 gunicorn
 whitenoise
-
-

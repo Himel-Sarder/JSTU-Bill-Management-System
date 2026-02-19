@@ -1,43 +1,37 @@
-FROM python:3.12-slim
+FROM python:3.11
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update --allow-releaseinfo-change \
+ && apt-get install -y --no-install-recommends \
     build-essential \
-    libpango-1.0-0 \
-    libpangoft2-1.0-0 \
     libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libpangoft2-1.0-0 \
+    pango1.0-tools \
     libgdk-pixbuf-2.0-0 \
-    libffi8 \
+    libgdk-pixbuf2.0-bin \
+    libffi-dev \
+    libxml2 \
+    libxslt1.1 \
+    libjpeg-dev \
+    zlib1g-dev \
+    libssl-dev \
+    libglib2.0-0 \
     shared-mime-info \
-    fontconfig \
+    ca-certificates \
     fonts-dejavu-core \
-    fonts-liberation \
-    fonts-noto-core \
-    fonts-noto-extra \
-    && rm -rf /var/lib/apt/lists/*
+    fonts-freefont-ttf \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY requirements.txt /app/
-RUN pip install --upgrade pip setuptools wheel
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN python -c "import weasyprint; print('WEASYPRINT_VERSION=', weasyprint.__version__)"
-RUN pip show html5lib || true
+COPY . .
 
-RUN pip uninstall -y html5lib || true
+RUN python manage.py collectstatic --noinput
 
-COPY . /app/
-
-RUN python manage.py collectstatic --noinput || true
-
-RUN mkdir -p /usr/local/share/fonts/custom \
- && cp -f /app/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
- && fc-cache -f -v
-
-RUN ls -lah /app/static/fonts/ && fc-list | grep -i kalpurush || true
-
-EXPOSE 8000
-CMD sh -c "python manage.py migrate && gunicorn bill_management.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120"
+CMD gunicorn bill_management.wsgi:application --bind 0.0.0.0:$PORT --timeout 120

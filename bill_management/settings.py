@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-0(y0o9u=ml@n6&i^qcpn0b)ad41#eotn-+@*@loo+v=+%gk-ne
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', '.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -97,4 +97,5 @@ WEASYPRINT_BASEURL = 'http://localhost:8000'  # For development
 FONT_CONFIG = {
     'font_family': 'BanglaFont',
     'fallback_fonts': ['SolaimanLipi', 'Kalpurush', 'Arial', 'sans-serif']
+
 }

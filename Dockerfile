@@ -18,8 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-extra \
     && rm -rf /var/lib/apt/lists/*
 
-RUN fc-cache -f -v
-
 WORKDIR /app
 
 COPY requirements.txt /app/
@@ -30,6 +28,10 @@ RUN pip uninstall -y html5lib || true
 COPY . /app/
 
 RUN python manage.py collectstatic --noinput || true
+
+RUN mkdir -p /usr/local/share/fonts/custom \
+ && cp -f /app/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
+ && fc-cache -f -v
 
 EXPOSE 8000
 

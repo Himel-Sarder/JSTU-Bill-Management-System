@@ -25,7 +25,7 @@ RUN apt-get update --allow-releaseinfo-change \
     fonts-freefont-ttf \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /core
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -33,5 +33,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN python manage.py collectstatic --noinput
+RUN mkdir -p /usr/local/share/fonts/custom \
+ && cp -f /app/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
+ && fc-cache -f -v
 
+RUN ls -lah /app/static/fonts/ && fc-list | grep -i kalpurush || true
 CMD gunicorn bill_management.wsgi:application --bind 0.0.0.0:$PORT --timeout 120

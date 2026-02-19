@@ -1,5 +1,8 @@
-Django>=4.2,<5.0
-requests
-weasyprint>=61
-gunicorn
+dj_database_url
+Django
+openpyxl
 whitenoise
+weasyprint==61.2
+pydyf<0.11
+gunicorn
+

@@ -2,72 +2,61 @@
 {% load static %}
 
 {% block content %}
-<div class="container"
-     style="display: flex; justify-content: center; align-items: center; min-height: 90vh;">
+<div class="register-container">
 
-  <div class="glass-card"
-       style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-              background: rgba(255,255,255,0.1); border-radius: 20px; backdrop-filter: blur(10px);
-              box-shadow: 0 4px 30px rgba(0,0,0,0.2); padding: 40px; max-width: 900px; width: 100%;">
+  <div class="glass-card register-card">
 
     <!-- Left: Image -->
-    <div style="flex: 1; display: flex; justify-content: center; align-items: center; min-width: 300px;">
+    <div class="register-image">
       <img src="https://i.postimg.cc/qM1p3hG8/Sign-up-amico.png"
-           alt="Registration Illustration"
-           style="width: 320px; height: 320px; object-fit: contain;">
+           alt="Registration Illustration">
     </div>
 
     <!-- Right: Registration Form -->
-    <div style="flex: 1; min-width: 300px; max-width: 400px;">
-      <h2 style="text-align: center; color: white; margin-bottom: 30px;">রেজিস্ট্রেশন</h2>
+    <div class="register-form">
+      <h2 class="register-title">রেজিস্ট্রেশন</h2>
 
-      <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+      <form method="post" class="register-form-fields">
         {% csrf_token %}
 
         {% for field in form %}
-        <div>
-          <label style="color: white; display: block; margin-bottom: 5px; font-weight: 500;">
+        <div class="form-group">
+          <label class="form-label">
             {{ field.label }}
-            {% if field.field.required %}<span style="color: #FF6B6B;">*</span>{% endif %}
+            {% if field.field.required %}<span class="required-star">*</span>{% endif %}
           </label>
 
           {% if field.name == 'user_type' %}
             <!-- Styled select dropdown for user_type -->
-            <select name="{{ field.name }}" id="{{ field.id_for_label }}"
-                    style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-                           background: rgba(255,255,255,0.1); color: white; font-size: 16px;
-                           backdrop-filter: blur(5px); outline: none;">
+            <select name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-select">
               {% for value, text in field.field.choices %}
-                <option value="{{ value }}" style="background: #2c3e50; color: white;">{{ text }}</option>
+                <option value="{{ value }}">{{ text }}</option>
               {% endfor %}
             </select>
           {% elif field.name == 'password1' or field.name == 'password2' %}
             <!-- Password input fields -->
             <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}"
                    value="{{ field.value|default:'' }}"
-                   style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-                          background: rgba(255,255,255,0.1); color: white; font-size: 16px;
-                          backdrop-filter: blur(5px); outline: none; transition: all 0.3s;">
+                   placeholder="আপনার {{ field.label }} লিখুন"
+                   class="form-input password-input">
           {% else %}
             <!-- Regular text input fields -->
             <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}"
                    value="{{ field.value|default:'' }}"
                    placeholder="আপনার {{ field.label }} লিখুন"
-                   style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-                          background: rgba(255,255,255,0.1); color: white; font-size: 16px;
-                          backdrop-filter: blur(5px); outline: none; transition: all 0.3s;">
+                   class="form-input">
           {% endif %}
 
           <!-- Help text -->
           {% if field.help_text %}
-            <small style="color: #aaa; display: block; margin-top: 5px; font-size: 12px;">
+            <small class="help-text">
               {{ field.help_text }}
             </small>
           {% endif %}
 
           <!-- Error messages -->
           {% if field.errors %}
-            <div style="color: #FF6B6B; font-size: 14px; margin-top: 5px;">
+            <div class="error-messages">
               {% for error in field.errors %}
                 {{ error }}
               {% endfor %}
@@ -76,16 +65,13 @@
         </div>
         {% endfor %}
 
-        <button type="submit" class="btn"
-                style="width: 100%; background: linear-gradient(45deg, #4ECDC4, #44A08D); color: white; border: none;
-                       border-radius: 10px; padding: 14px; font-weight: bold; cursor: pointer; font-size: 16px;
-                       transition: all 0.3s; margin-top: 10px;">
+        <button type="submit" class="btn register-btn">
           রেজিস্টার
         </button>
       </form>
 
-      <p style="text-align: center; color: white; margin-top: 20px;">
-        ইতিমধ্যে অ্যাকাউন্ট আছে? <a href="{% url 'login' %}" style="color: #4ECDC4; text-decoration: none; font-weight: 500;">লগইন করুন</a>
+      <p class="login-link">
+        ইতিমধ্যে অ্যাকাউন্ট আছে? <a href="{% url 'login' %}" class="login-link-text">লগইন করুন</a>
       </p>
     </div>
 
@@ -93,31 +79,383 @@
 </div>
 
 <style>
-/* Add focus effect for inputs */
-input:focus, select:focus {
-  border-color: #4ECDC4 !important;
-  box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.register-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    max-width: 1000px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.register-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 300px;
+    padding: 20px;
+}
+
+.register-image img {
+    width: 320px;
+    height: 320px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.register-form {
+    flex: 1;
+    min-width: 300px;
+    max-width: 450px;
+    padding: 20px;
+}
+
+.register-title {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.register-form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    width: 100%;
+}
+
+.form-label {
+    color: white;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.required-star {
+    color: #FF6B6B;
+    margin-left: 3px;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 16px;
+    backdrop-filter: blur(5px);
+    outline: none;
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+.form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 20px;
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+.form-input:focus, .form-select:focus {
+    border-color: #4ECDC4 !important;
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Style for select options */
-select option {
-  background: #2c3e50;
-  color: white;
-  padding: 10px;
+.form-select option {
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
 }
 
-/* Hover effect for button */
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+.help-text {
+    color: #aaa;
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
 }
 
-/* Password strength indicator (optional) */
+.error-messages {
+    color: #FF6B6B;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.register-btn {
+    width: 100%;
+    background: linear-gradient(45deg, #4ECDC4, #44A08D);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+    margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+}
+
+.register-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+    background: linear-gradient(45deg, #44A08D, #4ECDC4);
+}
+
+.register-btn:active {
+    transform: translateY(0);
+}
+
+.login-link {
+    text-align: center;
+    color: white;
+    margin-top: 25px;
+    font-size: 16px;
+}
+
+.login-link-text {
+    color: #4ECDC4;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.login-link-text:hover {
+    color: white;
+    background: #4ECDC4;
+    text-decoration: none;
+}
+
+/* Password strength indicator */
 .password-strength {
-  height: 5px;
-  border-radius: 5px;
-  margin-top: 5px;
-  transition: all 0.3s;
+    height: 5px;
+    border-radius: 5px;
+    margin-top: 8px;
+    transition: all 0.3s;
+    width: 0%;
+}
+
+/* Responsive Breakpoints */
+
+/* Tablet and medium screens */
+@media screen and (max-width: 900px) {
+    .register-card {
+        padding: 30px;
+    }
+    
+    .register-image img {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .register-title {
+        font-size: 26px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .register-card {
+        padding: 30px 20px;
+        flex-direction: column;
+    }
+
+    .register-image {
+        min-width: 100%;
+        padding: 10px 20px 20px;
+    }
+
+    .register-image img {
+        width: 260px;
+        height: 260px;
+    }
+
+    .register-form {
+        min-width: 100%;
+        max-width: 100%;
+        padding: 10px;
+    }
+
+    .register-title {
+        font-size: 24px;
+        margin-bottom: 25px;
+    }
+
+    .form-input, .form-select {
+        padding: 12px;
+    }
+}
+
+/* Mobile phones */
+@media screen and (max-width: 480px) {
+    .register-container {
+        padding: 10px;
+        min-height: auto;
+    }
+
+    .register-card {
+        padding: 25px 15px;
+    }
+
+    .register-image {
+        padding: 0 0 15px;
+    }
+
+    .register-image img {
+        width: 200px;
+        height: 200px;
+    }
+
+    .register-title {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 5px;
+    }
+
+    .form-label {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .form-input, .form-select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .form-input::placeholder {
+        font-size: 13px;
+    }
+
+    .register-btn {
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .login-link {
+        margin-top: 20px;
+        font-size: 14px;
+    }
+}
+
+/* Small phones */
+@media screen and (max-width: 360px) {
+    .register-card {
+        padding: 20px 12px;
+    }
+
+    .register-image img {
+        width: 160px;
+        height: 160px;
+    }
+
+    .register-title {
+        font-size: 20px;
+    }
+
+    .form-input, .form-select {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .register-btn {
+        padding: 10px;
+        font-size: 15px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .register-container {
+        min-height: auto;
+        padding: 15px;
+    }
+
+    .register-card {
+        flex-direction: row;
+        padding: 20px;
+    }
+
+    .register-image {
+        min-width: 35%;
+        padding: 10px;
+    }
+
+    .register-image img {
+        width: 160px;
+        height: 160px;
+    }
+
+    .register-form {
+        min-width: 60%;
+        padding: 10px;
+    }
+
+    .register-form-fields {
+        gap: 10px;
+    }
+}
+
+/* Small height devices */
+@media screen and (max-height: 700px) {
+    .register-container {
+        min-height: auto;
+        padding: 15px;
+    }
+
+    .register-image img {
+        width: 180px;
+        height: 180px;
+    }
+
+    .register-card {
+        padding: 20px;
+    }
+}
+
+/* Tablet landscape */
+@media screen and (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+    .register-card {
+        padding: 30px;
+    }
+    
+    .register-image img {
+        width: 260px;
+        height: 260px;
+    }
 }
 </style>
 
@@ -128,12 +466,22 @@ document.addEventListener('DOMContentLoaded', function() {
   const password2 = document.querySelector('input[name="password2"]');
 
   if (password1) {
+    // Create strength bar container
+    const strengthContainer = document.createElement('div');
+    strengthContainer.style.marginTop = '5px';
+    password1.parentNode.appendChild(strengthContainer);
+
+    const strengthBar = document.createElement('div');
+    strengthBar.id = 'password-strength-bar';
+    strengthBar.className = 'password-strength';
+    strengthContainer.appendChild(strengthBar);
+
     password1.addEventListener('input', function() {
-      checkPasswordStrength(this.value);
+      checkPasswordStrength(this.value, strengthBar);
     });
   }
 
-  function checkPasswordStrength(password) {
+  function checkPasswordStrength(password, strengthBar) {
     let strength = 0;
     if (password.length >= 8) strength++;
     if (password.match(/[a-z]+/)) strength++;
@@ -141,19 +489,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (password.match(/[0-9]+/)) strength++;
     if (password.match(/[$@#&!]+/)) strength++;
 
-    const strengthBar = document.getElementById('password-strength-bar');
-    if (!strengthBar) {
-      const bar = document.createElement('div');
-      bar.id = 'password-strength-bar';
-      bar.className = 'password-strength';
-      password1.parentNode.appendChild(bar);
-    }
-
-    const bar = document.getElementById('password-strength-bar');
     const colors = ['#FF6B6B', '#FF6B6B', '#FFA06B', '#FFD56B', '#4ECDC4'];
     const width = (strength / 5) * 100;
-    bar.style.width = width + '%';
-    bar.style.backgroundColor = colors[strength];
+    strengthBar.style.width = width + '%';
+    strengthBar.style.backgroundColor = colors[Math.floor(strength)];
+    
+    // Add text indicator
+    const strengthTexts = ['খুব দুর্বল', 'দুর্বল', 'মাঝারি', 'ভাল', 'শক্তিশালী'];
+    if (strength > 0) {
+      if (!document.getElementById('strength-text')) {
+        const text = document.createElement('small');
+        text.id = 'strength-text';
+        text.style.color = colors[Math.floor(strength)];
+        text.style.display = 'block';
+        text.style.marginTop = '5px';
+        text.style.fontSize = '12px';
+        strengthBar.parentNode.appendChild(text);
+      }
+      const text = document.getElementById('strength-text');
+      text.textContent = 'পাসওয়ার্ড শক্তি: ' + strengthTexts[Math.floor(strength)];
+      text.style.color = colors[Math.floor(strength)];
+    }
   }
 
   // Password match validation
@@ -161,8 +517,22 @@ document.addEventListener('DOMContentLoaded', function() {
     password2.addEventListener('input', function() {
       if (password1.value !== password2.value) {
         password2.style.borderColor = '#FF6B6B';
+        
+        // Add mismatch message
+        if (!document.getElementById('password-mismatch')) {
+          const msg = document.createElement('small');
+          msg.id = 'password-mismatch';
+          msg.style.color = '#FF6B6B';
+          msg.style.display = 'block';
+          msg.style.marginTop = '5px';
+          msg.style.fontSize = '12px';
+          msg.textContent = 'পাসওয়ার্ড মিলছে না';
+          password2.parentNode.appendChild(msg);
+        }
       } else {
         password2.style.borderColor = '#4ECDC4';
+        const msg = document.getElementById('password-mismatch');
+        if (msg) msg.remove();
       }
     });
   }

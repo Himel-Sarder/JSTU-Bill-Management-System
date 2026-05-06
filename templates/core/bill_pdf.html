@@ -263,7 +263,7 @@
         }
 
         /* ======================================== */
-        /* SIGNATURE SECTION - COMPLETELY REDESIGNED */
+        /* SIGNATURE SECTION - TEXT IN ROW (SINGLE LINE) */
         /* ======================================== */
         .signature-section {
             margin-top: 80px;
@@ -271,7 +271,6 @@
             page-break-inside: avoid;
         }
 
-        /* Use table for perfect alignment */
         .signature-table {
             width: 100%;
             border-collapse: collapse;
@@ -300,22 +299,23 @@
         }
 
         /* Signature Box - Left */
-        .signature-box-left {
-            display: inline-block;
-            text-align: center;
+        .left-signature-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
         }
 
         /* Signature Box - Right */
-        .signature-box-right {
-            display: inline-block;
-            text-align: center;
+        .right-signature-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
         }
 
         /* Signature Line */
         .sig-line {
             width: 200px;
             border-top: 1px solid #000;
-            margin: 10px 0;
         }
 
         .sig-line-left {
@@ -344,42 +344,31 @@
             margin-left: auto;
         }
 
-        /* Text Styles */
+        /* ======================================== */
+        /* TEXT STYLES - NOW IN ROW (SINGLE LINE) */
+        /* ======================================== */
+        /* Left side text - single line */
         .sig-title-left {
             font-size: 10px;
             text-align: left;
             line-height: 1.4;
             margin-top: 5px;
+            white-space: nowrap;
         }
 
+        /* Right side text - single line */
         .sig-title-right {
             font-size: 10px;
             text-align: right;
             line-height: 1.4;
             margin-top: 5px;
+            white-space: nowrap;
         }
 
-        /* Container for left signature */
-        .left-signature-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        /* Container for right signature */
-        .right-signature-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
-
-        /* Image wrapper */
-        .sig-img-wrapper {
-            text-align: left;
-        }
-
-        .sig-img-wrapper-right {
-            text-align: right;
+        /* Remove <br> effect by using spans */
+        .sig-title-left span,
+        .sig-title-right span {
+            display: inline-block;
         }
 
         .content-protector {
@@ -492,7 +481,7 @@
             </div>
             {% endif %}
 
-            <!-- SIGNATURE SECTION - COMPLETELY REDESIGNED USING TABLE -->
+            <!-- SIGNATURE SECTION - TEXT IN ROW (NO LINE BREAKS) -->
             <div class="signature-section">
                 <table class="signature-table">
                     <tr>
@@ -500,15 +489,14 @@
                         <td class="signature-left-col">
                             <div class="left-signature-container">
                                 {% if chairman_signature %}
-                                    <div class="sig-img-wrapper">
-                                        <img src="{{ chairman_signature }}" class="chairman-sig-img" alt="Chairman Signature">
-                                    </div>
+                                    <img src="{{ chairman_signature }}" class="chairman-sig-img" alt="Chairman Signature">
                                     <div class="sig-line sig-line-left"></div>
                                 {% else %}
                                     <div class="sig-line sig-line-left"></div>
                                 {% endif %}
+                                <!-- Text in SINGLE LINE - no <br> tags -->
                                 <div class="sig-title-left bangla-text">
-                                    পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
+                                    পরীক্ষা কমিটির সভাপতির স্বাক্ষর ও সিল
                                 </div>
                             </div>
                         </td>
@@ -520,15 +508,14 @@
                         <td class="signature-right-col">
                             <div class="right-signature-container">
                                 {% if user_signature %}
-                                    <div class="sig-img-wrapper-right">
-                                        <img src="{{ user_signature }}" class="user-sig-img" alt="User Signature">
-                                    </div>
+                                    <img src="{{ user_signature }}" class="user-sig-img" alt="User Signature">
                                     <div class="sig-line sig-line-right"></div>
                                 {% else %}
                                     <div class="sig-line sig-line-right"></div>
                                 {% endif %}
+                                <!-- Text in SINGLE LINE - no <br> tags -->
                                 <div class="sig-title-right bangla-text">
-                                    বিল পেশকারীর<br>স্বাক্ষর ও সিল
+                                    বিল পেশকারীর স্বাক্ষর ও সিল
                                 </div>
                             </div>
                         </td>

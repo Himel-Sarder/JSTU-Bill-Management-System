@@ -1,0 +1,40 @@
+/* Bengali Font Support for PDF and Web */
+@import url('https://fonts.maateen.me/solaiman-lipi/font.css');
+
+/* Alternative approach using Unicode ranges for better Bengali support */
+@font-face {
+    font-family: 'BanglaFont';
+    src: local('Arial');
+    unicode-range: U+0980-09FF;
+}
+
+@font-face {
+    font-family: 'BanglaPDF';
+    src: url('../fonts/Kalpurush.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.bangla-text {
+    font-family: 'SolaimanLipi', 'BanglaFont', 'BanglaPDF', Arial, sans-serif;
+}
+
+/* Fallback for browsers that don't support unicode-range */
+@font-face {
+    font-family: 'BanglaFallback';
+    src: local('Arial Unicode MS'), local('Microsoft Sans Serif');
+}
+
+.bangla-digit {
+    font-family: 'SolaimanLipi', 'BanglaFont', Arial, sans-serif;
+}
+
+/* Ensure Bengali text displays properly */
+body {
+    font-family: 'SolaimanLipi', Arial, sans-serif;
+}
+
+/* PDF specific styles */
+.pdf-bangla {
+    font-family: 'BanglaPDF', 'SolaimanLipi', Arial, sans-serif;
+}

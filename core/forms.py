@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from .models import Profile, Bill, WorkType, Benefit
 
 
+# In forms.py - Update CustomUserCreationForm
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(
         required=True,
@@ -28,7 +29,11 @@ class CustomUserCreationForm(UserCreationForm):
         })
     )
     user_type = forms.ChoiceField(
-        choices=Profile.USER_TYPES,
+        choices=[
+            ('অ্যাসিস্ট্যান্ট প্রফেসর', 'অ্যাসিস্ট্যান্ট প্রফেসর'),
+            ('লেকচারার', 'লেকচারার'),
+            ('অফিস সহকারী', 'অফিস সহকারী'),
+        ],
         label='পদবী',
         widget=forms.Select(attrs={
             'class': 'form-control'
@@ -65,7 +70,6 @@ class CustomUserCreationForm(UserCreationForm):
             profile.save()
 
         return user
-
 
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:

@@ -13,6 +13,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class Profile(models.Model):
     USER_TYPES = [
         ('চেয়ারম্যান', 'চেয়ারম্যান'),
+        ('কন্ট্রোলার', 'কন্ট্রোলার'),
         ('অ্যাসিস্ট্যান্ট প্রফেসর', 'অ্যাসিস্ট্যান্ট প্রফেসর'),
         ('লেকচারার', 'লেকচারার'),
         ('অফিস সহকারী', 'অফিস সহকারী'),
@@ -24,6 +25,14 @@ class Profile(models.Model):
                                         verbose_name='প্রোফাইল ছবি')
     phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name='ফোন নম্বর')
     joining_date = models.DateField(blank=True, null=True, verbose_name='যোগদানের তারিখ')
+    
+    # Signature fields for different users
+    signature = models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='স্বাক্ষর')
+    signature_general = models.ImageField(upload_to='signatures/general/', blank=True, null=True, verbose_name='সাধারণ স্বাক্ষর')
+    signature_chairman1 = models.ImageField(upload_to='signatures/chairman1/', blank=True, null=True, verbose_name='চেয়ারম্যান ১ স্বাক্ষর')
+    signature_chairman2 = models.ImageField(upload_to='signatures/chairman2/', blank=True, null=True, verbose_name='চেয়ারম্যান ২ স্বাক্ষর')
+    signature_chairman3 = models.ImageField(upload_to='signatures/chairman3/', blank=True, null=True, verbose_name='চেয়ারম্যান ৩ স্বাক্ষর')
+    signature_chairman4 = models.ImageField(upload_to='signatures/chairman4/', blank=True, null=True, verbose_name='চেয়ারম্যান ৪ স্বাক্ষর')
 
     def __str__(self):
         return f"{self.user.username} - {self.user_type}"
@@ -204,7 +213,11 @@ class Bill(models.Model):
     remarks = models.TextField(blank=True, null=True, verbose_name='মন্তব্য')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_hidden_from_chairman = models.BooleanField(default=False, verbose_name='চেয়ারম্যানের কাছে লুকানো')
+    sent_at = models.DateTimeField(null=True, blank=True, verbose_name='পাঠানোর সময়')  
     degree_type = models.CharField(max_length=10, choices=DEGREE_CHOICES, default='honors', verbose_name='ডিগ্রির ধরণ')
+    user_signature_added = models.BooleanField(default=False, verbose_name='ব্যবহারকারীর স্বাক্ষর যুক্ত হয়েছে')
+    chairman_signature_added = models.BooleanField(default=False, verbose_name='চেয়ারম্যানের স্বাক্ষর যুক্ত হয়েছে')
 
     class Meta:
         ordering = ['-created_at']
@@ -252,6 +265,7 @@ class Task(models.Model):
     quantity = models.PositiveIntegerField(default=1, verbose_name='পরিমাণ')
     unit = models.CharField(max_length=50, blank=True, verbose_name='একক')
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='টাকার পরিমাণ')
+    remarks = models.TextField(blank=True, null=True, verbose_name='মন্তব্য') 
 
     class Meta:
         verbose_name = 'কাজ'

@@ -7,7 +7,8 @@ from . import views
 urlpatterns = [
     # Basic URLs
     path('', views.home, name='home'),
-    path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
+    # Use custom login view instead of default
+    path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', views.custom_logout, name='logout'),
     path('register/', views.register, name='register'),
     path('profile/', views.profile, name='profile'),
@@ -18,6 +19,30 @@ urlpatterns = [
     path('bill/delete/<int:bill_id>/', views.delete_bill, name='delete_bill'),
     path('bill/download/<int:bill_id>/', views.download_bill_pdf, name='download_bill'),
     path('bill/view/<int:bill_id>/', views.view_bill_pdf, name='view_bill_pdf'),
+    
+    # Signature Upload (General User)
+    path('signature-upload/general/', views.signature_upload_general, name='signature_upload_general'),
+    path('delete-signature/general/', views.delete_signature_general, name='delete_signature_general'),
+    
+    # Signature Upload (Chairman 1)
+    path('signature-upload/chairman1/', views.signature_upload_chairman1, name='signature_upload_chairman1'),
+    path('delete-signature/chairman1/', views.delete_signature_chairman1, name='delete_signature_chairman1'),
+    
+    # Signature Upload (Chairman 2)
+    path('signature-upload/chairman2/', views.signature_upload_chairman2, name='signature_upload_chairman2'),
+    path('delete-signature/chairman2/', views.delete_signature_chairman2, name='delete_signature_chairman2'),
+    
+    # Signature Upload (Chairman 3)
+    path('signature-upload/chairman3/', views.signature_upload_chairman3, name='signature_upload_chairman3'),
+    path('delete-signature/chairman3/', views.delete_signature_chairman3, name='delete_signature_chairman3'),
+    
+    # Signature Upload (Chairman 4)
+    path('signature-upload/chairman4/', views.signature_upload_chairman4, name='signature_upload_chairman4'),
+    path('delete-signature/chairman4/', views.delete_signature_chairman4, name='delete_signature_chairman4'),
+    
+    # Signature Upload (General Chairman - Legacy)
+    path('signature-upload/', views.signature_upload, name='signature_upload'),
+    path('delete-signature/', views.delete_signature, name='delete_signature'),
 
     # Admin Features
     path('dashboard/', views.dashboard, name='dashboard'),
@@ -38,12 +63,21 @@ urlpatterns = [
     path('get-benefit-choices-old/', views.get_benefit_choices_old, name='get_benefit_choices_old'),
     path('get-amount-old/', views.get_amount_old, name='get_amount_old'),
 
-    # Add to urls.py
+    # Degree-based API Endpoints
     path('get-work-types-by-degree/', views.get_work_types_by_degree, name='get_work_types_by_degree'),
     path('get-benefit-choices-by-degree/', views.get_benefit_choices_by_degree, name='get_benefit_choices_by_degree'),
 
+    # Bill Status URLs
     path('bill-status/', views.bill_status, name='bill_status'),
     path('send-bill/<int:bill_id>/', views.send_bill, name='send_bill'),
+    path('send-bill-with-year/<int:bill_id>/', views.send_bill_with_year, name='send_bill_with_year'),
+    
+    # Signature Addition to Bill
+    path('add-user-signature/<int:bill_id>/', views.add_user_signature_to_bill, name='add_user_signature_to_bill'),
+    path('add-signature-to-bill/<int:bill_id>/', views.add_signature_to_bill_chairman, name='add_signature_to_bill_chairman'),
+    path('bill/add-signature/<int:bill_id>/', views.add_signature_to_bill, name='add_signature_to_bill'),
+
+    path('debug-bill/<int:bill_id>/', views.debug_bill_signature, name='debug_bill_signature'),
 ]
 
 # Error handlers

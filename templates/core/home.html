@@ -1,0 +1,684 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card">
+        <h1 style="text-align: center; color: white; margin-bottom: 30px; font-size: 2.5em;">
+            বিল ব্যবস্থাপনা সিস্টেম
+        </h1>
+        
+        <!-- Two Column Layout for Slider and Calendar -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <!-- Image Slider with University Name Below -->
+            <div>
+                <div class="slider-container">
+                    <div class="slider" id="imageSlider">
+                        {% for image in slider_images %}
+                        <div class="slide {% if forloop.first %}active{% endif %}">
+                            {% if image.image and image.image.url %}
+                            <img src="{{ image.image.url }}" alt="{{ image.title }}" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            {% endif %}
+                            <div class="card {% if not image.image or not image.image.url %}default-slide{% endif %}">
+                                <h3>{{ image.title }}</h3>
+                                <p>{{ image.description|linebreaksbr }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <!-- Default slides when no images exist -->
+                        <div class="slide active">
+                            <div class="slide-content default-slide">
+                                <h3>বিল ব্যবস্থাপনা সিস্টেম</h3>
+                                <p>কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ<br>জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</p>
+                            </div>
+                        </div>
+                        <div class="slide">
+                            <div class="slide-content default-slide">
+                                <h3>ডিজিটাল বিল প্রক্রিয়াকরণ</h3>
+                                <p>কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ<br>জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</p>
+                            </div>
+                        </div>
+                        <div class="slide">
+                            <div class="slide-content default-slide">
+                                <h3>স্বয়ংক্রিয় বিল জেনারেশন</h3>
+                                <p>কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ<br>জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Navigation Arrows -->
+                    <button class="slider-nav prev" onclick="changeSlide(-1)">‹</button>
+                    <button class="slider-nav next" onclick="changeSlide(1)">›</button>
+                    
+                    <!-- Dots Indicator -->
+                    <div class="slider-dots" id="sliderDots"></div>
+                </div>
+                
+                <!-- University Name Text directly under slider -->
+                <div class="slider-university-text">
+                    কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ <br>
+                    জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়
+                </div>
+            </div>
+
+            <!-- Bengali Calendar -->
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button onclick="changeMonth(-1)" class="calendar-nav-btn">‹</button>
+                    <h3 id="calendar-month-year" class="calendar-month-year"></h3>
+                    <button onclick="changeMonth(1)" class="calendar-nav-btn">›</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>রবি</div>
+                    <div>সোম</div>
+                    <div>মঙ্গল</div>
+                    <div>বুধ</div>
+                    <div>বৃহস্পতি</div>
+                    <div>শুক্র</div>
+                    <div>শনি</div>
+                </div>
+                <div id="calendar-days" class="calendar-days"></div>
+                <div class="calendar-bangla-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="bangla-date-today"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Button -->
+        <div style="text-align: center; margin: 30px 0;">
+            {% if user.is_authenticated %}
+                <a href="{% url 'bill_create' %}" class="btn">বিল তৈরী করুন</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn">বিল তৈরী করুন</a>
+            {% endif %}
+        </div>
+        
+        <!-- User Manual -->
+        <div class="user-manual">
+            <h3 style="color: black; text-align: center; margin-bottom: 20px;">ব্যবহারকারী ম্যানুয়াল</h3>
+            <div class="manual-content">
+                <div class="manual-item">
+                    <h4>বিল তৈরির ধাপসমূহ:</h4>
+                    <ol>
+                        <li>লগইন করুন বা নতুন অ্যাকাউন্ট তৈরি করুন</li>
+                        <li>"বিল তৈরী করুন" বাটনে ক্লিক করুন</li>
+                        <li>সেমিস্টার নির্বাচন করুন</li>
+                        <li>"কাজ যোগ করুন" বাটনে ক্লিক করে কাজের তালিকা তৈরি করুন</li>
+                        <li>কাজের ধরণ এবং উপকাজ নির্বাচন করুন</li>
+                        <li>বিল সাবমিট করুন এবং PDF ডাউনলোড করুন</li>
+                    </ol>
+                </div>
+                <div class="manual-item">
+                    <h4>সিস্টেমের বৈশিষ্ট্য:</h4>
+                    <ul>
+                        <li>স্বয়ংক্রিয় বিল নম্বর জেনারেশন</li>
+                        <li>বাংলা তারিখ এবং সংখ্যা</li>
+                        <li>PDF ফরম্যাটে বিল ডাউনলোড</li>
+                        <li>বিলের ইতিহাস সংরক্ষণ</li>
+                        <li>ব্যবহারকারী-বান্ধব ইন্টারফেস</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.slider-container {
+    position: relative;
+    background: rgba(255,255,255,0.9);
+    border-radius: 15px;
+    overflow: hidden;
+    min-height: 300px;
+}
+
+.slider {
+    position: relative;
+    height: 350px;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slide.active {
+    opacity: 1;
+}
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.slide-content {
+    position: relative;
+    z-index: 2;
+    background: rgba(254, 253, 253, 0.18);
+    color: white;
+    padding: 30px;
+    text-align: center;
+    border-radius: 10px;
+    max-width: 80%;
+    backdrop-filter: blur(10px);
+}
+
+.slide-content.default-slide {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.slide-content h3 {
+    margin-bottom: 15px;
+    font-size: 1.8em;
+    color: #fff;
+}
+
+.slide-content p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin: 0;
+    color: rgba(255,255,255,0.9);
+}
+
+.slider-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.9);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slider-nav:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.slider-nav.prev {
+    left: 20px;
+}
+
+.slider-nav.next {
+    right: 20px;
+}
+
+.slider-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.dot.active {
+    background: white;
+    transform: scale(1.2);
+    border-color: #667eea;
+}
+
+/* University text under slider */
+.slider-university-text {
+    text-align: center;
+    margin-top: 15px;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    letter-spacing: 1px;
+}
+
+/* Calendar Styles */
+.calendar-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+
+.calendar-nav-btn {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.calendar-nav-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.calendar-month-year {
+    color: #2c3e50;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 0.85rem;
+}
+
+.calendar-weekdays div {
+    padding: 8px 0;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    gap: 3px;
+}
+
+.calendar-day {
+    padding: 10px 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.calendar-day:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transform: scale(1.05);
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, #4ECDC4, #44A08D);
+    color: white;
+    font-weight: bold;
+}
+
+.calendar-day.other-month {
+    color: #bbb;
+}
+
+.calendar-bangla-date {
+    margin-top: 15px;
+    padding: 10px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+
+.calendar-bangla-date i {
+    color: #667eea;
+    margin-right: 8px;
+}
+
+.user-manual {
+    background: rgba(255,255,255,0.9);
+    border-radius: 15px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.manual-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.manual-item {
+    color: #333;
+}
+
+.manual-item h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #4ECDC4;
+    padding-bottom: 5px;
+    font-size: 1.2em;
+}
+
+.manual-item ol, .manual-item ul {
+    padding-left: 20px;
+}
+
+.manual-item li {
+    margin-bottom: 10px;
+    line-height: 1.6;
+    font-size: 1em;
+}
+
+@media (max-width: 768px) {
+    .slider {
+        height: 300px;
+    }
+    
+    .slide-content {
+        padding: 20px;
+        max-width: 90%;
+    }
+    
+    .slide-content h3 {
+        font-size: 1.4em;
+    }
+    
+    .slide-content p {
+        font-size: 1em;
+    }
+    
+    .slider-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    .manual-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+    
+    div[style*="grid-template-columns: 2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .slider-university-text {
+        font-size: 1rem;
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .slider {
+        height: 250px;
+    }
+    
+    .slide-content {
+        padding: 15px;
+    }
+    
+    .slide-content h3 {
+        font-size: 1.2em;
+    }
+    
+    .slider-nav {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+    }
+    
+    .slider-university-text {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+}
+</style>
+
+<script>
+// Bengali month names
+const banglaMonths = [
+    'বৈশাখ', 'জ্যৈষ্ঠ', 'আষাঢ়', 'শ্রাবণ', 'ভাদ্র', 'আশ্বিন',
+    'কার্তিক', 'অগ্রহায়ণ', 'পৌষ', 'মাঘ', 'ফাল্গুন', 'চৈত্র'
+];
+
+// Bangla numbers conversion
+const banglaNumbers = {
+    '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+    '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
+};
+
+function toBanglaNumber(num) {
+    return num.toString().split('').map(d => banglaNumbers[d] || d).join('');
+}
+
+// Bengali calendar calculation
+function getBengaliDate(gregorianDate) {
+    const bengaliYear = gregorianDate.getFullYear() - 593;
+    const gregorianMonth = gregorianDate.getMonth();
+    
+    const monthMap = [
+        { bengali: 10, dayOffset: 14 }, // April - Baishakh
+        { bengali: 11, dayOffset: 15 }, // May - Joishtho
+        { bengali: 0, dayOffset: 15 },  // June - Asharh
+        { bengali: 1, dayOffset: 16 },  // July - Shrabon
+        { bengali: 2, dayOffset: 16 },  // August - Bhadro
+        { bengali: 3, dayOffset: 15 },  // September - Ashwin
+        { bengali: 4, dayOffset: 15 },  // October - Kartik
+        { bengali: 5, dayOffset: 14 },  // November - Ogrohayon
+        { bengali: 6, dayOffset: 14 },  // December - Poush
+        { bengali: 7, dayOffset: 13 },  // January - Magh
+        { bengali: 8, dayOffset: 12 },  // February - Falgun
+        { bengali: 9, dayOffset: 14 }   // March - Chaitra
+    ];
+    
+    const monthInfo = monthMap[gregorianMonth];
+    const bengaliMonth = monthInfo.bengali;
+    let bengaliDay = gregorianDate.getDate() - monthInfo.dayOffset;
+    
+    if (bengaliDay <= 0) {
+        const prevMonth = (bengaliMonth - 1 + 12) % 12;
+        const prevMonthDays = [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30];
+        bengaliDay += prevMonthDays[prevMonth];
+        return {
+            day: toBanglaNumber(bengaliDay),
+            month: banglaMonths[prevMonth],
+            year: toBanglaNumber(bengaliYear + (gregorianMonth < 3 ? 0 : 1))
+        };
+    }
+    
+    return {
+        day: toBanglaNumber(bengaliDay),
+        month: banglaMonths[bengaliMonth],
+        year: toBanglaNumber(bengaliYear + (gregorianMonth >= 3 ? 1 : 0))
+    };
+}
+
+let currentDate = new Date();
+
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const monthNames = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${toBanglaNumber(year)}`;
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    
+    const calendarDays = document.getElementById('calendar-days');
+    calendarDays.innerHTML = '';
+    
+    let today = new Date();
+    
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = prevMonthDays - i;
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day other-month';
+        dayDiv.textContent = toBanglaNumber(day);
+        calendarDays.appendChild(dayDiv);
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        dayDiv.textContent = toBanglaNumber(day);
+        
+        if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+            dayDiv.classList.add('today');
+        }
+        
+        dayDiv.addEventListener('click', (function(d) {
+            return function() {
+                const clickedDate = new Date(year, month, d);
+                const banglaDate = getBengaliDate(clickedDate);
+                document.getElementById('bangla-date-today').innerHTML = `${banglaDate.day} ${banglaDate.month} ${banglaDate.year}`;
+                highlightSelectedDay(calendarDays, clickedDate);
+            };
+        })(day));
+        
+        calendarDays.appendChild(dayDiv);
+    }
+    
+    const totalDaysShown = calendarDays.children.length;
+    const remainingDays = 42 - totalDaysShown;
+    
+    for (let day = 1; day <= remainingDays; day++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day other-month';
+        dayDiv.textContent = toBanglaNumber(day);
+        calendarDays.appendChild(dayDiv);
+    }
+    
+    const banglaToday = getBengaliDate(today);
+    document.getElementById('bangla-date-today').innerHTML = `${banglaToday.day} ${banglaToday.month} ${banglaToday.year}`;
+}
+
+function highlightSelectedDay(container, selectedDate) {
+    const days = container.children;
+    for (let i = 0; i < days.length; i++) {
+        days[i].style.background = '';
+        days[i].style.color = '';
+    }
+    
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const day = selectedDate.getDate();
+    
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const index = firstDayOfMonth + day - 1;
+    
+    if (index >= 0 && index < days.length) {
+        days[index].style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+        days[index].style.color = 'white';
+        days[index].style.transform = 'scale(1.05)';
+    }
+}
+
+function changeMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    renderCalendar();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    renderCalendar();
+    
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('sliderDots');
+    let currentSlide = 0;
+    
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `dot ${index === 0 ? 'active' : ''}`;
+        dot.addEventListener('click', () => goToSlide(index));
+        dotsContainer.appendChild(dot);
+    });
+    
+    const dots = document.querySelectorAll('.dot');
+    
+    function goToSlide(n) {
+        slides[currentSlide].classList.remove('active');
+        dots[currentSlide].classList.remove('active');
+        
+        currentSlide = (n + slides.length) % slides.length;
+        
+        slides[currentSlide].classList.add('active');
+        dots[currentSlide].classList.add('active');
+    }
+    
+    setInterval(() => {
+        goToSlide(currentSlide + 1);
+    }, 5000);
+    
+    const images = document.querySelectorAll('.slide img');
+    images.forEach(img => {
+        img.addEventListener('error', function() {
+            this.style.display = 'none';
+            const content = this.nextElementSibling;
+            if (content) {
+                content.classList.add('default-slide');
+                content.style.display = 'block';
+            }
+        });
+    });
+});
+
+function changeSlide(direction) {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    let currentSlide = 0;
+    
+    slides.forEach((slide, index) => {
+        if (slide.classList.contains('active')) {
+            currentSlide = index;
+        }
+    });
+    
+    slides[currentSlide].classList.remove('active');
+    dots[currentSlide].classList.remove('active');
+    
+    currentSlide = (currentSlide + direction + slides.length) % slides.length;
+    
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
+}
+</script>
+{% endblock %}

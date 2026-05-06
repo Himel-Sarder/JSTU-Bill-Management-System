@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}স্বাক্ষর আপলোড - ১ম বর্ষ চেয়ারম্যান{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card" style="max-width: 600px; margin: 50px auto;">
+        <h2 style="color: #FFD700; text-align: center; margin-bottom: 30px;">
+            <i class="fas fa-signature"></i> স্বাক্ষর আপলোড
+        </h2>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div class="info-badge chairman1-badge">
+                <i class="fas fa-star"></i>
+                <span>১ম বর্ষ চেয়ারম্যান</span>
+                <i class="fas fa-star"></i>
+            </div>
+        </div>
+        
+        {% if user.profile.signature_chairman1 %}
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h4 style="color: #FFD700; margin-bottom: 15px;">আপনার বর্তমান স্বাক্ষর:</h4>
+            <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <img src="{{ user.profile.signature_chairman1.url }}" alt="Chairman 1 Signature" 
+                     style="max-width: 300px; max-height: 120px; object-fit: contain;">
+            </div>
+            <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">
+                <i class="fas fa-info-circle"></i> নতুন স্বাক্ষর আপলোড করলে পুরাতন স্বাক্ষর প্রতিস্থাপিত হবে।
+            </p>
+        </div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 25px;">
+                <label style="color: #FFD700; display: block; margin-bottom: 10px; font-weight: bold;">
+                    <i class="fas fa-image"></i> স্বাক্ষরের ছবি নির্বাচন করুন:
+                </label>
+                <div style="border: 2px dashed rgba(255,215,0,0.3); border-radius: 15px; padding: 30px; text-align: center; background: rgba(255,215,0,0.05);">
+                    <input type="file" name="signature" id="signature" accept="image/jpeg,image/png,image/jpg" 
+                           style="display: none;" onchange="previewImage(this)">
+                    <button type="button" class="btn btn-warning" onclick="document.getElementById('signature').click()" style="margin-bottom: 15px;">
+                        <i class="fas fa-upload"></i> ছবি নির্বাচন করুন
+                    </button>
+                    <p style="color: rgba(255,215,0,0.7); margin-top: 10px; font-size: 12px;">
+                        <i class="fas fa-info-circle"></i> JPEG বা PNG ফরম্যাট, সর্বোচ্চ ২MB
+                    </p>
+                    <div id="preview" style="margin-top: 20px; display: none;">
+                        <img id="preview-image" style="max-width: 300px; max-height: 150px; border-radius: 10px;">
+                        <p style="color: #FFD700; margin-top: 10px;">প্রিভিউ</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> স্বাক্ষর সংরক্ষণ করুন
+                </button>
+                {% if user.profile.signature_chairman1 %}
+                <a href="{% url 'delete_signature_chairman1' %}" class="btn btn-danger" 
+                   onclick="return confirm('আপনার স্বাক্ষর ডিলিট করতে চান?')">
+                    <i class="fas fa-trash"></i> স্বাক্ষর ডিলিট করুন
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.chairman1-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #fff;
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    color: #333;
+}
+
+.btn-success {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+}
+
+.btn-danger {
+    background: linear-gradient(45deg, #F44336, #D32F2F);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 768px) {
+    .glass-card {
+        margin: 20px !important;
+        padding: 20px !important;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    div[style*="display: flex"] {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('preview');
+    const previewImage = document.getElementById('preview-image');
+    
+    if (input.files && input.files[0]) {
+        if (input.files[0].size > 2 * 1024 * 1024) {
+            alert('ছবির সাইজ ২MB এর কম হতে হবে।');
+            input.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+const form = document.querySelector('form');
+form.addEventListener('submit', function() {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<span class="loading"></span> সংরক্ষণ হচ্ছে...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

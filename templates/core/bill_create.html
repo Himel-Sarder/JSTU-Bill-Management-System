@@ -139,6 +139,11 @@
                 <input type="hidden" class="amount-hidden" name="amount_value">
             </div>
         </div>
+        <!-- NEW: Remarks Field -->
+        <div class="form-group remarks-group" style="margin-top: 15px;">
+            <label>মন্তব্য <span style="color: #aaa; font-size: 12px;">(ঐচ্ছিক)</span></label>
+            <textarea class="task-remarks form-control" name="remarks" rows="2" placeholder="কোনো মন্তব্য থাকলে এখানে লিখুন..."></textarea>
+        </div>
     </div>
 </div>
 
@@ -396,6 +401,32 @@
 .work-type-option-masters {
     color: #FF6B6B;
     font-weight: 500;
+}
+
+/* Remarks field styles */
+.remarks-group {
+    margin-top: 15px;
+}
+
+.task-remarks {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.task-remarks:focus {
+    outline: none;
+    border-color: #4ECDC4;
+    background: rgba(255,255,255,0.1);
+}
+
+.task-remarks::placeholder {
+    color: rgba(255,255,255,0.5);
 }
 </style>
 
@@ -857,6 +888,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const amount = task.querySelector('.amount-hidden').value;
             const quantityInput = task.querySelector('.number-input');
             const quantityContainer = task.querySelector('.number-input-container');
+            const remarksTextarea = task.querySelector('.task-remarks'); // NEW
 
             if (workType.value && benefitSelect.value && amount) {
                 const workTypeName = workType.options[workType.selectedIndex].text;
@@ -864,11 +896,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 let quantity = 1;
                 let unit = '';
+                let remarks = ''; // NEW
 
                 if (quantityInput && quantityContainer && quantityContainer.style.display !== 'none') {
                     quantity = parseInt(quantityInput.value) || 1;
                     const benefitLabel = task.querySelector('.benefit-label');
                     unit = benefitLabel ? (benefitLabel.textContent || '') : '';
+                }
+
+                // Get remarks value
+                if (remarksTextarea) {
+                    remarks = remarksTextarea.value.trim();
                 }
 
                 const cleanWorkTypeName = workTypeName.replace(/\s*\([^)]*\)\s*/g, '').trim();
@@ -879,7 +917,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     benefit: cleanBenefitName,
                     quantity: quantity,
                     unit: unit,
-                    amount: amount
+                    amount: amount,
+                    remarks: remarks  // NEW
                 });
             }
         });

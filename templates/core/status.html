@@ -26,12 +26,18 @@
                         <p style="color: #666; margin: 5px 0 0 0;">
                             <i class="fas fa-calendar-alt"></i> তৈরির তারিখ: {{ bill.created_at|date:"d-m-Y"|bangla_number }}
                         </p>
+                        {% if bill.sent_at %}
+                        <p style="color: #666; margin: 5px 0 0 0;">
+                            <i class="fas fa-paper-plane"></i> পাঠানোর তারিখ: {{ bill.sent_at|date:"d-m-Y"|bangla_number }}
+                        </p>
+                        {% endif %}
                     </div>
                     <span class="status-badge status-{{ bill.status }}">
                         {% if bill.status == 'pending' %}অপেক্ষমান
                         {% elif bill.status == 'approved' %}অনুমোদিত
                         {% elif bill.status == 'rejected' %}বাতিল
                         {% elif bill.status == 'paid' %}পরিশোধিত
+                        {% elif bill.status == 'draft' %}খসড়া
                         {% endif %}
                     </span>
                 </div>
@@ -77,17 +83,41 @@
                         <i class="fas fa-download"></i> ডাউনলোড
                     </a>
 
-                    {% if request.user == bill.user and bill.status == 'pending' %}
-                    <form method="post" action="{% url 'delete_bill' bill.id %}" style="display: inline;"
-                          onsubmit="return confirm('আপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-delete">
-                            <i class="fas fa-trash-alt"></i> ডিলিট
-                        </button>
-                    </form>
+                    <!-- Delete for Regular Users - Only Rejected and Approved Bills (Hard Delete) -->
+                    {% if request.user == bill.user %}
+                        {% if bill.status == 'rejected' or bill.status == 'approved' %}
+                        <form method="post" action="{% url 'delete_bill' bill.id %}" style="display: inline;"
+                              onsubmit="return confirmDeleteBill('{{ bill.bill_number }}', '{{ bill.status }}');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-delete">
+                                <i class="fas fa-trash-alt"></i> স্থায়ীভাবে ডিলিট
+                            </button>
+                        </form>
+                        {% endif %}
                     {% endif %}
 
-                    {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' %}
+                    <!-- Delete for Chairman - Draft, Approved, and Rejected Bills (Soft Delete) -->
+                    {% if request.user.profile.user_type == 'চেয়ারম্যান' %}
+                        {% if bill.status == 'draft' %}
+                        <button onclick="showDeleteModal('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}', 'draft')" 
+                                class="btn btn-delete-soft">
+                            <i class="fas fa-eye-slash"></i> প্যানেল থেকে মুছুন
+                        </button>
+                        {% elif bill.status == 'approved' %}
+                        <button onclick="showDeleteModal('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}', 'approve')" 
+                                class="btn btn-delete-soft">
+                            <i class="fas fa-eye-slash"></i> প্যানেল থেকে মুছুন
+                        </button>
+                        {% elif bill.status == 'rejected' %}
+                        <button onclick="showDeleteModal('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}', 'reject')" 
+                                class="btn btn-delete-soft">
+                            <i class="fas fa-eye-slash"></i> প্যানেল থেকে মুছুন
+                        </button>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- Status Update Button for Admins -->
+                    {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
                         {% if bill.status == 'pending' %}
                         <a href="{% url 'update_bill_status' bill.id %}" class="btn btn-status">
                             <i class="fas fa-edit"></i> স্ট্যাটাস আপডেট
@@ -128,6 +158,25 @@
             {% endif %}
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal (For Chairman) -->
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="glass-card" style="max-width: 500px; margin: 20px; text-align: center; background: white;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #FFC107; margin-bottom: 20px;"></i>
+        <h3 style="color: #333; margin-bottom: 15px;">নিশ্চিত করুন</h3>
+        <div id="modalMessage">
+            <p style="color: #666; margin-bottom: 20px;">আপনি কি এই বিলটি মুছে ফেলতে চান?</p>
+        </div>
+        <p id="billInfo" style="color: #FFC107; margin: 20px 0; font-weight: bold;"></p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="closeDeleteModal()" class="btn btn-secondary" style="background: #9E9E9E;">বাতিল</button>
+            <form id="deleteForm" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" style="background: #F44336;">মুছুন</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -181,7 +230,7 @@
     border: 2px solid white;
 }
 
-/* Status Cards - No hover effect */
+/* Status Cards */
 .status-card {
     background: #ffffff;
     border-radius: 15px;
@@ -243,6 +292,10 @@
 
 .status-paid {
     background: #2196F3;
+}
+
+.status-draft {
+    background: #9E9E9E;
 }
 
 /* Bill Details Grid */
@@ -359,12 +412,24 @@
     background: linear-gradient(45deg, #FF6B6B, #C44D58);
 }
 
+.btn-delete-soft {
+    background: linear-gradient(45deg, #FF9800, #F57C00);
+}
+
 .btn-status {
     background: linear-gradient(45deg, #FFA500, #FF8C00);
 }
 
 .btn-primary {
     background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.btn-secondary {
+    background: #9E9E9E;
+}
+
+.btn-danger {
+    background: #F44336;
 }
 
 .btn:hover {
@@ -464,6 +529,100 @@
     }
 }
 </style>
+
+<script>
+function confirmDeleteBill(billNumber, billStatus) {
+    let message = '';
+    if (billStatus === 'rejected') {
+        message = `সতর্কতা: বিল #${billNumber} স্থায়ীভাবে ডেটাবেস থেকে মুছে ফেলা হবে।\n\nএই action পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?`;
+    } else if (billStatus === 'approved') {
+        message = `সতর্কতা: বিল #${billNumber} স্থায়ীভাবে ডেটাবেস থেকে মুছে ফেলা হবে।\n\nএই action পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?`;
+    }
+    return confirm(message);
+}
+
+let currentBillId = null;
+let currentBillNumber = null;
+let currentBillStatus = null;
+
+function showDeleteModal(billId, billNumber, billStatus, type) {
+    currentBillId = billId;
+    currentBillNumber = billNumber;
+    currentBillStatus = billStatus;
+    
+    const modal = document.getElementById('deleteModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const billInfo = document.getElementById('billInfo');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const deleteForm = document.getElementById('deleteForm');
+    
+    billInfo.innerHTML = `বিল নম্বর: ${billNumber}`;
+    
+    if (billStatus === 'draft') {
+        modalMessage.innerHTML = `
+            <div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 10px; margin: 10px 0;">
+                <i class="fas fa-info-circle" style="color: #FFC107; font-size: 24px;"></i>
+                <p style="color: #333; margin-top: 10px;">
+                    <strong>সতর্কতা:</strong> এই খসড়া বিলটি শুধুমাত্র চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হবে।<br>
+                    শিক্ষক তাদের "আমার বিল" পৃষ্ঠায় এই বিলটি "খসড়া" স্ট্যাটাস সহ দেখতে পাবেন।
+                </p>
+            </div>
+        `;
+        confirmBtn.innerHTML = '<i class="fas fa-eye-slash"></i> প্যানেল থেকে মুছুন';
+    } else if (billStatus === 'approved') {
+        modalMessage.innerHTML = `
+            <div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 10px; margin: 10px 0;">
+                <i class="fas fa-info-circle" style="color: #FFC107; font-size: 24px;"></i>
+                <p style="color: #333; margin-top: 10px;">
+                    <strong>সতর্কতা:</strong> এই অনুমোদিত বিলটি শুধুমাত্র চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হবে।<br>
+                    শিক্ষক তাদের স্ট্যাটাস পৃষ্ঠায় এই বিলটি "অনুমোদিত" স্ট্যাটাস সহ দেখতে পাবেন।
+                </p>
+            </div>
+        `;
+        confirmBtn.innerHTML = '<i class="fas fa-eye-slash"></i> প্যানেল থেকে মুছুন';
+    } else if (billStatus === 'rejected') {
+        modalMessage.innerHTML = `
+            <div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 10px; margin: 10px 0;">
+                <i class="fas fa-info-circle" style="color: #FFC107; font-size: 24px;"></i>
+                <p style="color: #333; margin-top: 10px;">
+                    <strong>সতর্কতা:</strong> এই বাতিল বিলটি শুধুমাত্র চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হবে।<br>
+                    শিক্ষক তাদের স্ট্যাটাস পৃষ্ঠায় এই বিলটি "বাতিল" স্ট্যাটাস সহ দেখতে পাবেন।
+                </p>
+            </div>
+        `;
+        confirmBtn.innerHTML = '<i class="fas fa-eye-slash"></i> প্যানেল থেকে মুছুন';
+    }
+    
+    deleteForm.action = `/bill/delete/${billId}/`;
+    modal.style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'none';
+    currentBillId = null;
+    currentBillNumber = null;
+    currentBillStatus = null;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Add loading effect on form submit
+const deleteForm = document.getElementById('deleteForm');
+if (deleteForm) {
+    deleteForm.addEventListener('submit', function() {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<span class="loading"></span> মুছে ফেলা হচ্ছে...';
+        submitBtn.disabled = true;
+    });
+}
+</script>
 
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

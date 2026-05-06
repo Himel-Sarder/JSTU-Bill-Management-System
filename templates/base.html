@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     
     <style>
-        /* Additional inline styles for critical elements */
+        /* Your existing styles remain the same */
         .navbar {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -191,95 +191,6 @@
             font-weight: 500;
         }
 
-        /* Status Badge Styles */
-        .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-pending {
-            background: #FFC107;
-            color: #000;
-        }
-
-        .status-approved {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .status-rejected {
-            background: #F44336;
-            color: white;
-        }
-
-        .status-paid {
-            background: #2196F3;
-            color: white;
-        }
-
-        /* Status Card Styles */
-        .status-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .status-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .status-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .status-actions .btn {
-            padding: 8px 15px;
-            font-size: 14px;
-        }
-
-        .status-filter {
-            margin-bottom: 30px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .filter-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            color: white;
-        }
-
-        .filter-btn.active {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -342,14 +253,6 @@
             .user-welcome {
                 display: none;
             }
-
-            .status-actions {
-                flex-direction: column;
-            }
-
-            .status-actions .btn {
-                width: 100%;
-            }
         }
 
         /* Loading animation */
@@ -396,17 +299,56 @@
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
 
             <div class="nav-links" id="navLinks">
+                <!-- Home link for all users -->
                 <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
+                
                 {% if user.is_authenticated %}
-                    <a href="{% url 'bill_status' %}" {% if 'status' in request.path %}class="active"{% endif %}>স্ট্যাটাস</a>
-                    {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' %}
-                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                    {% if user.profile.user_type == 'চেয়ারম্যান' %}
+                        <!-- Chairman based on username -->
+                        {% if user.username == 'JSTUChairman1' %}
+                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                            <a href="{% url 'signature_upload_chairman1' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                        {% elif user.username == 'JSTUChairman2' %}
+                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                            <a href="{% url 'signature_upload_chairman2' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                        {% elif user.username == 'JSTUChairman3' %}
+                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                            <a href="{% url 'signature_upload_chairman3' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                        {% elif user.username == 'JSTUChairman4' %}
+                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                            <a href="{% url 'signature_upload_chairman4' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                        {% else %}
+                            <!-- Other Chairmen -->
+                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                            <a href="{% url 'signature_upload' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                        {% endif %}
+                        
+                    {% else %}
+                        <!-- All Others (Controller, Office Assistant, Assistant Professor, Lecturer): See all navbar items -->
+                        <a href="{% url 'bill_create' %}" {% if 'create' in request.path %}class="active"{% endif %}>বিল তৈরী</a>
+                        <a href="{% url 'my_bills' %}" {% if 'my-bills' in request.path %}class="active"{% endif %}>আমার বিল</a>
+                        <a href="{% url 'bill_status' %}" {% if 'bill-status' in request.path %}class="active"{% endif %}>স্ট্যাটাস</a>
+                        <a href="{% url 'signature_upload_general' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                        <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                        <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+                        
+                        <!-- Additional admin links for Controller and Office Assistant -->
+                        {% if user.profile.user_type == 'কন্ট্রোলার' or user.profile.user_type == 'অফিস সহকারী' %}
+                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                        {% endif %}
                     {% endif %}
-                    <a href="{% url 'bill_create' %}" {% if 'create' in request.path %}class="active"{% endif %}>বিল তৈরী</a>
-                    <a href="{% url 'my_bills' %}" {% if 'my-bills' in request.path %}class="active"{% endif %}>আমার বিল</a>
-                    <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                    
                     <span class="user-welcome">স্বাগতম, {{ user.first_name }}</span>
-                    <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
                 {% else %}
                     <a href="{% url 'login' %}" {% if 'login' in request.path %}class="active"{% endif %}>লগইন</a>
                     <a href="{% url 'register' %}" {% if 'register' in request.path %}class="active"{% endif %}>রেজিস্টার</a>

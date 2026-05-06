@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}স্বাক্ষর আপলোড - বিল ব্যবস্থাপনা সিস্টেম{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card" style="max-width: 600px; margin: 50px auto;">
+        <h2 style="color: white; text-align: center; margin-bottom: 30px;">
+            <i class="fas fa-signature"></i> স্বাক্ষর আপলোড
+        </h2>
+        
+        {% if user.profile.signature %}
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h4 style="color: white; margin-bottom: 15px;">বর্তমান স্বাক্ষর:</h4>
+            <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block;">
+                <img src="{{ user.profile.signature.url }}" alt="Current Signature" 
+                     style="max-width: 300px; max-height: 150px; object-fit: contain;">
+            </div>
+            <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">
+                <i class="fas fa-info-circle"></i> নতুন স্বাক্ষর আপলোড করলে পুরাতন স্বাক্ষর প্রতিস্থাপিত হবে।
+            </p>
+        </div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="color: white; display: block; margin-bottom: 10px;">
+                    <i class="fas fa-image"></i> স্বাক্ষরের ছবি নির্বাচন করুন:
+                </label>
+                <div style="border: 2px dashed rgba(255,255,255,0.3); border-radius: 10px; padding: 30px; text-align: center; background: rgba(255,255,255,0.05);">
+                    <input type="file" name="signature" id="signature" accept="image/jpeg,image/png,image/jpg" 
+                           style="display: none;" onchange="previewImage(this)">
+                    <button type="button" class="btn btn-info" onclick="document.getElementById('signature').click()">
+                        <i class="fas fa-upload"></i> ছবি নির্বাচন করুন
+                    </button>
+                    <p style="color: rgba(255,255,255,0.7); margin-top: 10px; font-size: 12px;">
+                        <i class="fas fa-info-circle"></i> JPEG বা PNG ফরম্যাট, সর্বোচ্চ ২MB
+                    </p>
+                    <div id="preview" style="margin-top: 20px; display: none;">
+                        <img id="preview-image" style="max-width: 300px; max-height: 150px; border-radius: 5px;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> স্বাক্ষর সংরক্ষণ করুন
+                </button>
+                {% if user.profile.signature %}
+                <a href="{% url 'delete_signature' %}" class="btn btn-danger" 
+                   onclick="return confirm('আপনার স্বাক্ষর ডিলিট করতে চান?');">
+                    <i class="fas fa-trash"></i> স্বাক্ষর ডিলিট করুন
+                </a>
+                {% endif %}
+            </div>
+        </form>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+            <h4 style="color: white; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> নির্দেশনা:
+            </h4>
+            <ul style="color: rgba(255,255,255,0.8); line-height: 1.6;">
+                <li>স্বাক্ষর অবশ্যই পরিষ্কার এবং স্পষ্ট হতে হবে</li>
+                <li>সাদা ব্যাকগ্রাউন্ডে স্বাক্ষর আপলোড করলে ভালো দেখায়</li>
+                <li>স্বাক্ষরটি পিডিএফ বিলে স্বয়ংক্রিয়ভাবে যুক্ত হবে</li>
+                <li>শুধুমাত্র JPEG বা PNG ফরম্যাটের ছবি আপলোড করা যাবে</li>
+                <li>ছবির সাইজ ২MB এর কম হতে হবে</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('preview');
+    const previewImage = document.getElementById('preview-image');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Add loading effect on form submit
+const form = document.querySelector('form');
+form.addEventListener('submit', function() {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<span class="loading"></span> সংরক্ষণ হচ্ছে...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

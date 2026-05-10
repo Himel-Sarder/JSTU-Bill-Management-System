@@ -83,9 +83,7 @@
             <div class="form-section">
                 <div class="section-header">
                     <h3 style="color: white; margin-bottom: 20px;">কাজের তালিকা তৈরি করুন</h3>
-                    <button type="button" id="add-task" class="btn btn-add" disabled>
-                        কাজ যোগ করুন +
-                    </button>
+                    <!-- The add button is now moved to floating FAB -->
                 </div>
 
                 <div id="tasks-container">
@@ -104,6 +102,12 @@
         </form>
     </div>
 </div>
+
+<!-- Floating Action Button (FAB) -->
+<button type="button" id="fab-add-task" class="fab-btn" disabled>
+    <span class="fab-icon">+</span>
+    <span class="fab-text">কাজ যোগ করুন</span>
+</button>
 
 <!-- Task Template (Hidden) -->
 <div id="task-template" class="task-item" style="display: none;">
@@ -187,6 +191,84 @@
     margin-bottom: 20px;
 }
 
+/* Floating Action Button Styles */
+.fab-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #4ECDC4, #44A08D);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 25px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.31);
+}
+
+.fab-btn:not(:disabled):hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(135deg, #5dd9d0, #4eb899);
+}
+
+.fab-btn:not(:disabled):active {
+    transform: translateY(0px) scale(0.98);
+}
+
+.fab-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    background: linear-gradient(135deg, #999, #777);
+}
+
+.fab-icon {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.fab-text {
+    font-size: 16px;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive FAB for mobile */
+@media (max-width: 768px) {
+    .fab-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+    }
+    
+    .fab-text {
+        display: inline;
+    }
+    
+    .fab-icon {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .fab-btn {
+        padding: 12px 18px;
+    }
+    
+    .fab-text {
+        font-size: 14px;
+    }
+}
+
 .btn-add {
     background: linear-gradient(45deg, #4ECDC4, #44A08D);
     border: none;
@@ -214,6 +296,13 @@
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.task-item:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(78, 205, 196, 0.5);
 }
 
 .task-header {
@@ -233,6 +322,12 @@
     color: white;
     cursor: pointer;
     font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-remove:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
 }
 
 .total-section {
@@ -262,6 +357,8 @@
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
+    border-radius: 8px;
+    font-weight: bold;
 }
 
 .btn-primary:disabled {
@@ -279,6 +376,8 @@
     transition: all 0.3s ease;
     text-decoration: none;
     display: inline-block;
+    border-radius: 8px;
+    font-weight: bold;
 }
 
 .btn-secondary:hover {
@@ -299,6 +398,10 @@
 
     .form-actions {
         flex-direction: column;
+    }
+    
+    .btn-primary, .btn-secondary {
+        width: 100%;
     }
 }
 
@@ -428,6 +531,22 @@
 .task-remarks::placeholder {
     color: rgba(255,255,255,0.5);
 }
+
+/* Animation for new tasks */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.task-item {
+    animation: slideIn 0.3s ease-out;
+}
 </style>
 
 <script>
@@ -441,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const taskTemplate = document.getElementById('task-template');
     const totalAmountElement = document.getElementById('total-amount');
     const billForm = document.getElementById('bill-form');
-    const addTaskBtn = document.getElementById('add-task');
+    const fabAddTask = document.getElementById('fab-add-task');
     const degreeSelect = document.getElementById('degree_type');
     const submitBtn = document.getElementById('submit-btn');
 
@@ -473,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isSubmitting) resetSubmitButton();
 
         if (degreeType) {
-            addTaskBtn.disabled = false;
+            fabAddTask.disabled = false;
             tasksContainer.innerHTML = '';
             taskCounter = 0;
 
@@ -481,15 +600,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 addTask();
             }, 100);
         } else {
-            addTaskBtn.disabled = true;
+            fabAddTask.disabled = true;
             tasksContainer.innerHTML = '';
             taskCounter = 0;
             showMessage('দয়া করে প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
         }
     });
 
-    // Add task button event
-    addTaskBtn.addEventListener('click', function() {
+    // FAB add task button event
+    fabAddTask.addEventListener('click', function() {
         if (!degreeSelect.value) {
             alert('প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
             return;
@@ -617,6 +736,13 @@ document.addEventListener('DOMContentLoaded', function() {
             taskCounter--;
             updateTaskNumbers();
             calculateTotal();
+            
+            // Optional: Show subtle feedback
+            const removeBtn = button;
+            removeBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                removeBtn.style.transform = '';
+            }, 200);
         } else {
             alert('কমপক্ষে একটি কাজ থাকতে হবে!');
         }
@@ -649,6 +775,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tasksContainer.appendChild(newTask);
         updateTaskNumbers();
+        
+        // Scroll to the new task smoothly
+        newTask.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Optional: Add a small pulse effect to the new task
+        newTask.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            newTask.style.transform = '';
+        }, 200);
     }
 
     function populateWorkTypes(taskElement) {
@@ -869,8 +1004,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!workType || !benefit || !amount || parseFloat(amount) <= 0) {
                 isValid = false;
                 task.style.border = '2px solid #FF6B6B';
+                task.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
             } else {
                 task.style.border = '1px solid rgba(255,255,255,0.1)';
+                task.style.backgroundColor = 'rgba(255,255,255,0.05)';
             }
         });
 

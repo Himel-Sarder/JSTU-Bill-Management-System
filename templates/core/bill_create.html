@@ -83,7 +83,6 @@
             <div class="form-section">
                 <div class="section-header">
                     <h3 style="color: white; margin-bottom: 20px;">কাজের তালিকা তৈরি করুন</h3>
-                    <!-- The add button is now moved to floating FAB -->
                 </div>
 
                 <div id="tasks-container">
@@ -96,7 +95,7 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" id="submit-btn" class="btn btn-primary">বিল তৈরি করুন</button>
+                <button type="button" id="submit-btn" class="btn btn-primary">বিল তৈরি করুন</button>
                 <a href="{% url 'my_bills' %}" class="btn btn-secondary">বাতিল করুন</a>
             </div>
         </form>
@@ -109,44 +108,44 @@
     <span class="fab-text">কাজ যোগ করুন</span>
 </button>
 
-<!-- Task Template (Hidden) -->
-<div id="task-template" class="task-item" style="display: none;">
-    <div class="task-header">
-        <h4 style="color: white;">কাজ #<span class="task-number">1</span></h4>
-        <button type="button" class="btn btn-remove">✖</button>
-    </div>
-    <div class="task-form">
-        <div class="form-grid-3">
-            <div class="form-group">
-                <label>কাজের ধরণ</label>
-                <select class="work-type-select form-control" name="work_type" disabled>
-                    <option value="">প্রথমে ডিগ্রি নির্বাচন করুন</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="benefit-label">উপকাজ</label>
-                <select class="benefit-select form-control" name="benefit" disabled>
-                    <option value="">প্রথমে কাজের ধরণ নির্বাচন করুন</option>
-                </select>
-                <!-- Quantity input for quantity-based benefits -->
-                <div class="number-input-container" style="display: none;">
-                    <div class="number-input-group">
-                        <button type="button" class="btn-number btn-decrease">-</button>
-                        <input type="number" class="number-input form-control" value="1" min="1" max="100">
-                        <button type="button" class="btn-number btn-increase">+</button>
+<!-- Task Template (Hidden - MUST be outside tasks-container) -->
+<div id="task-template" style="display: none;">
+    <div class="task-item">
+        <div class="task-header">
+            <h4 style="color: white;">কাজ #<span class="task-number">1</span></h4>
+            <button type="button" class="btn btn-remove">✖</button>
+        </div>
+        <div class="task-form">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label>কাজের ধরণ <span style="color: #ff6b6b;">*</span></label>
+                    <select class="work-type-select form-control" name="work_type" disabled>
+                        <option value="">প্রথমে ডিগ্রি নির্বাচন করুন</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="benefit-label">উপকাজ <span style="color: #ff6b6b;">*</span></label>
+                    <select class="benefit-select form-control" name="benefit" disabled>
+                        <option value="">প্রথমে কাজের ধরণ নির্বাচন করুন</option>
+                    </select>
+                    <div class="number-input-container" style="display: none;">
+                        <div class="number-input-group">
+                            <button type="button" class="btn-number btn-decrease">-</button>
+                            <input type="number" class="number-input form-control" value="1" min="1" max="100">
+                            <button type="button" class="btn-number btn-increase">+</button>
+                        </div>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>টাকার পরিমাণ</label>
+                    <input type="text" class="amount-input form-control" name="amount" readonly>
+                    <input type="hidden" class="amount-hidden" name="amount_value">
+                </div>
             </div>
-            <div class="form-group">
-                <label>টাকার পরিমাণ</label>
-                <input type="text" class="amount-input form-control" name="amount" readonly>
-                <input type="hidden" class="amount-hidden" name="amount_value">
+            <div class="form-group remarks-group" style="margin-top: 15px;">
+                <label>মন্তব্য <span style="color: #aaa; font-size: 12px;">(ঐচ্ছিক)</span></label>
+                <textarea class="task-remarks form-control" name="remarks" rows="2" placeholder="কোনো মন্তব্য থাকলে এখানে লিখুন..."></textarea>
             </div>
-        </div>
-        <!-- NEW: Remarks Field -->
-        <div class="form-group remarks-group" style="margin-top: 15px;">
-            <label>মন্তব্য <span style="color: #aaa; font-size: 12px;">(ঐচ্ছিক)</span></label>
-            <textarea class="task-remarks form-control" name="remarks" rows="2" placeholder="কোনো মন্তব্য থাকলে এখানে লিখুন..."></textarea>
         </div>
     </div>
 </div>
@@ -267,27 +266,6 @@
     .fab-text {
         font-size: 14px;
     }
-}
-
-.btn-add {
-    background: linear-gradient(45deg, #4ECDC4, #44A08D);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 20px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-add:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-add:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 .task-item {
@@ -446,66 +424,6 @@
     display: block;
 }
 
-.loading-spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-    margin-left: 10px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.degree-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    margin-left: 8px;
-}
-
-.degree-badge.honors {
-    background: #4ECDC4;
-    color: white;
-}
-
-.degree-badge.masters {
-    background: #FF6B6B;
-    color: white;
-}
-
-/* Error message styles */
-.error-message {
-    color: #FF6B6B;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-.alert-info {
-    background: rgba(78, 205, 196, 0.1);
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    color: white;
-    margin: 10px 0;
-}
-
-/* Work type option styles */
-.work-type-option-honors {
-    color: #4ECDC4;
-    font-weight: 500;
-}
-
-.work-type-option-masters {
-    color: #FF6B6B;
-    font-weight: 500;
-}
-
 /* Remarks field styles */
 .remarks-group {
     margin-top: 15px;
@@ -547,15 +465,32 @@
 .task-item {
     animation: slideIn 0.3s ease-out;
 }
+
+.alert-info {
+    background: rgba(78, 205, 196, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: white;
+    margin: 10px 0;
+}
+
+.work-type-option-honors {
+    color: #4ECDC4;
+    font-weight: 500;
+}
+
+.work-type-option-masters {
+    color: #FF6B6B;
+    font-weight: 500;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded - starting bill create script');
-
     let taskCounter = 0;
     let isSubmitting = false;
-
+    
     const tasksContainer = document.getElementById('tasks-container');
     const taskTemplate = document.getElementById('task-template');
     const totalAmountElement = document.getElementById('total-amount');
@@ -563,261 +498,89 @@ document.addEventListener('DOMContentLoaded', function() {
     const fabAddTask = document.getElementById('fab-add-task');
     const degreeSelect = document.getElementById('degree_type');
     const submitBtn = document.getElementById('submit-btn');
-
-    // ✅ helper: always bring button back to normal state
+    
     function resetSubmitButton() {
         isSubmitting = false;
         submitBtn.disabled = false;
-        submitBtn.textContent = 'বিল তৈরি করুন';
+        submitBtn.innerHTML = 'বিল তৈরি করুন';
     }
-
-    // ✅ NEW: if button gets stuck in loading state, any user correction re-enables it
-    ['input', 'change'].forEach(evt => {
-        billForm.addEventListener(evt, function() {
-            if (isSubmitting && submitBtn.disabled) {
-                resetSubmitButton();
-            }
-        }, true); // capture=true works for dynamically added inputs
-    });
-
-    // Event delegation setup
-    setupEventDelegation();
-
-    // Degree selection change event
-    degreeSelect.addEventListener('change', function() {
-        const degreeType = this.value;
-        console.log('Degree selected:', degreeType);
-
-        // Any change should allow re-submit if it was stuck
-        if (isSubmitting) resetSubmitButton();
-
-        if (degreeType) {
-            fabAddTask.disabled = false;
-            tasksContainer.innerHTML = '';
-            taskCounter = 0;
-
-            setTimeout(function() {
-                addTask();
-            }, 100);
-        } else {
-            fabAddTask.disabled = true;
-            tasksContainer.innerHTML = '';
-            taskCounter = 0;
-            showMessage('দয়া করে প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
-        }
-    });
-
-    // FAB add task button event
-    fabAddTask.addEventListener('click', function() {
-        if (!degreeSelect.value) {
-            alert('প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
-            return;
-        }
-        addTask();
-    });
-
-    // ✅ FIXED Form submission
-    billForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        console.log('Form submitted');
-
-        // Prevent double submission
-        if (isSubmitting) {
-            console.log('Already submitting, please wait...');
-            return;
-        }
-
-        // Degree required
-        if (!degreeSelect.value) {
-            alert('ডিগ্রির ধরণ নির্বাচন করুন');
-            resetSubmitButton();
-            return;
-        }
-
-        // ✅ Validate first (do not disable before validation)
-        const ok = validateForm();
-        if (!ok) {
-            resetSubmitButton();
-            return;
-        }
-
-        // ✅ Lock only after validation passed
-        isSubmitting = true;
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'প্রক্রিয়া হচ্ছে...';
-
-        try {
-            prepareFormData();
-            // native submit without re-triggering this handler
-            HTMLFormElement.prototype.submit.call(billForm);
-        } catch (err) {
-            console.error('Submit failed:', err);
-            alert('সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
-            resetSubmitButton();
-        }
-    });
-
+    
+    window.addEventListener('pageshow', resetSubmitButton);
+    
+    // Bangla number conversion
+    function toBangla(num) {
+        const digits = {'0':'০','1':'১','2':'২','3':'৩','4':'৪',
+                       '5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+        return Math.round(num).toString().split('').map(c => digits[c] || c).join('');
+    }
+    
+    // Calculate total amount
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('#tasks-container .amount-hidden').forEach(input => {
+            if (input.value) total += parseFloat(input.value);
+        });
+        totalAmountElement.textContent = toBangla(total);
+    }
+    
+    // Update quantity amount
+    function updateQuantityAmount(taskElement, baseAmount, quantity) {
+        const amountInput = taskElement.querySelector('.amount-input');
+        const amountHidden = taskElement.querySelector('.amount-hidden');
+        if (!amountInput || !amountHidden) return;
+        const qty = parseInt(quantity) || 1;
+        const base = parseFloat(baseAmount) || 0;
+        const amount = base * qty;
+        amountInput.value = toBangla(amount);
+        amountHidden.value = amount;
+        calculateTotal();
+    }
+    
+    // Update task numbers
+    function updateTaskNumbers() {
+        const tasks = tasksContainer.querySelectorAll('.task-item');
+        tasks.forEach((task, idx) => {
+            const numSpan = task.querySelector('.task-number');
+            if (numSpan) numSpan.textContent = idx + 1;
+        });
+        taskCounter = tasks.length;
+    }
+    
     function showMessage(message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'alert-info';
         messageDiv.innerHTML = message;
         tasksContainer.appendChild(messageDiv);
     }
-
-    // EVENT DELEGATION SETUP FUNCTION
-    function setupEventDelegation() {
-        console.log('Setting up event delegation...');
-
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('btn-increase')) {
-                handleQuantityButtonClick(e.target, 'increase');
-            }
-            if (e.target.classList.contains('btn-decrease')) {
-                handleQuantityButtonClick(e.target, 'decrease');
-            }
-            if (e.target.classList.contains('btn-remove')) {
-                handleRemoveButtonClick(e.target);
-            }
-        });
-
-        document.addEventListener('input', function(e) {
-            if (e.target.classList.contains('number-input')) {
-                handleNumberInputChange(e.target);
-            }
-        });
-    }
-
-    function handleQuantityButtonClick(button, action) {
-        const taskItem = button.closest('.task-item');
-        if (!taskItem) return;
-
-        const quantityInput = taskItem.querySelector('.number-input');
-        const baseAmount = taskItem.dataset.baseAmount;
-
-        if (!quantityInput || !baseAmount) return;
-
-        let currentValue = parseInt(quantityInput.value) || 0;
-        const minValue = parseInt(quantityInput.min) || 1;
-        const maxValue = parseInt(quantityInput.max) || 100;
-
-        if (action === 'increase' && currentValue < maxValue) currentValue++;
-        else if (action === 'decrease' && currentValue > minValue) currentValue--;
-        else return;
-
-        quantityInput.value = currentValue;
-        updateQuantityAmount(taskItem, baseAmount, currentValue);
-    }
-
-    function handleNumberInputChange(input) {
-        const taskItem = input.closest('.task-item');
-        if (!taskItem) return;
-
-        const baseAmount = taskItem.dataset.baseAmount;
-        if (!baseAmount) return;
-
-        let value = parseInt(input.value) || 1;
-        const minValue = parseInt(input.min) || 1;
-        const maxValue = parseInt(input.max) || 100;
-
-        if (value < minValue) value = minValue;
-        if (value > maxValue) value = maxValue;
-
-        input.value = value;
-        updateQuantityAmount(taskItem, baseAmount, value);
-    }
-
-    function handleRemoveButtonClick(button) {
-        const taskItem = button.closest('.task-item');
-        if (!taskItem) return;
-
-        const allTasks = document.querySelectorAll('.task-item');
-        if (allTasks.length > 1) {
-            taskItem.remove();
-            taskCounter--;
-            updateTaskNumbers();
-            calculateTotal();
-            
-            // Optional: Show subtle feedback
-            const removeBtn = button;
-            removeBtn.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                removeBtn.style.transform = '';
-            }, 200);
-        } else {
-            alert('কমপক্ষে একটি কাজ থাকতে হবে!');
-        }
-    }
-
-    function addTask() {
-        const messageDiv = tasksContainer.querySelector('.alert-info');
-        if (messageDiv) messageDiv.remove();
-
-        taskCounter++;
-        const newTask = taskTemplate.cloneNode(true);
-        newTask.style.display = 'block';
-        newTask.id = 'task-' + taskCounter;
-        newTask.querySelector('.task-number').textContent = taskCounter;
-
-        populateWorkTypes(newTask);
-
-        const workTypeSelect = newTask.querySelector('.work-type-select');
-        workTypeSelect.addEventListener('change', function() {
-            // user changed something => allow resubmit if stuck
-            if (isSubmitting) resetSubmitButton();
-            handleWorkTypeChange.call(this);
-        });
-
-        const benefitSelect = newTask.querySelector('.benefit-select');
-        benefitSelect.addEventListener('change', function() {
-            if (isSubmitting) resetSubmitButton();
-            handleBenefitChange.call(this);
-        });
-
-        tasksContainer.appendChild(newTask);
-        updateTaskNumbers();
-        
-        // Scroll to the new task smoothly
-        newTask.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        // Optional: Add a small pulse effect to the new task
-        newTask.style.transform = 'scale(0.98)';
-        setTimeout(() => {
-            newTask.style.transform = '';
-        }, 200);
-    }
-
+    
+    // Populate work types
     function populateWorkTypes(taskElement) {
         const workTypeSelect = taskElement.querySelector('.work-type-select');
         const degreeType = degreeSelect.value;
-
+        
         if (!degreeType) {
             workTypeSelect.innerHTML = '<option value="">প্রথমে ডিগ্রি নির্বাচন করুন</option>';
             workTypeSelect.disabled = true;
             return;
         }
-
+        
         workTypeSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
         workTypeSelect.disabled = true;
-
+        
         fetch(`/get-work-types-by-degree/?degree_type=${degreeType}`)
             .then(response => response.json())
             .then(data => {
                 workTypeSelect.innerHTML = '<option value="">কাজের ধরণ নির্বাচন করুন</option>';
-
                 if (data.work_types && data.work_types.length > 0) {
                     data.work_types.forEach(workType => {
                         const option = document.createElement('option');
                         option.value = workType.value;
                         option.textContent = workType.display;
-                        option.dataset.degreeType = workType.degree_type;
-                        option.dataset.workTypeId = workType.id;
-
                         if (workType.degree_type === 'honors') {
                             option.classList.add('work-type-option-honors');
                         } else if (workType.degree_type === 'masters') {
                             option.classList.add('work-type-option-masters');
                         }
-
                         workTypeSelect.appendChild(option);
                     });
                     workTypeSelect.disabled = false;
@@ -827,12 +590,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error populating work types:', error);
+                console.error('Error:', error);
                 workTypeSelect.innerHTML = '<option value="">ত্রুটি হয়েছে</option>';
                 workTypeSelect.disabled = true;
             });
     }
-
+    
+    // Handle work type change
     function handleWorkTypeChange() {
         const taskItem = this.closest('.task-item');
         const benefitSelect = taskItem.querySelector('.benefit-select');
@@ -840,15 +604,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const amountInput = taskItem.querySelector('.amount-input');
         const amountHidden = taskItem.querySelector('.amount-hidden');
         const degreeType = degreeSelect.value;
-
+        
         benefitSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
         benefitSelect.disabled = true;
         numberInputContainer.style.display = 'none';
         amountInput.value = '';
         amountHidden.value = '';
-
+        
         const selectedWork = this.value;
-
+        
         if (selectedWork && degreeType) {
             fetch(`/get-benefit-choices-by-degree/?work_type=${encodeURIComponent(selectedWork)}&degree_type=${degreeType}`)
                 .then(response => response.json())
@@ -858,16 +622,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         benefitSelect.disabled = true;
                         return;
                     }
-
+                    
                     benefitSelect.innerHTML = '<option value="">উপকাজ নির্বাচন করুন</option>';
-
+                    
                     if (!data.needs_benefit) {
                         const option = document.createElement('option');
                         option.value = 'no_benefit';
                         option.textContent = (data.benefits && data.benefits.length > 0) ? data.benefits[0][1] : selectedWork;
                         benefitSelect.appendChild(option);
                         benefitSelect.disabled = false;
-
                         benefitSelect.value = 'no_benefit';
                         benefitSelect.dispatchEvent(new Event('change'));
                     } else if (data.benefits && data.benefits.length > 0) {
@@ -884,13 +647,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching benefits:', error);
+                    console.error('Error:', error);
                     benefitSelect.innerHTML = '<option value="">ত্রুটি হয়েছে</option>';
                     benefitSelect.disabled = true;
                 });
         }
     }
-
+    
+    // Handle benefit change
     function handleBenefitChange() {
         const taskItem = this.closest('.task-item');
         const workTypeSelect = taskItem.querySelector('.work-type-select');
@@ -899,36 +663,36 @@ document.addEventListener('DOMContentLoaded', function() {
         const numberInputContainer = taskItem.querySelector('.number-input-container');
         const benefitLabel = taskItem.querySelector('.benefit-label');
         const degreeType = degreeSelect.value;
-
+        
         if (this.value === 'no_benefit') {
             const selectedWork = workTypeSelect.value;
             fetch(`/get-work-type-amount/?work_type=${encodeURIComponent(selectedWork)}&degree_type=${degreeType}`)
                 .then(response => response.json())
                 .then(data => {
                     const amount = data.amount || 0;
-                    amountInput.value = convertToBanglaDigits(amount);
+                    amountInput.value = toBangla(amount);
                     amountHidden.value = amount;
                     calculateTotal();
                     numberInputContainer.style.display = 'none';
                 })
-                .catch(error => console.error('Error fetching work type amount:', error));
+                .catch(error => console.error('Error:', error));
         } else if (this.value) {
             fetch(`/get-benefit-details/?benefit_id=${encodeURIComponent(this.value)}`)
                 .then(response => response.json())
                 .then(data => {
                     taskItem.dataset.baseAmount = data.base_amount;
                     taskItem.dataset.calculationType = data.calculation_type;
-
+                    
                     if (data.calculation_type === 'fixed') {
                         numberInputContainer.style.display = 'none';
                         const amount = parseFloat(data.base_amount) || 0;
-                        amountInput.value = convertToBanglaDigits(amount);
+                        amountInput.value = toBangla(amount);
                         amountHidden.value = amount;
                         calculateTotal();
                     } else {
                         numberInputContainer.style.display = 'block';
                         if (benefitLabel) benefitLabel.textContent = data.unit_label || 'পরিমাণ';
-
+                        
                         const quantityInput = taskItem.querySelector('.number-input');
                         if (quantityInput) {
                             quantityInput.min = data.min_unit || 1;
@@ -939,127 +703,154 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching benefit details:', error);
+                    console.error('Error:', error);
                     amountInput.value = 'ত্রুটি';
                 });
         }
     }
-
-    function updateQuantityAmount(taskItem, baseAmount, quantity) {
-        const amountInput = taskItem.querySelector('.amount-input');
-        const amountHidden = taskItem.querySelector('.amount-hidden');
-        if (!amountInput || !amountHidden) return;
-
-        const qty = parseInt(quantity) || 1;
-        const base = parseFloat(baseAmount) || 0;
-        const amount = base * qty;
-
-        amountInput.value = convertToBanglaDigits(amount);
-        amountHidden.value = amount;
-        calculateTotal();
-    }
-
-    function updateTaskNumbers() {
-        const tasks = tasksContainer.querySelectorAll('.task-item');
-        tasks.forEach((task, index) => {
-            const el = task.querySelector('.task-number');
-            if (el) el.textContent = index + 1;
+    
+    // Add new task
+    function addTask() {
+        const messageDiv = tasksContainer.querySelector('.alert-info');
+        if (messageDiv) messageDiv.remove();
+        
+        taskCounter++;
+        const newTask = taskTemplate.cloneNode(true);
+        newTask.style.display = 'block';
+        newTask.id = 'task-' + taskCounter;
+        newTask.querySelector('.task-number').textContent = taskCounter;
+        
+        // Set up event listeners
+        const workTypeSelect = newTask.querySelector('.work-type-select');
+        workTypeSelect.addEventListener('change', handleWorkTypeChange);
+        
+        const benefitSelect = newTask.querySelector('.benefit-select');
+        benefitSelect.addEventListener('change', handleBenefitChange);
+        
+        // Remove button
+        const removeBtn = newTask.querySelector('.btn-remove');
+        removeBtn.addEventListener('click', function() {
+            const allTasks = tasksContainer.querySelectorAll('.task-item');
+            if (allTasks.length > 1) {
+                newTask.remove();
+                updateTaskNumbers();
+                calculateTotal();
+            } else {
+                alert('কমপক্ষে একটি কাজ থাকতে হবে!');
+            }
         });
-    }
-
-    function convertToBanglaDigits(number) {
-        const englishToBangla = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
-        };
-        const numberStr = Math.round(number).toString();
-        let banglaNumber = '';
-        for (let char of numberStr) banglaNumber += englishToBangla[char] || char;
-        return banglaNumber;
-    }
-
-    function calculateTotal() {
-        let total = 0;
-        const amountInputs = document.querySelectorAll('.amount-hidden');
-        amountInputs.forEach(input => {
-            if (input.value) total += parseFloat(input.value);
-        });
-        totalAmountElement.textContent = convertToBanglaDigits(total);
-    }
-
-    function validateForm() {
-        const tasks = tasksContainer.querySelectorAll('.task-item');
-        let isValid = true;
-
-        if (tasks.length === 0) {
-            alert('কমপক্ষে একটি কাজ যোগ করুন');
-            return false;
+        
+        // Number input buttons
+        const decreaseBtn = newTask.querySelector('.btn-decrease');
+        const increaseBtn = newTask.querySelector('.btn-increase');
+        const numberInput = newTask.querySelector('.number-input');
+        
+        if (decreaseBtn) {
+            decreaseBtn.addEventListener('click', function() {
+                if (numberInput) {
+                    let val = parseInt(numberInput.value) || 1;
+                    if (val > parseInt(numberInput.min || 1)) {
+                        numberInput.value = val - 1;
+                        const baseAmount = newTask.dataset.baseAmount;
+                        if (baseAmount) updateQuantityAmount(newTask, baseAmount, numberInput.value);
+                    }
+                }
+            });
         }
-
+        
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', function() {
+                if (numberInput) {
+                    let val = parseInt(numberInput.value) || 1;
+                    if (val < parseInt(numberInput.max || 100)) {
+                        numberInput.value = val + 1;
+                        const baseAmount = newTask.dataset.baseAmount;
+                        if (baseAmount) updateQuantityAmount(newTask, baseAmount, numberInput.value);
+                    }
+                }
+            });
+        }
+        
+        if (numberInput) {
+            numberInput.addEventListener('change', function() {
+                let val = parseInt(this.value) || 1;
+                val = Math.max(parseInt(this.min || 1), Math.min(parseInt(this.max || 100), val));
+                this.value = val;
+                const baseAmount = newTask.dataset.baseAmount;
+                if (baseAmount) updateQuantityAmount(newTask, baseAmount, val);
+            });
+        }
+        
+        populateWorkTypes(newTask);
+        tasksContainer.appendChild(newTask);
+        updateTaskNumbers();
+        newTask.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Validate form - ONLY validates tasks inside container
+    function validateForm() {
+        let firstInvalid = null;
+        let allValid = true;
+        
+        const tasks = tasksContainer.querySelectorAll('.task-item');
+        
         tasks.forEach(task => {
             const workType = task.querySelector('.work-type-select').value;
             const benefit = task.querySelector('.benefit-select').value;
             const amount = task.querySelector('.amount-hidden').value;
-
-            if (!workType || !benefit || !amount || parseFloat(amount) <= 0) {
-                isValid = false;
-                task.style.border = '2px solid #FF6B6B';
-                task.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
-            } else {
-                task.style.border = '1px solid rgba(255,255,255,0.1)';
-                task.style.backgroundColor = 'rgba(255,255,255,0.05)';
-            }
+            const isValid = workType && benefit && amount && parseFloat(amount) > 0;
+            
+            task.style.border = isValid ? '1px solid rgba(255,255,255,0.1)' : '2px solid #FF6B6B';
+            task.style.backgroundColor = isValid ? 'rgba(255,255,255,0.05)' : 'rgba(255,107,107,0.1)';
+            
+            if (!isValid && !firstInvalid) firstInvalid = task;
+            if (!isValid) allValid = false;
         });
-
-        if (!isValid) alert('দয়া করে সব কাজের তথ্য সঠিকভাবে পূরণ করুন।');
-        return isValid;
+        
+        return { allValid, firstInvalid };
     }
-
+    
+    // Prepare form data
     function prepareFormData() {
         const tasks = [];
         const taskItems = tasksContainer.querySelectorAll('.task-item');
-
+        
         taskItems.forEach(task => {
             const workType = task.querySelector('.work-type-select');
             const benefitSelect = task.querySelector('.benefit-select');
             const amount = task.querySelector('.amount-hidden').value;
             const quantityInput = task.querySelector('.number-input');
             const quantityContainer = task.querySelector('.number-input-container');
-            const remarksTextarea = task.querySelector('.task-remarks'); // NEW
-
-            if (workType.value && benefitSelect.value && amount) {
-                const workTypeName = workType.options[workType.selectedIndex].text;
-                const benefitName = benefitSelect.options[benefitSelect.selectedIndex].text;
-
+            const remarksTextarea = task.querySelector('.task-remarks');
+            
+            if (workType.value && benefitSelect.value && amount && parseFloat(amount) > 0) {
+                const workTypeName = workType.options[workType.selectedIndex]?.text || '';
+                const benefitName = benefitSelect.options[benefitSelect.selectedIndex]?.text || '';
+                
                 let quantity = 1;
                 let unit = '';
-                let remarks = ''; // NEW
-
+                
                 if (quantityInput && quantityContainer && quantityContainer.style.display !== 'none') {
                     quantity = parseInt(quantityInput.value) || 1;
                     const benefitLabel = task.querySelector('.benefit-label');
                     unit = benefitLabel ? (benefitLabel.textContent || '') : '';
                 }
-
-                // Get remarks value
-                if (remarksTextarea) {
-                    remarks = remarksTextarea.value.trim();
-                }
-
+                
                 const cleanWorkTypeName = workTypeName.replace(/\s*\([^)]*\)\s*/g, '').trim();
                 const cleanBenefitName = benefitName.replace(/\s*\([^)]*\)\s*/g, '').replace(' (স্বয়ংক্রিয়)', '').trim();
-
+                
                 tasks.push({
                     work_type: cleanWorkTypeName,
                     benefit: cleanBenefitName,
                     quantity: quantity,
                     unit: unit,
                     amount: amount,
-                    remarks: remarks  // NEW
+                    remarks: remarksTextarea ? remarksTextarea.value.trim() : ''
                 });
             }
         });
-
+        
+        // Add degree type
         let degreeInput = document.querySelector('input[name="degree_type"]');
         if (!degreeInput) {
             degreeInput = document.createElement('input');
@@ -1068,7 +859,8 @@ document.addEventListener('DOMContentLoaded', function() {
             billForm.appendChild(degreeInput);
         }
         degreeInput.value = degreeSelect.value;
-
+        
+        // Add tasks
         let tasksInput = document.querySelector('input[name="tasks"]');
         if (!tasksInput) {
             tasksInput = document.createElement('input');
@@ -1077,16 +869,77 @@ document.addEventListener('DOMContentLoaded', function() {
             billForm.appendChild(tasksInput);
         }
         tasksInput.value = JSON.stringify(tasks);
-
+        
         console.log('Form data prepared:', { degree_type: degreeSelect.value, tasks: tasks });
     }
-
-    // ✅ ensure normal state on page show (bfcache)
-    window.addEventListener('pageshow', function() {
-        resetSubmitButton();
+    
+    // Event Listeners
+    degreeSelect.addEventListener('change', function() {
+        const degreeType = this.value;
+        
+        if (degreeType) {
+            fabAddTask.disabled = false;
+            tasksContainer.innerHTML = '';
+            taskCounter = 0;
+            setTimeout(function() {
+                addTask();
+            }, 100);
+        } else {
+            fabAddTask.disabled = true;
+            tasksContainer.innerHTML = '';
+            taskCounter = 0;
+            showMessage('দয়া করে প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
+        }
     });
-
-    // ✅ ensure normal state at initial load
+    
+    fabAddTask.addEventListener('click', function() {
+        if (!degreeSelect.value) {
+            alert('প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
+            return;
+        }
+        addTask();
+    });
+    
+    // Submit button handler
+    submitBtn.addEventListener('click', function() {
+        if (isSubmitting) return;
+        
+        if (!degreeSelect.value) {
+            alert('ডিগ্রির ধরণ নির্বাচন করুন');
+            return;
+        }
+        
+        const tasks = tasksContainer.querySelectorAll('.task-item');
+        if (tasks.length === 0) {
+            alert('কমপক্ষে একটি কাজ যোগ করুন');
+            return;
+        }
+        
+        // Validate - button still enabled at this point
+        const { allValid, firstInvalid } = validateForm();
+        if (!allValid) {
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            alert('দয়া করে সব কাজের তথ্য সঠিকভাবে পূরণ করুন।');
+            return; // Stop here, button not disabled
+        }
+        
+        // Only reach here if validation passes
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> প্রক্রিয়া হচ্ছে...';
+        
+        try {
+            prepareFormData();
+            HTMLFormElement.prototype.submit.call(billForm);
+        } catch (err) {
+            console.error('Submit failed:', err);
+            alert('সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+            resetSubmitButton();
+        }
+    });
+    
     resetSubmitButton();
 });
 </script>

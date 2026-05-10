@@ -78,6 +78,8 @@ urlpatterns = [
     path('bill/add-signature/<int:bill_id>/', views.add_signature_to_bill, name='add_signature_to_bill'),
 
     path('debug-bill/<int:bill_id>/', views.debug_bill_signature, name='debug_bill_signature'),
+
+    path('bill/edit/<int:bill_id>/', views.edit_bill, name='edit_bill'),
 ]
 
 # Error handlers

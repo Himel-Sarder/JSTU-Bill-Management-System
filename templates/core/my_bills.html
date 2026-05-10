@@ -68,10 +68,9 @@
                     </a>
 
                     <!-- Delete option -->
-                    <form method="post" action="{% url 'delete_bill' bill.id %}" class="delete-form" style="display: inline;"
-                          onsubmit="return confirm('আপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?')">
+                    <form method="post" action="{% url 'delete_bill' bill.id %}" class="delete-form" style="display: inline;">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-delete">
+                        <button type="button" class="btn btn-delete delete-btn">
                             <i class="fas fa-trash-alt"></i> ডিলিট
                         </button>
                     </form>
@@ -785,6 +784,27 @@ window.onclick = function(event) {
         closeSignatureModal();
     }
 }
+
+// Delete button handler — only disable on confirm
+document.querySelectorAll('.delete-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const confirmed = confirm('আপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?');
+        if (!confirmed) return;  // user pressed Cancel — do nothing
+
+        // User confirmed — disable button and submit
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> মুছছে...';
+        btn.closest('form').submit();
+    });
+});
+
+// Re-enable all delete buttons on page show (bfcache fix)
+window.addEventListener('pageshow', function(e) {
+    document.querySelectorAll('.delete-btn').forEach(function(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> ডিলিট';
+    });
+});
 </script>
 
 <!-- Add Font Awesome for icons -->

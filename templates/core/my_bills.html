@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <div class="glass-card">
-        <h2 style="text-align: center; color: white; margin-bottom: 30px;">আমার বিল</h2>
+        <h2 style="text-align: center; color: #000000; margin-bottom: 30px;">আমার বিল</h2>
         
         {% if bills %}
         <div class="bills-list">
@@ -16,6 +16,19 @@
                     <p><i class="fas fa-graduation-cap"></i> সেমিস্টার: {{ bill.semester }}</p>
                     <p><i class="fas fa-coins"></i> মোট টাকা: {{ bill.total_amount|bangla_number }} টাকা</p>
                     <p><i class="fas fa-calendar"></i> তারিখ: {{ bill.bangla_date }}</p>
+                    <p><i class="fas fa-info-circle"></i> স্ট্যাটাস: 
+                        {% if bill.status == 'draft' %}
+                        <span class="status-badge draft">খসড়া</span>
+                        {% elif bill.status == 'pending' %}
+                        <span class="status-badge pending">অপেক্ষমান</span>
+                        {% elif bill.status == 'approved' %}
+                        <span class="status-badge approved">অনুমোদিত</span>
+                        {% elif bill.status == 'rejected' %}
+                        <span class="status-badge rejected">বাতিল</span>
+                        {% elif bill.status == 'paid' %}
+                        <span class="status-badge paid">পরিশোধিত</span>
+                        {% endif %}
+                    </p>
 
                     {% if bill.remarks %}
                     <div class="bill-remarks">
@@ -25,6 +38,13 @@
                 </div>
 
                 <div class="bill-actions">
+                    <!-- Edit button - only for draft and rejected bills -->
+                    {% if bill.status == 'draft' or bill.status == 'rejected' %}
+                    <a href="{% url 'edit_bill' bill.id %}" class="btn btn-edit">
+                        <i class="fas fa-edit"></i> এডিট
+                    </a>
+                    {% endif %}
+
                     <!-- Signature button for adding user signature to bill -->
                     {% if bill.status == 'draft' %}
                     <button type="button" class="btn btn-signature" onclick="openSignatureModal('{{ bill.id }}')">
@@ -32,10 +52,12 @@
                     </button>
                     {% endif %}
 
-                    <!-- Send button with year selection -->
+                    <!-- Send button with year selection - only for draft bills -->
+                    {% if bill.status == 'draft' %}
                     <button type="button" class="btn btn-send" onclick="openYearModal('{{ bill.id }}')">
                         <i class="fas fa-paper-plane"></i> পাঠান
                     </button>
+                    {% endif %}
 
                     <a href="{% url 'view_bill_pdf' bill.id %}" class="btn btn-view" target="_blank">
                         <i class="fas fa-eye"></i> দেখুন
@@ -511,6 +533,15 @@
     background: linear-gradient(45deg, #9C27B0, #7B1FA2);
 }
 
+.btn-edit {
+    background: linear-gradient(45deg, #FFC107, #FF9800);
+}
+
+.btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+}
+
 .btn-create {
     background: linear-gradient(45deg, #6a11cb, #2575fc);
 }
@@ -528,7 +559,41 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-/* Pagination styles - FIXED VISIBILITY */
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.draft {
+    background: #95A5A6;
+    color: white;
+}
+
+.status-badge.pending {
+    background: #FFC107;
+    color: #333;
+}
+
+.status-badge.approved {
+    background: #4ECDC4;
+    color: white;
+}
+
+.status-badge.rejected {
+    background: #FF6B6B;
+    color: white;
+}
+
+.status-badge.paid {
+    background: #2196F3;
+    color: white;
+}
+
+/* Pagination styles */
 .pagination-container {
     margin-top: 30px;
     padding-top: 20px;
@@ -600,10 +665,8 @@
 .pagination-info {
     display: block;
     width: fit-content;
-    margin: 15px auto;   /* centers horizontally */
-    
-    text-align: center;  /* centers text inside */
-
+    margin: 15px auto;
+    text-align: center;
     color: rgba(255, 255, 255, 0.9);
     font-size: 14px;
     padding: 10px;
@@ -618,7 +681,7 @@
 /* No bills section */
 .no-bills {
     text-align: center;
-    color: white;
+    color: #000000;
     padding: 50px 20px;
 }
 
@@ -626,6 +689,7 @@
     font-size: 4rem;
     margin-bottom: 20px;
     opacity: 0.7;
+    color: #000000
 }
 
 .no-bills h3 {

@@ -466,51 +466,49 @@ def my_bills(request):
 def delete_bill(request, bill_id):
     """Delete a bill with different rules based on user type"""
     bill = get_object_or_404(Bill, id=bill_id)
-    
+
     is_chairman = request.user.is_authenticated and request.user.profile.user_type == 'চেয়ারম্যান'
-    
+
     if not is_chairman:
+        # Must own the bill
         if bill.user != request.user:
             messages.error(request, 'আপনার এই বিল ডিলিট করার অনুমতি নেই।')
-            return redirect('bill_status')
-        
+            return redirect('my_bills')
+
+        # Cannot delete pending or paid bills
         if bill.status == 'pending':
             messages.error(request, 'অপেক্ষমান বিল ডিলিট করা যাবে না।')
             return redirect('bill_status')
         elif bill.status == 'paid':
             messages.error(request, 'পরিশোধিত বিল ডিলিট করা যাবে না।')
             return redirect('bill_status')
-        elif bill.status == 'draft':
-            messages.error(request, 'খসড়া বিল "আমার বিল" পৃষ্ঠা থেকে ডিলিট করুন।')
-            return redirect('bill_status')
-        elif bill.status not in ['rejected', 'approved']:
-            messages.error(request, 'শুধুমাত্র বাতিল বা অনুমোদিত বিল ডিলিট করা যাবে।')
-            return redirect('bill_status')
-        
+
+        # draft, rejected, approved — all allowed to delete
         bill_number = bill.bill_number
         bill.delete()
-        
+
         log_activity(request.user, 'Bill deleted', f'Bill {bill_number} permanently deleted')
         messages.success(request, f'বিল {bill_number} স্থায়ীভাবে ডিলিট করা হয়েছে!')
+
+        # Redirect to my_bills if it was a draft, otherwise bill_status
+        if bill.status == 'draft':
+            return redirect('my_bills')
         return redirect('bill_status')
-    
+
     else:
+        # Chairman logic
         if bill.status == 'pending':
             messages.error(request, 'অপেক্ষমান বিল ডিলিট করা যাবে না।')
             return redirect('all_bills')
         elif bill.status == 'paid':
             messages.error(request, 'পরিশোধিত বিল ডিলিট করা যাবে না।')
             return redirect('all_bills')
-        elif bill.status not in ['draft', 'approved', 'rejected']:
-            messages.error(request, 'শুধুমাত্র খসড়া, অনুমোদিত বা বাতিল বিল ডিলিট করা যাবে।')
-            return redirect('all_bills')
-        
+
         bill.is_hidden_from_chairman = True
         bill.save()
-        
-        log_activity(request.user, 'Bill hidden from chairman', 
+
+        log_activity(request.user, 'Bill hidden from chairman',
                     f'Bill {bill.bill_number} hidden from chairman view')
-        
         messages.success(request, f'বিল {bill.bill_number} চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হয়েছে।')
         return redirect('all_bills')
 
@@ -1528,3 +1526,91 @@ def admin_dashboard(request):
         'recent_bills': Bill.objects.select_related('user').order_by('-created_at')[:5],
     }
     return render(request, 'admin/index.html', context)
+
+import json
+
+
+@login_required
+def edit_bill(request, bill_id):
+    """Edit an existing bill"""
+    bill = get_object_or_404(Bill, id=bill_id)
+    
+    # Check permission
+    if bill.user != request.user:
+        messages.error(request, 'আপনার এই বিল এডিট করার অনুমতি নেই।')
+        return redirect('my_bills')
+    
+    # Only draft or rejected bills can be edited
+    if bill.status not in ['draft', 'rejected']:
+        messages.error(request, 'শুধুমাত্র খসড়া বা বাতিলকৃত বিল এডিট করা যাবে।')
+        return redirect('my_bills')
+    
+    if request.method == 'POST':
+        form = BillForm(request.POST, instance=bill)
+        action = request.POST.get('action', 'save')
+        
+        if form.is_valid():
+            bill = form.save(commit=False)
+            
+            if action == 'send':
+                bill.status = 'pending'
+                bill.sent_at = timezone.now()
+                success_message = 'বিল সফলভাবে আপডেট এবং পাঠানো হয়েছে!'
+                redirect_url = 'bill_status'
+            else:
+                bill.status = 'draft'
+                bill.sent_at = None
+                success_message = 'বিল সফলভাবে আপডেট করা হয়েছে!'
+                redirect_url = 'my_bills'
+            
+            bill.save()
+            
+            # Delete existing tasks
+            Task.objects.filter(bill=bill).delete()
+            
+            # Create new tasks
+            tasks_data = json.loads(request.POST.get('tasks', '[]'))
+            total_amount = 0
+            
+            for task_data in tasks_data:
+                task = Task(
+                    bill=bill,
+                    work_type=task_data['work_type'],
+                    benefit=task_data['benefit'],
+                    quantity=task_data.get('quantity', 1),
+                    unit=task_data.get('unit', ''),
+                    amount=task_data['amount'],
+                    remarks=task_data.get('remarks', '')
+                )
+                task.save()
+                total_amount += float(task_data['amount'])
+            
+            bill.total_amount = total_amount
+            bill.save()
+            
+            log_activity(request.user, 'Bill edited', f'Bill {bill.bill_number} edited')
+            messages.success(request, success_message)
+            return redirect(redirect_url)
+    else:
+        form = BillForm(instance=bill)
+        
+    # Get existing tasks
+    tasks = bill.tasks.all()
+    tasks_list = []
+    for task in tasks:
+        tasks_list.append({
+            'work_type': task.work_type,
+            'benefit': task.benefit,
+            'quantity': task.quantity,
+            'unit': task.unit,
+            'amount': str(task.amount),
+            'remarks': task.remarks or ''
+        })
+    
+    context = {
+        'form': form,
+        'bill': bill,
+        'tasks_json': json.dumps(tasks_list, ensure_ascii=False),
+        'edit_mode': True
+    }
+    return render(request, 'core/bill_edit.html', context)

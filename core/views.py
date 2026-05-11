@@ -1504,32 +1504,6 @@ def handler500(request):
 
 
 
-
-# admin----------------------------------------------------------------
-# ---------------------------------------------------------------------
-from django.contrib.admin.views.decorators import staff_member_required
-from .models import ActivityLog, Bill
-
-@staff_member_required
-def admin_dashboard(request):
-    """Custom admin dashboard view"""
-    from django.db.models import Sum, Count
-    
-    context = {
-        'total_bills': Bill.objects.count(),
-        'pending_bills': Bill.objects.filter(status='pending').count(),
-        'approved_bills': Bill.objects.filter(status='approved').count(),
-        'rejected_bills': Bill.objects.filter(status='rejected').count(),
-        'paid_bills': Bill.objects.filter(status='paid').count(),
-        'total_amount': Bill.objects.aggregate(total=Sum('total_amount'))['total'] or 0,
-        'recent_activities': ActivityLog.objects.select_related('user').order_by('-created_at')[:10],
-        'recent_bills': Bill.objects.select_related('user').order_by('-created_at')[:5],
-    }
-    return render(request, 'admin/index.html', context)
-
-import json
-
-
 @login_required
 def edit_bill(request, bill_id):
     """Edit an existing bill"""

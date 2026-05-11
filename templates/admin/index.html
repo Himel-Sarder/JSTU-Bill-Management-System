@@ -1,939 +1,551 @@
 {% extends "admin/base_site.html" %}
-{% load static i18n %}
-
-{% block title %}Admin Panel - বিল ব্যবস্থাপনা সিস্টেম{% endblock %}
+{% load i18n static %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{{ block.super }}
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        background: #f5f7fb;
-        font-family: 'Segoe UI', 'BanglaFont', 'SolaimanLipi', -apple-system, BlinkMacSystemFont, sans-serif;
-        overflow-x: hidden;
-    }
-
-    /* Dashboard Main Wrapper */
-    .dashboard-wrapper {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    /* ======================================== */
-    /* SIDEBAR STYLES */
-    /* ======================================== */
-    .admin-sidebar {
-        width: 280px;
-        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-        color: #e2e8f0;
-        position: fixed;
-        height: 100vh;
-        overflow-y: auto;
-        transition: all 0.3s;
-        z-index: 1000;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.08);
-    }
-
-    .sidebar-header {
-        padding: 28px 24px;
-        text-align: center;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        margin-bottom: 20px;
-    }
-
-    .sidebar-header h3 {
-        background: linear-gradient(135deg, #60a5fa, #34d399);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        margin: 0;
-        font-size: 1.4rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    .sidebar-header p {
-        color: rgba(255,255,255,0.4);
-        font-size: 0.7rem;
-        margin: 8px 0 0;
-    }
-
-    .sidebar-nav {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .sidebar-nav li {
-        margin: 4px 12px;
-    }
-
-    .sidebar-nav li a {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        color: #94a3b8;
-        text-decoration: none;
-        transition: all 0.3s;
-        border-radius: 12px;
-        gap: 12px;
-        font-size: 0.9rem;
-        font-weight: 500;
-    }
-
-    .sidebar-nav li a i {
-        width: 22px;
-        font-size: 1.1rem;
-    }
-
-    .sidebar-nav li a:hover {
-        background: rgba(96, 165, 250, 0.1);
-        color: #60a5fa;
-    }
-
-    .sidebar-nav li.active a {
-        background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(52, 211, 153, 0.08));
-        color: #60a5fa;
-        border: 1px solid rgba(96, 165, 250, 0.2);
-    }
-
-    /* ======================================== */
-    /* MAIN CONTENT STYLES */
-    /* ======================================== */
-    .admin-main {
-        flex: 1;
-        margin-left: 280px;
-        transition: all 0.3s;
-    }
-
-    /* Top Navbar */
-    .admin-navbar {
-        background: white;
-        padding: 16px 28px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: sticky;
-        top: 0;
-        z-index: 99;
-    }
-
-    .navbar-left {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-    }
-
-    .sidebar-toggle {
-        display: none;
-        background: none;
-        border: none;
-        font-size: 1.3rem;
-        cursor: pointer;
-        color: #475569;
-    }
-
-    .navbar-title {
-        font-size: 1rem;
-        font-weight: 500;
-        color: #64748b;
-        margin: 0;
-    }
-
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 40px;
-        background: #f8fafc;
-        transition: all 0.2s;
-    }
-
-    .user-info:hover {
-        background: #f1f5f9;
-    }
-
-    .user-avatar {
-        width: 38px;
-        height: 38px;
-        background: linear-gradient(135deg, #60a5fa, #34d399);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        color: white;
-        font-size: 0.9rem;
-    }
-
-    .user-name {
-        font-weight: 500;
-        color: #334155;
-        font-size: 0.9rem;
-    }
-
-    /* Content Container */
-    .admin-content {
-        padding: 28px;
-    }
-
-    /* ======================================== */
-    /* STATS GRID */
-    /* ======================================== */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-        margin-bottom: 28px;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 20px;
-        padding: 22px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        transition: all 0.3s;
-        border: 1px solid rgba(0,0,0,0.04);
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-        border-color: rgba(96, 165, 250, 0.2);
-    }
-
-    .stat-icon {
-        font-size: 2rem;
-        margin-bottom: 12px;
-        color: #60a5fa;
-    }
-
-    .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 8px 0 4px;
-        letter-spacing: -0.5px;
-    }
-
-    .stat-label {
-        color: #64748b;
-        font-size: 0.8rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* ======================================== */
-    /* CHARTS GRID */
-    /* ======================================== */
-    .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-        margin-bottom: 28px;
-    }
-
-    .chart-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.04);
-        overflow: hidden;
-    }
-
-    .chart-header {
-        padding: 18px 24px;
-        border-bottom: 1px solid #f1f5f9;
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 0.95rem;
-        letter-spacing: 0.3px;
-    }
-
-    .chart-header i {
-        margin-right: 10px;
-        color: #60a5fa;
-    }
-
-    .chart-body {
-        padding: 24px;
-    }
-
-    .chart-container {
-        height: 260px;
-        position: relative;
-    }
-
-    canvas {
-        max-height: 220px;
-        width: 100%;
-    }
-
-    /* ======================================== */
-    /* TWO COLUMN GRID */
-    /* ======================================== */
-    .two-column-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-        margin-bottom: 0;
-    }
-
-    /* Cards */
-    .info-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.04);
-        overflow: hidden;
-    }
-
-    .info-card-header {
-        padding: 18px 24px;
-        border-bottom: 1px solid #f1f5f9;
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 0.95rem;
-    }
-
-    .info-card-header i {
-        margin-right: 10px;
-        color: #60a5fa;
-    }
-
-    .info-card-body {
-        padding: 20px 24px;
-        max-height: 420px;
-        overflow-y: auto;
-    }
-
-    /* Quick Actions Buttons */
-    .action-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 14px;
-        border-radius: 14px;
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.3s;
-        border: none;
-        cursor: pointer;
-    }
-
-    .action-btn-primary {
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        color: white;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
-    }
-
-    .action-btn-success {
-        background: linear-gradient(135deg, #34d399, #10b981);
-        color: white;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
-    }
-
-    .action-btn-info {
-        background: linear-gradient(135deg, #2dd4bf, #14b8a6);
-        color: white;
-        box-shadow: 0 2px 8px rgba(20, 184, 166, 0.25);
-    }
-
-    .action-btn-warning {
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
-        color: white;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
-    }
-
-    .action-btn:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.05);
-    }
-
-    /* Activity List */
-    .activity-list {
-        max-height: 360px;
-        overflow-y: auto;
-    }
-
-    .activity-item {
-        display: flex;
-        gap: 14px;
-        padding: 14px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .activity-item:last-child {
-        border-bottom: none;
-    }
-
-    .activity-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .activity-icon.success {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        color: #059669;
-    }
-
-    .activity-icon.warning {
-        background: linear-gradient(135deg, #fed7aa, #fde68a);
-        color: #d97706;
-    }
-
-    .activity-icon.danger {
-        background: linear-gradient(135deg, #fee2e2, #fecaca);
-        color: #dc2626;
-    }
-
-    .activity-icon.info {
-        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-        color: #2563eb;
-    }
-
-    .activity-content {
-        flex: 1;
-    }
-
-    .activity-title {
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 4px;
-        font-size: 0.85rem;
-    }
-
-    .activity-time {
-        font-size: 0.7rem;
-        color: #94a3b8;
-    }
-
-    .activity-detail {
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-top: 3px;
-    }
-
-    /* Bill List */
-    .bill-list {
-        max-height: 360px;
-        overflow-y: auto;
-    }
-
-    .bill-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 14px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .bill-item:last-child {
-        border-bottom: none;
-    }
-
-    .bill-info h4 {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin: 0 0 5px;
-    }
-
-    .bill-meta {
-        font-size: 0.7rem;
-        color: #94a3b8;
-    }
-
-    .bill-amount {
-        font-weight: 700;
-        color: #0f172a;
-        font-size: 0.9rem;
-        margin-top: 4px;
-    }
-
-    .badge {
-        padding: 5px 12px;
-        border-radius: 30px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-    }
-
-    .badge-approved { background: #d1fae5; color: #059669; }
-    .badge-pending { background: #fed7aa; color: #c2410c; }
-    .badge-rejected { background: #fee2e2; color: #dc2626; }
-    .badge-paid { background: #dbeafe; color: #2563eb; }
-
-    /* Scrollbar */
-    .activity-list::-webkit-scrollbar,
-    .bill-list::-webkit-scrollbar,
-    .info-card-body::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    .activity-list::-webkit-scrollbar-track,
-    .bill-list::-webkit-scrollbar-track,
-    .info-card-body::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 10px;
-    }
-
-    .activity-list::-webkit-scrollbar-thumb,
-    .bill-list::-webkit-scrollbar-thumb,
-    .info-card-body::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-
-    .activity-list::-webkit-scrollbar-thumb:hover,
-    .bill-list::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-
-    /* ======================================== */
-    /* RESPONSIVE DESIGN */
-    /* ======================================== */
-    @media (max-width: 1200px) {
-        .stats-grid {
-            gap: 18px;
-        }
-        .charts-grid {
-            gap: 18px;
-        }
-        .two-column-grid {
-            gap: 18px;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        .charts-grid {
-            grid-template-columns: 1fr;
-        }
-        .two-column-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .admin-sidebar {
-            transform: translateX(-100%);
-        }
-        
-        .admin-sidebar.show {
-            transform: translateX(0);
-        }
-        
-        .admin-main {
-            margin-left: 0;
-        }
-        
-        .sidebar-toggle {
-            display: block;
-        }
-        
-        .stats-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-        
-        .admin-content {
-            padding: 20px;
-        }
-        
-        .stat-number {
-            font-size: 1.6rem;
-        }
-    }
-
-    /* Utility Classes */
-    .text-center { text-align: center; }
-    .text-muted { color: #94a3b8; }
-    .mt-3 { margin-top: 1rem; }
-    .mb-3 { margin-bottom: 1rem; }
+  :root {
+    --teal:    #4ECDC4;
+    --orange:  #FF6B35;
+    --green:   #2ECC71;
+    --red:     #E74C3C;
+    --yellow:  #F39C12;
+    --blue:    #3498DB;
+    --purple:  #9B59B6;
+    --dark:    #1a1d23;
+    --card-bg: #22262f;
+    --border:  rgba(78,205,196,0.2);
+  }
+
+  body, #content-main, .dashboard { background: var(--dark) !important; }
+  #content { background: var(--dark) !important; padding: 20px !important; }
+  #content h1 { display: none; }
+
+  /* ── Dashboard grid ── */
+  .dash-wrap {
+    font-family: 'Rajdhani', sans-serif;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ── Header bar ── */
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    padding: 18px 24px;
+    background: var(--card-bg);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
+  .dash-header h1 {
+    display: block !important;
+    color: var(--teal);
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    margin: 0;
+    letter-spacing: 2px;
+  }
+  .dash-header h1 span { color: white; }
+
+  /* ── Clock ── */
+  .clock-block { text-align: right; }
+  .clock-time {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    color: var(--teal);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+  .clock-date {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ── Stat cards ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 700px)  { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 20px 16px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+  .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+  .stat-card .icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .stat-card .num {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-card .lbl {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .stat-card .trend {
+    position: absolute;
+    bottom: 12px; right: 14px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ── Charts row ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 1000px) { .charts-row { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 650px)  { .charts-row { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .chart-card h3 {
+    color: white;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-card h3 span { color: var(--teal); }
+  canvas { max-height: 220px; }
+
+  /* ── Bottom row ── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 750px) { .bottom-row { grid-template-columns: 1fr; } }
+
+  .table-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .table-card h3 {
+    color: white;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0 0 14px 0;
+  }
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .dash-table th {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .dash-table td {
+    color: rgba(255,255,255,0.85);
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .dash-table tr:last-child td { border-bottom: none; }
+  .dash-table tr:hover td { background: rgba(78,205,196,0.05); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-draft    { background: rgba(149,165,166,0.2); color: #95A5A6; }
+  .badge-pending  { background: rgba(243,156,18,0.2);  color: #F39C12; }
+  .badge-approved { background: rgba(46,204,113,0.2);  color: #2ECC71; }
+  .badge-rejected { background: rgba(231,76,60,0.2);   color: #E74C3C; }
+  .badge-paid     { background: rgba(52,152,219,0.2);  color: #3498DB; }
+
+  /* ── Quick links ── */
+  .quick-links {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 700px) { .quick-links { grid-template-columns: repeat(2, 1fr); } }
+
+  .ql-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .ql-btn:hover {
+    background: rgba(78,205,196,0.1);
+    border-color: var(--teal);
+    color: var(--teal);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .ql-btn .ql-icon { font-size: 1.3rem; }
+
+  /* ── Progress bars ── */
+  .prog-row { margin-bottom: 14px; }
+  .prog-label {
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.82rem;
+    margin-bottom: 5px;
+  }
+  .prog-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .prog-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  /* Hide default django app list */
+  #content-main > .app-* { display: none; }
+  .app-list-wrapper { display: none !important; }
+  #content > h1 { display: none !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-wrapper">
-    <!-- Sidebar -->
-    <div class="admin-sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h3>বিল ব্যবস্থাপনা</h3>
-            <p>Administration Panel</p>
-        </div>
-        <ul class="sidebar-nav">
-            <li class="active">
-                <a href="{% url 'admin:index' %}">
-                    <i class="fas fa-chart-line"></i> ড্যাশবোর্ড
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:core_bill_changelist' %}">
-                    <i class="fas fa-file-invoice"></i> বিলসমূহ
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:auth_user_changelist' %}">
-                    <i class="fas fa-users"></i> ব্যবহারকারী
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:core_worktype_changelist' %}">
-                    <i class="fas fa-briefcase"></i> কাজের ধরণ
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:core_benefit_changelist' %}">
-                    <i class="fas fa-tags"></i> উপকাজ
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:core_sliderimage_changelist' %}">
-                    <i class="fas fa-image"></i> স্লাইডার ছবি
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:password_change' %}">
-                    <i class="fas fa-lock"></i> পাসওয়ার্ড পরিবর্তন
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'admin:logout' %}">
-                    <i class="fas fa-sign-out-alt"></i> লগআউট
-                </a>
-            </li>
-        </ul>
+<div class="dash-wrap">
+
+  <!-- Header + Clock -->
+  <div class="dash-header">
+    <h1><span>বিল</span> ড্যাশবোর্ড</h1>
+    <div class="clock-block">
+      <div class="clock-time" id="clock">00:00:00</div>
+      <div class="clock-date" id="clock-date"></div>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" style="--accent: var(--teal);">
+      <span class="icon"></span>
+      <div class="num" id="stat-total">{{ total_bills }}</div>
+      <div class="lbl">মোট বিল</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--yellow);">
+      <span class="icon"></span>
+      <div class="num" id="stat-pending">{{ pending_bills }}</div>
+      <div class="lbl">অপেক্ষমান</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--green);">
+      <span class="icon"></span>
+      <div class="num" id="stat-approved">{{ approved_bills }}</div>
+      <div class="lbl">অনুমোদিত</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--red);">
+      <span class="icon"></span>
+      <div class="num" id="stat-rejected">{{ rejected_bills }}</div>
+      <div class="lbl">বাতিল</div>
+      <div class="trend">প্রত্যাখ্যাত</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--blue);">
+      <span class="icon"></span>
+      <div class="num" id="stat-paid">{{ paid_bills }}</div>
+      <div class="lbl">পরিশোধিত</div>
+    </div>
+    <div class="stat-card" style="--accent: var(--purple);">
+      <span class="icon"></span>
+      <div class="num">{{ total_users }}</div>
+      <div class="lbl">মোট ব্যবহারকারী</div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="quick-links">
+    <a href="/admin/auth/user/" class="ql-btn"><span class="ql-icon"></span> ব্যবহারকারী</a>
+    <a href="/admin/core/worktype/" class="ql-btn"><span class="ql-icon"></span> কাজের ধরণ</a>
+    <a href="/admin/core/benefit/" class="ql-btn"><span class="ql-icon"></span> উপকাজ</a>
+    <a href="/admin/core/sliderimage/" class="ql-btn"><span class="ql-icon"></span> স্লাইডার</a>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+
+    <!-- Doughnut: Bill Status -->
+    <div class="chart-card">
+      <h3><span>●</span> বিলের অবস্থা</h3>
+      <canvas id="donutChart"></canvas>
     </div>
 
-    <!-- Main Content -->
-    <div class="admin-main">
-        <!-- Top Navbar -->
-        <nav class="admin-navbar">
-            <div class="navbar-left">
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h5 class="navbar-title">Welcome back, {{ request.user.get_full_name|default:request.user.username }}</h5>
-            </div>
-            <div class="user-info">
-                <div class="user-avatar">
-                    {{ request.user.username|make_list|first|upper }}
-                </div>
-                <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
-                <i class="fas fa-chevron-down" style="font-size: 0.7rem; color: #94a3b8;"></i>
-            </div>
-        </nav>
-
-        <!-- Content -->
-        <div class="admin-content">
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-file-invoice"></i>
-                    </div>
-                    <div class="stat-number">{{ total_bills|default:"0" }}</div>
-                    <div class="stat-label">Total Bills</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-hourglass-half"></i>
-                    </div>
-                    <div class="stat-number">{{ pending_bills|default:"0" }}</div>
-                    <div class="stat-label">Pending Bills</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-number">{{ approved_bills|default:"0" }}</div>
-                    <div class="stat-label">Approved Bills</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-coins"></i>
-                    </div>
-                    <div class="stat-number">{{ total_amount|default:"0"|floatformat:"0" }}</div>
-                    <div class="stat-label">Total Amount (BDT)</div>
-                </div>
-            </div>
-
-            <!-- Two Charts Grid -->
-            <div class="charts-grid">
-                <!-- Status Chart - Doughnut -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <i class="fas fa-chart-pie"></i> Bill Status Distribution
-                    </div>
-                    <div class="chart-body">
-                        <div class="chart-container">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Monthly Trends Chart - Bar Chart -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <i class="fas fa-chart-line"></i> Monthly Bill Trends
-                    </div>
-                    <div class="chart-body">
-                        <div class="chart-container">
-                            <canvas id="trendsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Two Column Grid for Actions and Activities -->
-            <div class="two-column-grid">
-                <!-- Quick Actions -->
-                <div class="info-card">
-                    <div class="info-card-header">
-                        <i class="fas fa-bolt"></i> Quick Actions
-                    </div>
-                    <div class="info-card-body">
-                        <div class="action-buttons">
-                            <a href="{% url 'admin:core_bill_add' %}" class="action-btn action-btn-primary">
-                                <i class="fas fa-plus-circle"></i> Create New Bill
-                            </a>
-                            <a href="{% url 'admin:auth_user_add' %}" class="action-btn action-btn-success">
-                                <i class="fas fa-user-plus"></i> Add New User
-                            </a>
-                            <a href="{% url 'admin:core_worktype_add' %}" class="action-btn action-btn-info">
-                                <i class="fas fa-briefcase"></i> Add Work Type
-                            </a>
-                            <a href="{% url 'admin:core_benefit_add' %}" class="action-btn action-btn-warning">
-                                <i class="fas fa-tags"></i> Add Benefit
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activities -->
-                <div class="info-card">
-                    <div class="info-card-header">
-                        <i class="fas fa-history"></i> Recent Activities
-                    </div>
-                    <div class="info-card-body" style="padding: 0 24px;">
-                        <div class="activity-list">
-                            {% if recent_activities %}
-                                {% for activity in recent_activities %}
-                                <div class="activity-item">
-                                    <div class="activity-icon {% if 'create' in activity.action or 'যোগ' in activity.action %}success{% elif 'delete' in activity.action or 'মুছে' in activity.action %}danger{% elif 'update' in activity.action or 'আপডেট' in activity.action %}warning{% else %}info{% endif %}">
-                                        <i class="fas fa-{% if 'create' in activity.action or 'যোগ' in activity.action %}plus{% elif 'delete' in activity.action or 'মুছে' in activity.action %}trash{% elif 'update' in activity.action or 'আপডেট' in activity.action %}pen{% else %}info-circle{% endif %}"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">{{ activity.action|truncatechars:50 }}</div>
-                                        <div class="activity-time">
-                                            <i class="far fa-clock"></i> {{ activity.created_at|timesince }} ago
-                                            {% if activity.user %} - {{ activity.user.get_full_name|default:activity.user.username }}{% endif %}
-                                        </div>
-                                        {% if activity.details %}
-                                        <div class="activity-detail">{{ activity.details|truncatechars:60 }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="text-center" style="padding: 40px;">
-                                    <i class="fas fa-inbox" style="font-size: 2rem; color: #cbd5e1;"></i>
-                                    <p class="text-muted" style="margin-top: 12px;">No recent activities</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Bills Section -->
-            <div class="info-card" style="margin-top: 24px;">
-                <div class="info-card-header">
-                    <i class="fas fa-file-alt"></i> Recent Bills
-                </div>
-                <div class="info-card-body" style="padding: 0 24px;">
-                    <div class="bill-list">
-                        {% if recent_bills %}
-                            {% for bill in recent_bills %}
-                            <div class="bill-item">
-                                <div class="bill-info">
-                                    <h4>Bill #{{ bill.bill_number }}</h4>
-                                    <div class="bill-meta">
-                                        <i class="far fa-user"></i> {{ bill.user.get_full_name|default:bill.user.username }}
-                                        <i class="far fa-calendar" style="margin-left: 12px;"></i> {{ bill.created_at|date:"d M Y" }}
-                                    </div>
-                                    <div class="bill-amount">
-                                        <i class="fas fa-coins" style="font-size: 0.7rem;"></i> {{ bill.total_amount|floatformat:"0" }} BDT
-                                    </div>
-                                </div>
-                                <span class="badge badge-{{ bill.status }}">
-                                    {% if bill.status == 'approved' %}Approved
-                                    {% elif bill.status == 'pending' %}Pending
-                                    {% elif bill.status == 'rejected' %}Rejected
-                                    {% else %}Paid{% endif %}
-                                </span>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-center" style="padding: 40px;">
-                                <i class="fas fa-inbox" style="font-size: 2rem; color: #cbd5e1;"></i>
-                                <p class="text-muted" style="margin-top: 12px;">No bills found</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Bar: Monthly bills -->
+    <div class="chart-card">
+      <h3><span>●</span> মাসিক বিল (বার চার্ট)</h3>
+      <canvas id="barChart"></canvas>
     </div>
+
+    <!-- Progress: Status breakdown -->
+    <div class="chart-card">
+      <h3><span>●</span> অবস্থানের অনুপাত</h3>
+      <div style="margin-top: 10px;">
+        {% if total_bills > 0 %}
+        <div class="prog-row">
+          <div class="prog-label"><span>অপেক্ষমান</span><span>{{ pending_bills }}/{{ total_bills }}</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio pending_bills total_bills 100 %}%; background: #F39C12;"></div></div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-label"><span>অনুমোদিত</span><span>{{ approved_bills }}/{{ total_bills }}</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio approved_bills total_bills 100 %}%; background: #2ECC71;"></div></div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-label"><span>বাতিল</span><span>{{ rejected_bills }}/{{ total_bills }}</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio rejected_bills total_bills 100 %}%; background: #E74C3C;"></div></div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-label"><span>পরিশোধিত</span><span>{{ paid_bills }}/{{ total_bills }}</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio paid_bills total_bills 100 %}%; background: #3498DB;"></div></div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-label"><span>খসড়া</span><span>{{ draft_bills }}/{{ total_bills }}</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio draft_bills total_bills 100 %}%; background: #95A5A6;"></div></div>
+        </div>
+        {% else %}
+        <p style="color:rgba(255,255,255,0.3); text-align:center; margin-top:40px;">কোনো বিল নেই</p>
+        {% endif %}
+
+        <!-- Total amount -->
+        <div style="margin-top: 24px; padding: 16px; background: rgba(78,205,196,0.07); border-radius: 10px; border: 1px solid var(--border);">
+          <div style="color: rgba(255,255,255,0.5); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px;">মোট টাকার পরিমাণ</div>
+          <div style="font-family: 'Orbitron', monospace; font-size: 1.5rem; color: var(--teal); margin-top: 6px;">
+            ৳ {{ total_amount|floatformat:0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Row: Recent Bills + Recent Users -->
+  <div class="bottom-row">
+
+    <div class="table-card">
+      <h3>🕐 সাম্প্রতিক বিলসমূহ</h3>
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>বিল নম্বর</th>
+            <th>ব্যবহারকারী</th>
+            <th>পরিমাণ</th>
+            <th>অবস্থা</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bill in recent_bills %}
+          <tr>
+            <td><a href="/admin/core/bill/{{ bill.id }}/change/" style="color: var(--teal); text-decoration: none;">{{ bill.bill_number }}</a></td>
+            <td style="color: rgba(255,255,255,0.7);">{{ bill.user.get_full_name|default:bill.user.username }}</td>
+            <td style="color: var(--green);">৳{{ bill.total_amount|floatformat:0 }}</td>
+            <td>
+              <span class="badge badge-{{ bill.status }}">
+                {% if bill.status == 'draft' %}খসড়া
+                {% elif bill.status == 'pending' %}অপেক্ষমান
+                {% elif bill.status == 'approved' %}অনুমোদিত
+                {% elif bill.status == 'rejected' %}বাতিল
+                {% elif bill.status == 'paid' %}পরিশোধিত
+                {% endif %}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center; color: rgba(255,255,255,0.3); padding: 30px;">কোনো বিল নেই</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h3>👥 সাম্প্রতিক ব্যবহারকারী</h3>
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>নাম</th>
+            <th>পদবী</th>
+            <th>যোগদান</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td><a href="/admin/auth/user/{{ u.id }}/change/" style="color: var(--teal); text-decoration: none;">{{ u.get_full_name|default:u.username }}</a></td>
+            <td style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">{{ u.profile.user_type|default:"—" }}</td>
+            <td style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">{{ u.date_joined|date:"d M Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" style="text-align:center; color: rgba(255,255,255,0.3); padding: 30px;">কোনো ব্যবহারকারী নেই</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
 </div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-    // Sidebar Toggle
-    document.getElementById('sidebarToggle').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('show');
-    });
+// ── Clock ──────────────────────────────────────────────────
+// ── Clock ──────────────────────────────────────────────────
+function updateClock() {
+    const now  = new Date();
+    const days = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+    const months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
 
-    // Status Chart - Doughnut Chart
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    new Chart(statusCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Pending', 'Approved', 'Rejected', 'Paid'],
-            datasets: [{
-                data: [{{ pending_bills|default:"0" }}, {{ approved_bills|default:"0" }}, {{ rejected_bills|default:"0" }}, {{ paid_bills|default:"0" }}],
-                backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#3b82f6'],
-                borderWidth: 0,
-                hoverOffset: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            cutout: '65%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { 
-                        font: { size: 11, weight: '500' },
-                        padding: 15,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.label || '';
-                            let value = context.raw || 0;
-                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return `${label}: ${value} (${percentage}%)`;
-                        }
-                    }
-                }
+    let hours   = now.getHours();
+    const ampm  = hours >= 12 ? 'PM' : 'AM';
+    hours       = hours % 12 || 12;          // 0 → 12, 13 → 1, etc.
+    const mm    = String(now.getMinutes()).padStart(2, '0');
+    const ss    = String(now.getSeconds()).padStart(2, '0');
+
+    document.getElementById('clock').textContent = `${hours}:${mm}:${ss} ${ampm}`;
+    document.getElementById('clock-date').textContent =
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── Shared chart defaults ──────────────────────────────────
+Chart.defaults.color = 'rgba(255,255,255,0.55)';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+Chart.defaults.font.family = "'Rajdhani', sans-serif";
+
+// ── Doughnut Chart ─────────────────────────────────────────
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['অপেক্ষমান','অনুমোদিত','বাতিল','পরিশোধিত','খসড়া'],
+        datasets: [{
+            data: [
+                {{ pending_bills }},
+                {{ approved_bills }},
+                {{ rejected_bills }},
+                {{ paid_bills }},
+                {{ draft_bills }}
+            ],
+            backgroundColor: [
+                'rgba(243,156,18,0.85)',
+                'rgba(46,204,113,0.85)',
+                'rgba(231,76,60,0.85)',
+                'rgba(52,152,219,0.85)',
+                'rgba(149,165,166,0.85)',
+            ],
+            borderColor: '#22262f',
+            borderWidth: 3,
+            hoverOffset: 8,
+        }]
+    },
+    options: {
+        cutout: '65%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 12, font: { size: 12 } }
             }
         }
-    });
+    }
+});
 
-    // Monthly Trends Chart - Bar Chart
-    // This uses sample data - replace with actual monthly data from your backend
-    const trendsCtx = document.getElementById('trendsChart').getContext('2d');
-    new Chart(trendsCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [
-                {
-                    label: 'Bills Created',
-                    data: [12, 19, 15, 17, 14, 22, 18, 25, 20, 23, 18, 16],
-                    backgroundColor: '#60a5fa',
-                    borderRadius: 8,
-                    barPercentage: 0.7
-                },
-                {
-                    label: 'Amount (000 BDT)',
-                    data: [8, 12, 10, 14, 11, 18, 15, 22, 17, 20, 16, 14],
-                    backgroundColor: '#34d399',
-                    borderRadius: 8,
-                    barPercentage: 0.7
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: { 
-                        font: { size: 11, weight: '500' },
-                        usePointStyle: true,
-                        boxWidth: 8
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            let value = context.raw || 0;
-                            if (context.dataset.label === 'Amount (000 BDT)') {
-                                return `${label}: ${value}K BDT`;
-                            }
-                            return `${label}: ${value}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#f1f5f9' },
-                    title: { display: true, text: 'Count / Amount (000 BDT)', font: { size: 10 } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { size: 10 } }
-                }
-            }
-        }
-    });
+// ── Bar Chart (monthly) ────────────────────────────────────
+const barCtx = document.getElementById('barChart').getContext('2d');
+const monthlyData   = {{ monthly_data|safe }};
+const monthlyLabels = {{ monthly_labels|safe }};
 
-    // Close sidebar on click outside (mobile)
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const toggle = document.getElementById('sidebarToggle');
-        if (window.innerWidth < 768 && sidebar.classList.contains('show')) {
-            if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
-                sidebar.classList.remove('show');
-            }
+new Chart(barCtx, {
+    type: 'bar',
+    data: {
+        labels: monthlyLabels,
+        datasets: [{
+            label: 'বিলের সংখ্যা',
+            data: monthlyData,
+            backgroundColor: 'rgba(78,205,196,0.7)',
+            borderColor: '#4ECDC4',
+            borderWidth: 1,
+            borderRadius: 6,
+            hoverBackgroundColor: 'rgba(78,205,196,1)',
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }
         }
-    });
+    }
+});
+
+// ── Animate stat numbers ───────────────────────────────────
+function animateCount(el, target) {
+    let current = 0;
+    const step  = Math.ceil(target / 40);
+    const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current;
+        if (current >= target) clearInterval(timer);
+    }, 30);
+}
+document.querySelectorAll('.stat-card .num').forEach(el => {
+    const val = parseInt(el.textContent) || 0;
+    el.textContent = '0';
+    setTimeout(() => animateCount(el, val), 200);
+});
 </script>
 {% endblock %}

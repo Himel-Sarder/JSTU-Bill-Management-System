@@ -4,6 +4,76 @@ from django.contrib.auth.models import User
 from django.utils.html import format_html
 from .models import Profile, SliderImage, WorkType, Benefit, Bill, Task
 
+# ── Add this to your admin.py (at the top, after imports) ────────────────────
+
+from django.contrib.admin import AdminSite
+from django.contrib.auth.models import User
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
+import json
+
+
+class CustomAdminSite(AdminSite):
+    site_header  = "বিল ম্যানেজমেন্ট অ্যাডমিন"
+    site_title   = "BillM Admin"
+    index_title  = "ড্যাশবোর্ড"
+
+    def index(self, request, extra_context=None):
+        from core.models import Bill   # adjust app name if needed
+
+        # ── Stats ──────────────────────────────────────────────
+        total_bills    = Bill.objects.count()
+        pending_bills  = Bill.objects.filter(status='pending').count()
+        approved_bills = Bill.objects.filter(status='approved').count()
+        rejected_bills = Bill.objects.filter(status='rejected').count()
+        paid_bills     = Bill.objects.filter(status='paid').count()
+        draft_bills    = Bill.objects.filter(status='draft').count()
+        total_users    = User.objects.count()
+
+        from django.db.models import Sum
+        total_amount = Bill.objects.aggregate(t=Sum('total_amount'))['t'] or 0
+
+        # ── Monthly data (last 7 months) ───────────────────────
+        seven_months_ago = timezone.now() - timezone.timedelta(days=210)
+        monthly_qs = (
+            Bill.objects
+            .filter(created_at__gte=seven_months_ago)
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+        bn_months = {
+            1:'জানু', 2:'ফেব্রু', 3:'মার্চ', 4:'এপ্রিল',
+            5:'মে',   6:'জুন',   7:'জুলাই', 8:'আগস্ট',
+            9:'সেপ্টে',10:'অক্টো',11:'নভে',  12:'ডিসে',
+        }
+        monthly_labels = [bn_months[m['month'].month] for m in monthly_qs]
+        monthly_data   = [m['count'] for m in monthly_qs]
+
+        # ── Recent records ─────────────────────────────────────
+        recent_bills = Bill.objects.select_related('user').order_by('-created_at')[:8]
+        recent_users = User.objects.select_related('profile').order_by('-date_joined')[:8]
+
+        extra_context = extra_context or {}
+        extra_context.update({
+            'total_bills':    total_bills,
+            'pending_bills':  pending_bills,
+            'approved_bills': approved_bills,
+            'rejected_bills': rejected_bills,
+            'paid_bills':     paid_bills,
+            'draft_bills':    draft_bills,
+            'total_users':    total_users,
+            'total_amount':   total_amount,
+            'monthly_labels': json.dumps(monthly_labels, ensure_ascii=False),
+            'monthly_data':   json.dumps(monthly_data),
+            'recent_bills':   recent_bills,
+            'recent_users':   recent_users,
+        })
+        return super().index(request, extra_context)
+
+
 
 class ProfileInline(admin.StackedInline):
     model = Profile
@@ -155,32 +225,55 @@ class BenefitAdmin(admin.ModelAdmin):
         return super().changelist_view(request, extra_context=extra_context)
 
 
+
+
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
-    list_display = ('bill_number', 'user', 'semester', 'total_amount', 'status', 'created_at')
-    list_filter = ('status', 'semester', 'created_at')
-    search_fields = ('bill_number', 'user__username', 'user__first_name')
-    readonly_fields = ('created_at', 'updated_at', 'approved_at')
+    list_display = ('bill_number', 'user', 'semester', 'colored_status', 'total_amount_display', 'created_at')
+    list_filter = ('status', 'semester', 'degree_type', 'created_at')
+    search_fields = ('bill_number', 'user__username', 'user__first_name', 'user__last_name')
+    readonly_fields = ('created_at', 'updated_at', 'approved_at', 'bill_number', 'voucher_number')
     ordering = ('-created_at',)
+    list_per_page = 20
+    date_hierarchy = 'created_at'
+    actions = ['mark_approved', 'mark_rejected', 'mark_paid']
 
-    fieldsets = (
-        ('বিলের তথ্য', {
-            'fields': ('bill_number', 'voucher_number', 'user', 'semester', 'department', 'bangla_date')
-        }),
-        ('টাকার তথ্য', {
-            'fields': ('total_amount', 'status')
-        }),
-        ('অনুমোদনের তথ্য', {
-            'fields': ('approved_by', 'approved_at', 'remarks')
-        }),
-        ('ব্যাংকের তথ্য', {
-            'fields': ('bank_name', 'bank_branch', 'account_number', 'routing_number')
-        }),
-        ('টাইমস্ট্যাম্প', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
+    def colored_status(self, obj):
+        colors = {
+            'draft':    ('#95A5A6', 'খসড়া'),
+            'pending':  ('#F39C12', 'অপেক্ষমান'),
+            'approved': ('#27AE60', 'অনুমোদিত'),
+            'rejected': ('#E74C3C', 'বাতিল'),
+            'paid':     ('#2980B9', 'পরিশোধিত'),
+        }
+        color, label = colors.get(obj.status, ('#999', obj.status))
+        return format_html(
+            '<span style="background:{};color:white;padding:3px 10px;'
+            'border-radius:12px;font-size:12px;font-weight:600;">{}</span>',
+            color, label
+        )
+    colored_status.short_description = 'স্ট্যাটাস'
+    colored_status.admin_order_field = 'status'
+
+    def total_amount_display(self, obj):
+        return format_html('<strong style="color:#27AE60;">৳ {}</strong>', f'{obj.total_amount:,.0f}')
+    total_amount_display.short_description = 'মোট টাকা'
+    total_amount_display.admin_order_field = 'total_amount'
+
+    @admin.action(description='নির্বাচিত বিল অনুমোদন করুন')
+    def mark_approved(self, request, queryset):
+        updated = queryset.exclude(status='paid').update(status='approved')
+        self.message_user(request, f'{updated}টি বিল অনুমোদিত হয়েছে।')
+
+    @admin.action(description='নির্বাচিত বিল বাতিল করুন')
+    def mark_rejected(self, request, queryset):
+        updated = queryset.exclude(status='paid').update(status='rejected')
+        self.message_user(request, f'{updated}টি বিল বাতিল হয়েছে।')
+
+    @admin.action(description='নির্বাচিত বিল পরিশোধিত করুন')
+    def mark_paid(self, request, queryset):
+        updated = queryset.filter(status='approved').update(status='paid')
+        self.message_user(request, f'{updated}টি বিল পরিশোধিত হয়েছে।')
 
 
 @admin.register(Task)
@@ -228,3 +321,9 @@ try:
         admin.site.unregister(ActivityLog)
 except (ImportError, admin.sites.NotRegistered):
     pass
+
+
+admin.site.__class__ = CustomAdminSite
+admin.site.site_header  = "বিল ম্যানেজমেন্ট অ্যাডমিন"
+admin.site.site_title   = "BillM Admin"
+admin.site.index_title  = "ড্যাশবোর্ড"

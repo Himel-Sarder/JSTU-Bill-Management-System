@@ -10,6 +10,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*', '.onrender.com']
 
 INSTALLED_APPS = [
+    'jazzmin',     
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -97,5 +98,119 @@ WEASYPRINT_BASEURL = 'http://localhost:8000'  # For development
 FONT_CONFIG = {
     'font_family': 'BanglaFont',
     'fallback_fonts': ['SolaimanLipi', 'Kalpurush', 'Arial', 'sans-serif']
+}
 
+
+
+
+
+JAZZMIN_SETTINGS = {
+    # ── Branding ───────────────────────────────────────────────
+    "site_title": "BillM Admin",
+    "site_header": "বিল ম্যানেজমেন্ট",
+    "site_brand": "BillM",
+    "site_logo": None,  # put your logo path here if you have one e.g. "img/logo.png"
+    "login_logo": None,
+    "login_logo_dark": None,
+    "site_logo_classes": "img-circle",
+    "site_icon": None,
+    "welcome_sign": "বিল ম্যানেজমেন্ট সিস্টেমে স্বাগতম",
+    "copyright": "BillM © 2026",
+    "search_model": ["auth.user", "core.Bill"],
+    "user_avatar": None,
+
+    # ── Top Menu ───────────────────────────────────────────────
+    "topmenu_links": [
+        {"name": "হোম", "url": "/", "new_window": False},
+        {"name": "বিল স্ট্যাটাস", "url": "/bill-status/", "new_window": False},
+        {"name": "সব বিল", "url": "/all-bills/", "new_window": False},
+        {"model": "auth.User"},
+        {"app": "core"},
+    ],
+
+    # ── User Menu ──────────────────────────────────────────────
+    "usermenu_links": [
+        {"name": "সাইট দেখুন", "url": "/", "new_window": False, "icon": "fas fa-home"},
+        {"model": "auth.user"},
+    ],
+
+    # ── Sidebar ────────────────────────────────────────────────
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+
+    "order_with_respect_to": [
+        "auth",
+        "core",
+        "core.Bill",
+        "core.Task",
+        "core.WorkType",
+        "core.Benefit",
+        "core.Profile",
+        "core.SliderImage",
+        "core.ActivityLog",
+    ],
+
+    "icons": {
+        "auth":                     "fas fa-users-cog",
+        "auth.user":                "fas fa-user",
+        "auth.Group":               "fas fa-users",
+        "core.Bill":                "fas fa-file-invoice-dollar",
+        "core.Task":                "fas fa-tasks",
+        "core.WorkType":            "fas fa-briefcase",
+        "core.Benefit":             "fas fa-coins",
+        "core.Profile":             "fas fa-id-card",
+        "core.SliderImage":         "fas fa-images",
+        "core.ActivityLog":         "fas fa-history",
+        "core.SystemSetting":       "fas fa-cogs",
+    },
+    "default_icon_parents": "fas fa-folder",
+    "default_icon_children": "fas fa-circle",
+
+    # ── UI Tweaks ──────────────────────────────────────────────
+    "related_modal_active": True,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,  # set True temporarily to visually tweak theme
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs",
+    },
+    "language_chooser": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-success",   # green brand bar
+    "accent": "accent-teal",            # teal accent throughout
+    "navbar": "navbar-dark",
+    "no_navbar_border": True,
+    "navbar_fixed": True,               # sticky top navbar
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,              # sticky sidebar
+    "sidebar": "sidebar-dark-teal",     # dark sidebar with teal
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "darkly",                  # dark theme base (options below)
+    "dark_mode_theme": "darkly",
+    "button_classes": {
+        "primary":   "btn-primary",
+        "secondary": "btn-secondary",
+        "info":      "btn-info",
+        "warning":   "btn-warning",
+        "danger":    "btn-danger",
+        "success":   "btn-success",
+    },
+    "actions_sticky_top": True,
 }

@@ -118,6 +118,7 @@ JAZZMIN_SETTINGS = {
     "copyright": "BillM © 2026",
     "search_model": ["auth.user", "core.Bill"],
     "user_avatar": None,
+    "custom_css": "admin/css/custom_dark.css", 
 
     # ── Top Menu ───────────────────────────────────────────────
     "topmenu_links": [

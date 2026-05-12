@@ -6,259 +6,255 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --teal:    #4ECDC4;
-    --orange:  #FF6B35;
-    --green:   #2ECC71;
-    --red:     #E74C3C;
-    --yellow:  #F39C12;
-    --blue:    #3498DB;
-    --purple:  #9B59B6;
-    --dark:    #1a1d23;
-    --card-bg: #22262f;
-    --border:  rgba(78,205,196,0.2);
+    --teal:   #4ECDC4;
+    --green:  #2ECC71;
+    --red:    #E74C3C;
+    --yellow: #F39C12;
+    --blue:   #3498DB;
+    --purple: #9B59B6;
+    --dark:   #0f1117;
+    --dark2:  #161920;
+    --card:   #1c2028;
+    --card2:  #232830;
+    --border: rgba(78,205,196,0.18);
   }
 
-  body, #content-main, .dashboard { background: var(--dark) !important; }
+  /* ══════════════════════════════════════════════════════════
+     FORCE DARK ON ALL DJANGO ADMIN ELEMENTS
+  ══════════════════════════════════════════════════════════ */
+  html, body,
+  #content-main, #main, #container, #content-related,
+  .colMS, .colSM, .main, [role="main"],
+  .content-wrapper, .wrapper, .dashboard,
+  .main-sidebar, .main-footer { background: var(--dark) !important; color: rgba(255,255,255,0.85) !important; }
+
   #content { background: var(--dark) !important; padding: 20px !important; }
-  #content h1 { display: none; }
+  #content > h1 { display: none !important; }
 
-  /* ── Dashboard grid ── */
-  .dash-wrap {
-    font-family: 'Rajdhani', sans-serif;
-    max-width: 1400px;
-    margin: 0 auto;
+  /* Header */
+  #header { background: var(--dark2) !important; border-bottom: 1px solid var(--border) !important; box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important; }
+  #branding h1, #branding h1 a, #branding h1 a:visited { color: var(--teal) !important; text-decoration: none !important; }
+  #user-tools { color: rgba(255,255,255,0.6) !important; }
+  #user-tools a, #user-tools a:visited { color: rgba(255,255,255,0.7) !important; }
+  #user-tools a:hover { color: var(--teal) !important; }
+
+  /* Breadcrumbs */
+  .breadcrumbs { background: var(--dark2) !important; border-bottom: 1px solid var(--border) !important; color: rgba(255,255,255,0.45) !important; padding: 10px 20px !important; }
+  .breadcrumbs a { color: var(--teal) !important; }
+
+  /* Footer */
+  #footer { background: var(--dark2) !important; border-top: 1px solid var(--border) !important; color: rgba(255,255,255,0.3) !important; }
+
+  /* Nav sidebar */
+  #nav-sidebar, .sticky { background: var(--dark2) !important; border-right: 1px solid var(--border) !important; }
+  #nav-sidebar .module { background: transparent !important; border: none !important; }
+  #nav-sidebar .module caption { background: var(--card2) !important; color: var(--teal) !important; }
+  #nav-sidebar a, #nav-sidebar a:visited { color: rgba(255,255,255,0.65) !important; }
+  #nav-sidebar a:hover { color: var(--teal) !important; background: rgba(78,205,196,0.08) !important; }
+  #nav-sidebar .current-app > .section { color: var(--teal) !important; font-weight: 700 !important; }
+
+  /* App/module boxes */
+  .module { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; overflow: hidden !important; }
+  .module h2, .module caption { background: var(--card2) !important; color: var(--teal) !important; border-bottom: 1px solid var(--border) !important; padding: 10px 14px !important; }
+  .module table { background: var(--card) !important; width: 100% !important; }
+  .module th, .module td { border-bottom: 1px solid rgba(255,255,255,0.05) !important; color: rgba(255,255,255,0.8) !important; padding: 8px 12px !important; }
+  .module a, .module a:visited { color: var(--teal) !important; }
+  .module a:hover { color: white !important; }
+
+  /* Changelist */
+  #changelist, #changelist-form { background: var(--card) !important; border-radius: 10px !important; }
+  #result_list { border-radius: 8px !important; overflow: hidden !important; }
+  #result_list thead th { background: var(--card2) !important; color: rgba(255,255,255,0.5) !important; border-bottom: 1px solid var(--border) !important; }
+  #result_list thead th a, #result_list thead th a:visited { color: rgba(255,255,255,0.55) !important; }
+  #result_list thead th a:hover { color: var(--teal) !important; }
+  #result_list tbody tr { background: var(--card) !important; }
+  #result_list tbody tr:nth-child(even) { background: #1f242c !important; }
+  #result_list tbody tr:hover { background: rgba(78,205,196,0.07) !important; }
+  #result_list tbody td, #result_list tbody th { border-bottom: 1px solid rgba(255,255,255,0.04) !important; color: rgba(255,255,255,0.8) !important; }
+  #result_list tbody td a, #result_list tbody th a { color: var(--teal) !important; }
+
+  /* Changelist search/filter bar */
+  #changelist .actions, #toolbar { background: var(--card2) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; margin-bottom: 10px !important; }
+  #changelist-search { background: var(--card2) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; padding: 10px !important; margin-bottom: 10px !important; }
+  #searchbar, input[name="q"] { background: var(--dark) !important; color: white !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 7px 12px !important; }
+
+  /* Filter sidebar */
+  #changelist-filter { background: var(--card) !important; border-left: 1px solid var(--border) !important; }
+  #changelist-filter h2 { background: var(--card2) !important; color: var(--teal) !important; }
+  #changelist-filter h3 { color: rgba(255,255,255,0.55) !important; border-bottom: 1px solid var(--border) !important; }
+  #changelist-filter ul li a { color: rgba(255,255,255,0.7) !important; }
+  #changelist-filter ul li a:hover, #changelist-filter ul .selected { color: var(--teal) !important; }
+
+  /* Change form */
+  .change-form, #content > form { background: var(--dark) !important; }
+  fieldset { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; margin-bottom: 16px !important; padding: 0 !important; }
+  fieldset h2 { background: var(--card2) !important; color: var(--teal) !important; border-radius: 8px 8px 0 0 !important; padding: 10px 16px !important; margin: 0 !important; font-size: 0.9rem !important; letter-spacing: 1px !important; }
+  .form-row { border-bottom: 1px solid rgba(255,255,255,0.04) !important; padding: 10px 16px !important; }
+  label { color: rgba(255,255,255,0.65) !important; }
+  .help, p.help { color: rgba(255,255,255,0.35) !important; font-size: 0.8rem !important; }
+  .errorlist li { background: rgba(231,76,60,0.15) !important; color: #E74C3C !important; border-radius: 4px !important; padding: 5px 10px !important; list-style: none !important; }
+
+  /* All inputs */
+  input[type="text"], input[type="password"], input[type="email"],
+  input[type="number"], input[type="url"], input[type="search"],
+  select, textarea {
+    background: var(--dark) !important;
+    color: white !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 6px !important;
+    padding: 7px 10px !important;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--teal) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(78,205,196,0.12) !important;
+  }
+  select option { background: var(--card2) !important; color: white !important; }
+
+  /* Submit row */
+  .submit-row {
+    background: var(--card) !important;
+    border-top: 1px solid var(--border) !important;
+    border-radius: 0 0 10px 10px !important;
+    padding: 14px 16px !important;
+    display: flex !important; gap: 10px !important; align-items: center !important;
+  }
+  input[type="submit"], .button {
+    background: linear-gradient(45deg, var(--teal), #44A08D) !important;
+    color: #000 !important; border: none !important;
+    border-radius: 6px !important; padding: 9px 22px !important;
+    font-weight: 700 !important; cursor: pointer !important;
+    transition: opacity 0.2s !important;
+  }
+  input[type="submit"]:hover { opacity: 0.88 !important; }
+  a.deletelink {
+    background: linear-gradient(45deg, #E74C3C, #C0392B) !important;
+    color: white !important; border: none !important; border-radius: 6px !important;
+    padding: 9px 22px !important; font-weight: 700 !important;
+    text-decoration: none !important; display: inline-block !important;
+  }
+  input[type="submit"][name="_addanother"], input[type="submit"][name="_continue"] {
+    background: var(--card2) !important; color: rgba(255,255,255,0.8) !important;
+    border: 1px solid var(--border) !important;
   }
 
-  /* ── Header bar ── */
+  /* Pagination */
+  .paginator { background: var(--card) !important; color: rgba(255,255,255,0.45) !important; border-top: 1px solid var(--border) !important; padding: 12px 16px !important; }
+  .paginator a { color: var(--teal) !important; }
+  .paginator .this-page { background: var(--teal) !important; color: #000 !important; border-radius: 4px !important; padding: 2px 9px !important; font-weight: 700 !important; }
+
+  /* Messages */
+  .messagelist li { background: var(--card) !important; border-left: 4px solid var(--teal) !important; color: white !important; border-radius: 7px !important; padding: 11px 16px !important; margin-bottom: 8px !important; list-style: none !important; }
+  .messagelist li.success { border-color: var(--green) !important; }
+  .messagelist li.warning { border-color: var(--yellow) !important; }
+  .messagelist li.error   { border-color: var(--red) !important; }
+
+  /* Object tools */
+  .object-tools a { background: var(--card2) !important; color: var(--teal) !important; border: 1px solid var(--border) !important; border-radius: 20px !important; padding: 6px 14px !important; }
+  .object-tools a:hover { background: rgba(78,205,196,0.12) !important; }
+
+  /* Inline groups */
+  .inline-group, .inline-related { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; }
+  .inline-group h2 { background: var(--card2) !important; color: var(--teal) !important; border-radius: 6px 6px 0 0 !important; }
+  .add-row a { color: var(--teal) !important; }
+  .inline-deletelink { color: var(--red) !important; }
+
+  /* Date/time widgets */
+  .datetimeshortcuts a, .timezonewarning { color: var(--teal) !important; }
+  .calendar caption, .calendarbox { background: var(--card2) !important; color: white !important; }
+  .calendar td a { color: var(--teal) !important; }
+
+  /* Login page */
+  .login #container { background: var(--dark) !important; }
+  .login #content-main { background: transparent !important; }
+  .login #content {
+    background: var(--card) !important; border-radius: 16px !important;
+    border: 1px solid var(--border) !important; padding: 30px !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
+  }
+  .login .submit-row input { width: 100% !important; padding: 12px !important; font-size: 1rem !important; }
+
+  /* ══════════════════════════════════════════════════════════
+     DASHBOARD STYLES
+  ══════════════════════════════════════════════════════════ */
+  .dash-wrap { font-family: 'Rajdhani', sans-serif; max-width: 1400px; margin: 0 auto; }
+
   .dash-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 28px;
-    padding: 18px 24px;
-    background: var(--card-bg);
-    border-radius: 14px;
-    border: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 28px; padding: 18px 24px;
+    background: var(--card); border-radius: 14px; border: 1px solid var(--border);
   }
   .dash-header h1 {
-    display: block !important;
-    color: var(--teal);
-    font-family: 'Orbitron', monospace;
-    font-size: 1.4rem;
-    margin: 0;
-    letter-spacing: 2px;
+    display: block !important; color: var(--teal);
+    font-family: 'Orbitron', monospace; font-size: 1.4rem;
+    margin: 0; letter-spacing: 2px;
   }
   .dash-header h1 span { color: white; }
 
-  /* ── Clock ── */
   .clock-block { text-align: right; }
-  .clock-time {
-    font-family: 'Orbitron', monospace;
-    font-size: 2rem;
-    color: var(--teal);
-    letter-spacing: 4px;
-    line-height: 1;
-  }
-  .clock-date {
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.5);
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
+  .clock-time { font-family: 'Orbitron', monospace; font-size: 2rem; color: var(--teal); letter-spacing: 4px; line-height: 1; }
+  .clock-date { font-size: 0.85rem; color: rgba(255,255,255,0.45); margin-top: 4px; letter-spacing: 1px; }
 
-  /* ── Stat cards ── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 700px)  { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stats-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width:1200px) { .stats-grid { grid-template-columns: repeat(3,1fr); } }
+  @media (max-width:700px)  { .stats-grid { grid-template-columns: repeat(2,1fr); } }
 
   .stat-card {
-    background: var(--card-bg);
-    border-radius: 14px;
-    padding: 20px 16px;
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: default;
+    background: var(--card); border-radius: 14px; padding: 20px 16px;
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s; cursor: default;
   }
-  .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent);
-  }
-  .stat-card .icon {
-    font-size: 2rem;
-    margin-bottom: 10px;
-    display: block;
-  }
-  .stat-card .num {
-    font-family: 'Orbitron', monospace;
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .stat-card .lbl {
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.55);
-    margin-top: 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .stat-card .trend {
-    position: absolute;
-    bottom: 12px; right: 14px;
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.3);
-  }
+  .stat-card:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(0,0,0,0.5); }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: var(--accent); border-radius: 14px 14px 0 0; }
+  .stat-card .icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+  .stat-card .num { font-family:'Orbitron',monospace; font-size:2.2rem; font-weight:700; color: var(--accent); line-height:1; }
+  .stat-card .lbl { font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:6px; text-transform:uppercase; letter-spacing:1px; }
 
-  /* ── Charts row ── */
-  .charts-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 18px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 1000px) { .charts-row { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 650px)  { .charts-row { grid-template-columns: 1fr; } }
+  .charts-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; margin-bottom:24px; }
+  @media (max-width:1000px) { .charts-row { grid-template-columns:1fr 1fr; } }
+  @media (max-width:650px)  { .charts-row { grid-template-columns:1fr; } }
 
-  .chart-card {
-    background: var(--card-bg);
-    border-radius: 14px;
-    padding: 20px;
-    border: 1px solid var(--border);
-  }
-  .chart-card h3 {
-    color: white;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin: 0 0 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .chart-card h3 span { color: var(--teal); }
+  .chart-card { background:var(--card); border-radius:14px; padding:20px; border:1px solid var(--border); }
+  .chart-card h3 { color:rgba(255,255,255,0.9); font-size:0.88rem; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 16px 0; display:flex; align-items:center; gap:8px; }
+  .chart-card h3 span { color:var(--teal); }
   canvas { max-height: 220px; }
 
-  /* ── Bottom row ── */
-  .bottom-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-  @media (max-width: 750px) { .bottom-row { grid-template-columns: 1fr; } }
+  .bottom-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:750px) { .bottom-row { grid-template-columns:1fr; } }
 
-  .table-card {
-    background: var(--card-bg);
-    border-radius: 14px;
-    padding: 20px;
-    border: 1px solid var(--border);
-  }
-  .table-card h3 {
-    color: white;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin: 0 0 14px 0;
-  }
-  .dash-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  .dash-table th {
-    color: rgba(255,255,255,0.4);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-  }
-  .dash-table td {
-    color: rgba(255,255,255,0.85);
-    padding: 10px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .dash-table tr:last-child td { border-bottom: none; }
-  .dash-table tr:hover td { background: rgba(78,205,196,0.05); }
+  .table-card { background:var(--card); border-radius:14px; padding:20px; border:1px solid var(--border); }
+  .table-card h3 { color:rgba(255,255,255,0.9); font-size:0.88rem; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 14px 0; }
+  .dash-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  .dash-table th { color:rgba(255,255,255,0.38); font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; background: transparent !important; }
+  .dash-table td { color:rgba(255,255,255,0.82); padding:10px; border-bottom:1px solid rgba(255,255,255,0.04); background: transparent !important; }
+  .dash-table tr:last-child td { border-bottom:none; }
+  .dash-table tr:hover td { background:rgba(78,205,196,0.05) !important; }
 
-  .badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-  .badge-draft    { background: rgba(149,165,166,0.2); color: #95A5A6; }
-  .badge-pending  { background: rgba(243,156,18,0.2);  color: #F39C12; }
-  .badge-approved { background: rgba(46,204,113,0.2);  color: #2ECC71; }
-  .badge-rejected { background: rgba(231,76,60,0.2);   color: #E74C3C; }
-  .badge-paid     { background: rgba(52,152,219,0.2);  color: #3498DB; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+  .badge-draft    { background:rgba(149,165,166,0.18); color:#95A5A6; }
+  .badge-pending  { background:rgba(243,156,18,0.18);  color:#F39C12; }
+  .badge-approved { background:rgba(46,204,113,0.18);  color:#2ECC71; }
+  .badge-rejected { background:rgba(231,76,60,0.18);   color:#E74C3C; }
+  .badge-paid     { background:rgba(52,152,219,0.18);  color:#3498DB; }
 
-  /* ── Quick links ── */
-  .quick-links {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 700px) { .quick-links { grid-template-columns: repeat(2, 1fr); } }
+  .quick-links { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:24px; }
+  @media (max-width:700px) { .quick-links { grid-template-columns:repeat(2,1fr); } }
 
   .ql-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: rgba(255,255,255,0.8);
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    letter-spacing: 0.5px;
+    display:flex; align-items:center; gap:10px; padding:13px 16px;
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    color:rgba(255,255,255,0.75); text-decoration:none; font-size:0.85rem;
+    font-weight:600; transition:all 0.2s; letter-spacing:0.5px;
   }
-  .ql-btn:hover {
-    background: rgba(78,205,196,0.1);
-    border-color: var(--teal);
-    color: var(--teal);
-    transform: translateY(-2px);
-    text-decoration: none;
-  }
-  .ql-btn .ql-icon { font-size: 1.3rem; }
+  .ql-btn:hover { background:rgba(78,205,196,0.1); border-color:var(--teal); color:var(--teal); transform:translateY(-2px); text-decoration:none; }
+  .ql-btn .ql-icon { font-size:1.3rem; }
 
-  /* ── Progress bars ── */
   .prog-row { margin-bottom: 14px; }
-  .prog-label {
-    display: flex;
-    justify-content: space-between;
-    color: rgba(255,255,255,0.7);
-    font-size: 0.82rem;
-    margin-bottom: 5px;
-  }
-  .prog-bar {
-    height: 8px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .prog-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 1s ease;
-  }
+  .prog-label { display:flex; justify-content:space-between; color:rgba(255,255,255,0.65); font-size:0.82rem; margin-bottom:5px; }
+  .prog-bar { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
+  .prog-fill { height:100%; border-radius:4px; transition:width 1.2s ease; }
 
-  /* Hide default django app list */
-  #content-main > .app-* { display: none; }
-  .app-list-wrapper { display: none !important; }
-  #content > h1 { display: none !important; }
+  .app-list-wrapper { display:none !important; }
 </style>
 {% endblock %}
 
@@ -276,34 +272,28 @@
 
   <!-- Stat Cards -->
   <div class="stats-grid">
-    <div class="stat-card" style="--accent: var(--teal);">
-      <span class="icon"></span>
-      <div class="num" id="stat-total">{{ total_bills }}</div>
+    <div class="stat-card" style="--accent:var(--teal);">
+      <div class="num">{{ total_bills }}</div>
       <div class="lbl">মোট বিল</div>
     </div>
-    <div class="stat-card" style="--accent: var(--yellow);">
-      <span class="icon"></span>
-      <div class="num" id="stat-pending">{{ pending_bills }}</div>
+    <div class="stat-card" style="--accent:var(--yellow);">
+      <div class="num">{{ pending_bills }}</div>
       <div class="lbl">অপেক্ষমান</div>
     </div>
-    <div class="stat-card" style="--accent: var(--green);">
-      <span class="icon"></span>
-      <div class="num" id="stat-approved">{{ approved_bills }}</div>
+    <div class="stat-card" style="--accent:var(--green);">
+      <div class="num">{{ approved_bills }}</div>
       <div class="lbl">অনুমোদিত</div>
     </div>
-    <div class="stat-card" style="--accent: var(--red);">
-      <span class="icon"></span>
-      <div class="num" id="stat-rejected">{{ rejected_bills }}</div>
+    <div class="stat-card" style="--accent:var(--red);">
+      <div class="num">{{ rejected_bills }}</div>
       <div class="lbl">বাতিল</div>
-      <div class="trend">প্রত্যাখ্যাত</div>
     </div>
-    <div class="stat-card" style="--accent: var(--blue);">
-      <span class="icon"></span>
-      <div class="num" id="stat-paid">{{ paid_bills }}</div>
+    <div class="stat-card" style="--accent:var(--blue);">
+      <div class="num">{{ paid_bills }}</div>
       <div class="lbl">পরিশোধিত</div>
     </div>
-    <div class="stat-card" style="--accent: var(--purple);">
-      <span class="icon"></span>
+    <div class="stat-card" style="--accent:var(--purple);">
+      <span class="icon">👤</span>
       <div class="num">{{ total_users }}</div>
       <div class="lbl">মোট ব্যবহারকারী</div>
     </div>
@@ -311,101 +301,83 @@
 
   <!-- Quick Links -->
   <div class="quick-links">
-    <a href="/admin/auth/user/" class="ql-btn"><span class="ql-icon"></span> ব্যবহারকারী</a>
-    <a href="/admin/core/worktype/" class="ql-btn"><span class="ql-icon"></span> কাজের ধরণ</a>
-    <a href="/admin/core/benefit/" class="ql-btn"><span class="ql-icon"></span> উপকাজ</a>
-    <a href="/admin/core/sliderimage/" class="ql-btn"><span class="ql-icon"></span> স্লাইডার</a>
+    <a href="/admin/auth/user/" class="ql-btn"></span> ব্যবহারকারী</a>
+    <a href="/admin/core/worktype/" class="ql-btn"></span> কাজের ধরণ</a>
+    <a href="/admin/core/benefit/" class="ql-btn"></span> উপকাজ</a>
+    <a href="/admin/core/sliderimage/" class="ql-btn"></span> স্লাইডার</a>
   </div>
 
-  <!-- Charts Row -->
+  <!-- Charts -->
   <div class="charts-row">
-
-    <!-- Doughnut: Bill Status -->
     <div class="chart-card">
       <h3><span>●</span> বিলের অবস্থা</h3>
       <canvas id="donutChart"></canvas>
     </div>
-
-    <!-- Bar: Monthly bills -->
     <div class="chart-card">
-      <h3><span>●</span> মাসিক বিল (বার চার্ট)</h3>
+      <h3><span>●</span> মাসিক বিল</h3>
       <canvas id="barChart"></canvas>
     </div>
-
-    <!-- Progress: Status breakdown -->
     <div class="chart-card">
       <h3><span>●</span> অবস্থানের অনুপাত</h3>
-      <div style="margin-top: 10px;">
+      <div style="margin-top:10px;">
         {% if total_bills > 0 %}
         <div class="prog-row">
           <div class="prog-label"><span>অপেক্ষমান</span><span>{{ pending_bills }}/{{ total_bills }}</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio pending_bills total_bills 100 %}%; background: #F39C12;"></div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio pending_bills total_bills 100 %}%;background:#F39C12;"></div></div>
         </div>
         <div class="prog-row">
           <div class="prog-label"><span>অনুমোদিত</span><span>{{ approved_bills }}/{{ total_bills }}</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio approved_bills total_bills 100 %}%; background: #2ECC71;"></div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio approved_bills total_bills 100 %}%;background:#2ECC71;"></div></div>
         </div>
         <div class="prog-row">
           <div class="prog-label"><span>বাতিল</span><span>{{ rejected_bills }}/{{ total_bills }}</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio rejected_bills total_bills 100 %}%; background: #E74C3C;"></div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio rejected_bills total_bills 100 %}%;background:#E74C3C;"></div></div>
         </div>
         <div class="prog-row">
           <div class="prog-label"><span>পরিশোধিত</span><span>{{ paid_bills }}/{{ total_bills }}</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio paid_bills total_bills 100 %}%; background: #3498DB;"></div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio paid_bills total_bills 100 %}%;background:#3498DB;"></div></div>
         </div>
         <div class="prog-row">
           <div class="prog-label"><span>খসড়া</span><span>{{ draft_bills }}/{{ total_bills }}</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio draft_bills total_bills 100 %}%; background: #95A5A6;"></div></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:{% widthratio draft_bills total_bills 100 %}%;background:#95A5A6;"></div></div>
         </div>
         {% else %}
-        <p style="color:rgba(255,255,255,0.3); text-align:center; margin-top:40px;">কোনো বিল নেই</p>
+        <p style="color:rgba(255,255,255,0.3);text-align:center;margin-top:40px;">কোনো বিল নেই</p>
         {% endif %}
-
-        <!-- Total amount -->
-        <div style="margin-top: 24px; padding: 16px; background: rgba(78,205,196,0.07); border-radius: 10px; border: 1px solid var(--border);">
-          <div style="color: rgba(255,255,255,0.5); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px;">মোট টাকার পরিমাণ</div>
-          <div style="font-family: 'Orbitron', monospace; font-size: 1.5rem; color: var(--teal); margin-top: 6px;">
+        <div style="margin-top:24px;padding:16px;background:rgba(78,205,196,0.07);border-radius:10px;border:1px solid var(--border);">
+          <div style="color:rgba(255,255,255,0.45);font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;">মোট টাকার পরিমাণ</div>
+          <div style="font-family:'Orbitron',monospace;font-size:1.5rem;color:var(--teal);margin-top:6px;">
             ৳ {{ total_amount|floatformat:0 }}
           </div>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- Bottom Row: Recent Bills + Recent Users -->
+  <!-- Tables -->
   <div class="bottom-row">
-
     <div class="table-card">
       <h3>🕐 সাম্প্রতিক বিলসমূহ</h3>
       <table class="dash-table">
-        <thead>
-          <tr>
-            <th>বিল নম্বর</th>
-            <th>ব্যবহারকারী</th>
-            <th>পরিমাণ</th>
-            <th>অবস্থা</th>
-          </tr>
-        </thead>
+        <thead><tr><th>বিল নম্বর</th><th>ব্যবহারকারী</th><th>পরিমাণ</th><th>অবস্থা</th></tr></thead>
         <tbody>
           {% for bill in recent_bills %}
           <tr>
-            <td><a href="/admin/core/bill/{{ bill.id }}/change/" style="color: var(--teal); text-decoration: none;">{{ bill.bill_number }}</a></td>
-            <td style="color: rgba(255,255,255,0.7);">{{ bill.user.get_full_name|default:bill.user.username }}</td>
-            <td style="color: var(--green);">৳{{ bill.total_amount|floatformat:0 }}</td>
+            <td><a href="/admin/core/bill/{{ bill.id }}/change/" style="color:var(--teal);text-decoration:none;">{{ bill.bill_number }}</a></td>
+            <td>{{ bill.user.get_full_name|default:bill.user.username }}</td>
+            <td style="color:var(--green);">৳{{ bill.total_amount|floatformat:0 }}</td>
             <td>
               <span class="badge badge-{{ bill.status }}">
                 {% if bill.status == 'draft' %}খসড়া
                 {% elif bill.status == 'pending' %}অপেক্ষমান
                 {% elif bill.status == 'approved' %}অনুমোদিত
                 {% elif bill.status == 'rejected' %}বাতিল
-                {% elif bill.status == 'paid' %}পরিশোধিত
-                {% endif %}
+                {% elif bill.status == 'paid' %}পরিশোধিত{% endif %}
               </span>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" style="text-align:center; color: rgba(255,255,255,0.3); padding: 30px;">কোনো বিল নেই</td></tr>
+          <tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">কোনো বিল নেই</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -414,138 +386,94 @@
     <div class="table-card">
       <h3>👥 সাম্প্রতিক ব্যবহারকারী</h3>
       <table class="dash-table">
-        <thead>
-          <tr>
-            <th>নাম</th>
-            <th>পদবী</th>
-            <th>যোগদান</th>
-          </tr>
-        </thead>
+        <thead><tr><th>নাম</th><th>পদবী</th><th>যোগদান</th></tr></thead>
         <tbody>
           {% for u in recent_users %}
           <tr>
-            <td><a href="/admin/auth/user/{{ u.id }}/change/" style="color: var(--teal); text-decoration: none;">{{ u.get_full_name|default:u.username }}</a></td>
-            <td style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">{{ u.profile.user_type|default:"—" }}</td>
-            <td style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">{{ u.date_joined|date:"d M Y" }}</td>
+            <td><a href="/admin/auth/user/{{ u.id }}/change/" style="color:var(--teal);text-decoration:none;">{{ u.get_full_name|default:u.username }}</a></td>
+            <td style="color:rgba(255,255,255,0.55);font-size:0.8rem;">{{ u.profile.user_type|default:"—" }}</td>
+            <td style="color:rgba(255,255,255,0.35);font-size:0.8rem;">{{ u.date_joined|date:"d M Y" }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="3" style="text-align:center; color: rgba(255,255,255,0.3); padding: 30px;">কোনো ব্যবহারকারী নেই</td></tr>
+          <tr><td colspan="3" style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">কোনো ব্যবহারকারী নেই</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-
   </div>
 
 </div>
 
-<!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 // ── Clock ──────────────────────────────────────────────────
-// ── Clock ──────────────────────────────────────────────────
 function updateClock() {
-    const now  = new Date();
-    const days = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+    const now    = new Date();
+    const days   = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
     const months = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
-
-    let hours   = now.getHours();
-    const ampm  = hours >= 12 ? 'PM' : 'AM';
-    hours       = hours % 12 || 12;          // 0 → 12, 13 → 1, etc.
-    const mm    = String(now.getMinutes()).padStart(2, '0');
-    const ss    = String(now.getSeconds()).padStart(2, '0');
-
-    document.getElementById('clock').textContent = `${hours}:${mm}:${ss} ${ampm}`;
+    let h = now.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('clock').textContent = `${h}:${mm}:${ss} ${ampm}`;
     document.getElementById('clock-date').textContent =
         `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 updateClock();
 setInterval(updateClock, 1000);
 
-// ── Shared chart defaults ──────────────────────────────────
-Chart.defaults.color = 'rgba(255,255,255,0.55)';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
-Chart.defaults.font.family = "'Rajdhani', sans-serif";
+// ── Chart defaults ─────────────────────────────────────────
+Chart.defaults.color = 'rgba(255,255,255,0.5)';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'Rajdhani',sans-serif";
 
-// ── Doughnut Chart ─────────────────────────────────────────
-const donutCtx = document.getElementById('donutChart').getContext('2d');
-new Chart(donutCtx, {
+// ── Doughnut ───────────────────────────────────────────────
+new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
         labels: ['অপেক্ষমান','অনুমোদিত','বাতিল','পরিশোধিত','খসড়া'],
         datasets: [{
-            data: [
-                {{ pending_bills }},
-                {{ approved_bills }},
-                {{ rejected_bills }},
-                {{ paid_bills }},
-                {{ draft_bills }}
-            ],
-            backgroundColor: [
-                'rgba(243,156,18,0.85)',
-                'rgba(46,204,113,0.85)',
-                'rgba(231,76,60,0.85)',
-                'rgba(52,152,219,0.85)',
-                'rgba(149,165,166,0.85)',
-            ],
-            borderColor: '#22262f',
-            borderWidth: 3,
-            hoverOffset: 8,
+            data: [{{ pending_bills }},{{ approved_bills }},{{ rejected_bills }},{{ paid_bills }},{{ draft_bills }}],
+            backgroundColor: ['rgba(243,156,18,0.85)','rgba(46,204,113,0.85)','rgba(231,76,60,0.85)','rgba(52,152,219,0.85)','rgba(149,165,166,0.85)'],
+            borderColor: '#1c2028', borderWidth: 3, hoverOffset: 8,
         }]
     },
-    options: {
-        cutout: '65%',
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: { padding: 12, font: { size: 12 } }
-            }
-        }
-    }
+    options: { cutout:'65%', plugins:{ legend:{ position:'bottom', labels:{ padding:14, font:{size:12} } } } }
 });
 
-// ── Bar Chart (monthly) ────────────────────────────────────
-const barCtx = document.getElementById('barChart').getContext('2d');
-const monthlyData   = {{ monthly_data|safe }};
-const monthlyLabels = {{ monthly_labels|safe }};
-
-new Chart(barCtx, {
+// ── Bar ────────────────────────────────────────────────────
+new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
-        labels: monthlyLabels,
+        labels: {{ monthly_labels|safe }},
         datasets: [{
             label: 'বিলের সংখ্যা',
-            data: monthlyData,
-            backgroundColor: 'rgba(78,205,196,0.7)',
-            borderColor: '#4ECDC4',
-            borderWidth: 1,
-            borderRadius: 6,
-            hoverBackgroundColor: 'rgba(78,205,196,1)',
+            data: {{ monthly_data|safe }},
+            backgroundColor: 'rgba(78,205,196,0.65)', borderColor:'#4ECDC4',
+            borderWidth:1, borderRadius:6, hoverBackgroundColor:'rgba(78,205,196,1)',
         }]
     },
     options: {
-        plugins: { legend: { display: false } },
+        plugins: { legend:{display:false} },
         scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }
+            x: { grid:{display:false}, ticks:{font:{size:11}} },
+            y: { beginAtZero:true, ticks:{stepSize:1,font:{size:11}}, grid:{color:'rgba(255,255,255,0.05)'} }
         }
     }
 });
 
-// ── Animate stat numbers ───────────────────────────────────
-function animateCount(el, target) {
-    let current = 0;
-    const step  = Math.ceil(target / 40);
-    const timer = setInterval(() => {
-        current = Math.min(current + step, target);
-        el.textContent = current;
-        if (current >= target) clearInterval(timer);
-    }, 30);
-}
+// ── Animate counters ───────────────────────────────────────
 document.querySelectorAll('.stat-card .num').forEach(el => {
-    const val = parseInt(el.textContent) || 0;
+    const target = parseInt(el.textContent) || 0;
     el.textContent = '0';
-    setTimeout(() => animateCount(el, val), 200);
+    let cur = 0;
+    const step = Math.max(1, Math.ceil(target / 40));
+    const t = setInterval(() => {
+        cur = Math.min(cur + step, target);
+        el.textContent = cur;
+        if (cur >= target) clearInterval(t);
+    }, 30);
 });
 </script>
 {% endblock %}

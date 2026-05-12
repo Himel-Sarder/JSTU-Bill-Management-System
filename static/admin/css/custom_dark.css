@@ -1,0 +1,286 @@
+/* ══════════════════════════════════════════════════════
+   FORCE FULL DARK MODE — overrides Jazzmin darkly theme
+   Place at: static/admin/css/custom_dark.css
+   Then set in settings.py: "custom_css": "admin/css/custom_dark.css"
+══════════════════════════════════════════════════════ */
+
+:root {
+  --dk-bg:      #0f1117;
+  --dk-bg2:     #161920;
+  --dk-card:    #1c2028;
+  --dk-card2:   #232830;
+  --dk-teal:    #4ECDC4;
+  --dk-border:  rgba(78, 205, 196, 0.18);
+  --dk-text:    rgba(255, 255, 255, 0.85);
+  --dk-muted:   rgba(255, 255, 255, 0.45);
+}
+
+/* ── Page / wrappers ───────────────────────────────── */
+html, body,
+.wrapper, .content-wrapper,
+.main-sidebar, .main-header,
+.main-footer, .control-sidebar,
+#django-content, #content-main {
+  background-color: var(--dk-bg) !important;
+  color: var(--dk-text) !important;
+}
+
+/* ── Content area (main white box) ─────────────────── */
+.content, .content-fluid,
+.container-fluid, #content,
+#content-main, .col-12,
+.card, .card-body,
+.card-header, .card-footer,
+.module, .module-footer,
+.change-list, .changelist,
+#changelist, #changelist-form,
+.results, #result_list,
+.inline-group {
+  background-color: var(--dk-card) !important;
+  color: var(--dk-text) !important;
+  border-color: var(--dk-border) !important;
+}
+
+/* ── Card headers ───────────────────────────────────── */
+.card-header, .card-title,
+.module h2, .module caption,
+fieldset h2, fieldset legend,
+.column-header {
+  background-color: var(--dk-card2) !important;
+  color: var(--dk-teal) !important;
+  border-color: var(--dk-border) !important;
+}
+
+/* ── Tables ─────────────────────────────────────────── */
+table, thead, tbody, tfoot,
+tr, th, td,
+.table, .table-bordered,
+.table-striped, .table-hover,
+#result_list thead th,
+#result_list tbody tr,
+#result_list tbody td {
+  background-color: var(--dk-card) !important;
+  color: var(--dk-text) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+#result_list thead th {
+  background-color: var(--dk-card2) !important;
+  color: var(--dk-muted) !important;
+}
+#result_list tbody tr:nth-child(even) {
+  background-color: #1f242c !important;
+}
+#result_list tbody tr:hover td {
+  background-color: rgba(78, 205, 196, 0.07) !important;
+}
+#result_list tbody td a,
+#result_list tbody th a {
+  color: var(--dk-teal) !important;
+}
+
+/* ── Forms / inputs ─────────────────────────────────── */
+input, input[type="text"],
+input[type="password"], input[type="email"],
+input[type="number"], input[type="search"],
+input[type="url"], input[type="tel"],
+select, textarea,
+.form-control, .select2-selection,
+.select2-selection__rendered,
+.select2-dropdown,
+.select2-results__option {
+  background-color: var(--dk-bg) !important;
+  color: var(--dk-text) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+input:focus, select:focus, textarea:focus,
+.form-control:focus {
+  border-color: var(--dk-teal) !important;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.12) !important;
+  outline: none !important;
+}
+.select2-selection--single,
+.select2-container--default .select2-selection--single {
+  background-color: var(--dk-bg) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.select2-results__option--highlighted {
+  background-color: rgba(78, 205, 196, 0.2) !important;
+  color: var(--dk-teal) !important;
+}
+.select2-dropdown {
+  background-color: var(--dk-card2) !important;
+  border-color: var(--dk-border) !important;
+}
+
+/* ── Labels / text ──────────────────────────────────── */
+label, .form-group label,
+.help-block, .help-text,
+p.help, .form-text {
+  color: var(--dk-muted) !important;
+}
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4 {
+  color: var(--dk-text) !important;
+}
+
+/* ── Fieldsets ──────────────────────────────────────── */
+fieldset {
+  background-color: var(--dk-card) !important;
+  border: 1px solid var(--dk-border) !important;
+  border-radius: 10px !important;
+}
+.form-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ── Breadcrumb ─────────────────────────────────────── */
+.breadcrumb, ol.breadcrumb,
+.content-header .breadcrumb {
+  background-color: transparent !important;
+  color: var(--dk-muted) !important;
+}
+.breadcrumb-item a,
+.breadcrumb-item.active {
+  color: var(--dk-teal) !important;
+}
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--dk-muted) !important;
+}
+
+/* ── Pagination ─────────────────────────────────────── */
+.paginator, .pagination,
+.page-link {
+  background-color: var(--dk-card) !important;
+  border-color: var(--dk-border) !important;
+  color: var(--dk-teal) !important;
+}
+.paginator .this-page,
+.page-item.active .page-link {
+  background-color: var(--dk-teal) !important;
+  border-color: var(--dk-teal) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+}
+.page-link:hover {
+  background-color: rgba(78, 205, 196, 0.12) !important;
+  color: var(--dk-teal) !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn-secondary, .btn-default {
+  background-color: var(--dk-card2) !important;
+  color: var(--dk-text) !important;
+  border-color: var(--dk-border) !important;
+}
+.btn-secondary:hover {
+  background-color: rgba(78, 205, 196, 0.12) !important;
+  border-color: var(--dk-teal) !important;
+}
+
+/* ── Submit row ─────────────────────────────────────── */
+.submit-row {
+  background-color: var(--dk-card) !important;
+  border-top: 1px solid var(--dk-border) !important;
+  border-radius: 0 0 10px 10px !important;
+}
+
+/* ── Object tools ───────────────────────────────────── */
+.object-tools a {
+  background-color: var(--dk-card2) !important;
+  color: var(--dk-teal) !important;
+  border: 1px solid var(--dk-border) !important;
+}
+.object-tools a:hover {
+  background-color: rgba(78, 205, 196, 0.12) !important;
+}
+
+/* ── Filter sidebar ─────────────────────────────────── */
+#changelist-filter,
+.list-group, .list-group-item {
+  background-color: var(--dk-card) !important;
+  border-color: var(--dk-border) !important;
+  color: var(--dk-text) !important;
+}
+#changelist-filter h2 {
+  background-color: var(--dk-card2) !important;
+  color: var(--dk-teal) !important;
+}
+#changelist-filter h3 {
+  color: var(--dk-muted) !important;
+  border-bottom-color: var(--dk-border) !important;
+}
+#changelist-filter li a {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+#changelist-filter li a:hover,
+#changelist-filter .selected {
+  color: var(--dk-teal) !important;
+}
+
+/* ── Alerts / messages ──────────────────────────────── */
+.alert, .alert-info,
+.alert-success, .alert-warning, .alert-danger,
+.messagelist li {
+  background-color: var(--dk-card) !important;
+  border-left: 4px solid var(--dk-teal) !important;
+  color: var(--dk-text) !important;
+  border-radius: 7px !important;
+}
+.alert-success, .messagelist li.success { border-left-color: #2ECC71 !important; }
+.alert-warning, .messagelist li.warning { border-left-color: #F39C12 !important; }
+.alert-danger,  .messagelist li.error   { border-left-color: #E74C3C !important; }
+
+/* ── Dropdowns ──────────────────────────────────────── */
+.dropdown-menu {
+  background-color: var(--dk-card2) !important;
+  border-color: var(--dk-border) !important;
+}
+.dropdown-item {
+  color: var(--dk-text) !important;
+}
+.dropdown-item:hover {
+  background-color: rgba(78, 205, 196, 0.1) !important;
+  color: var(--dk-teal) !important;
+}
+
+/* ── Inline admin ───────────────────────────────────── */
+.inline-related, .inline-group {
+  background-color: var(--dk-card) !important;
+  border: 1px solid var(--dk-border) !important;
+  border-radius: 8px !important;
+}
+.inline-group h2 {
+  background-color: var(--dk-card2) !important;
+  color: var(--dk-teal) !important;
+}
+
+/* ── Action bar ─────────────────────────────────────── */
+.actions, #changelist .actions {
+  background-color: var(--dk-card2) !important;
+  border: 1px solid var(--dk-border) !important;
+  border-radius: 8px !important;
+  color: var(--dk-text) !important;
+}
+
+/* ── Search bar ─────────────────────────────────────── */
+#changelist-search,
+#toolbar {
+  background-color: var(--dk-card2) !important;
+  border: 1px solid var(--dk-border) !important;
+  border-radius: 8px !important;
+}
+
+/* ── Misc text ──────────────────────────────────────── */
+p, span, li, a,
+.text-muted, small {
+  color: var(--dk-text) !important;
+}
+a { color: var(--dk-teal) !important; }
+a:hover { color: white !important; }
+hr { border-color: var(--dk-border) !important; }
+
+/* ── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--dk-bg); }
+::-webkit-scrollbar-thumb { background: rgba(78,205,196,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(78,205,196,0.6); }

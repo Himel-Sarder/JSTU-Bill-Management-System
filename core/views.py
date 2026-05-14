@@ -469,8 +469,22 @@ def delete_bill(request, bill_id):
 
     is_chairman = request.user.is_authenticated and request.user.profile.user_type == 'চেয়ারম্যান'
 
-    if not is_chairman:
-        # Must own the bill
+    if is_chairman:
+        # ── Chairman: permanently delete any bill, any status, no restrictions ──
+        bill_number = bill.bill_number
+        bill_status = bill.status
+        bill.delete()
+
+        log_activity(
+            request.user,
+            'Bill permanently deleted by chairman',
+            f'Bill {bill_number} (status: {bill_status}) permanently deleted by chairman'
+        )
+        messages.success(request, f'বিল {bill_number} স্থায়ীভাবে ডিলিট করা হয়েছে!')
+        return redirect('all_bills')
+
+    else:
+        # ── Regular user: must own the bill ──
         if bill.user != request.user:
             messages.error(request, 'আপনার এই বিল ডিলিট করার অনুমতি নেই।')
             return redirect('my_bills')
@@ -483,34 +497,15 @@ def delete_bill(request, bill_id):
             messages.error(request, 'পরিশোধিত বিল ডিলিট করা যাবে না।')
             return redirect('bill_status')
 
-        # draft, rejected, approved — all allowed to delete
+        # draft, rejected, approved — allowed
+        was_draft = bill.status == 'draft'
         bill_number = bill.bill_number
         bill.delete()
 
         log_activity(request.user, 'Bill deleted', f'Bill {bill_number} permanently deleted')
         messages.success(request, f'বিল {bill_number} স্থায়ীভাবে ডিলিট করা হয়েছে!')
 
-        # Redirect to my_bills if it was a draft, otherwise bill_status
-        if bill.status == 'draft':
-            return redirect('my_bills')
-        return redirect('bill_status')
-
-    else:
-        # Chairman logic
-        if bill.status == 'pending':
-            messages.error(request, 'অপেক্ষমান বিল ডিলিট করা যাবে না।')
-            return redirect('all_bills')
-        elif bill.status == 'paid':
-            messages.error(request, 'পরিশোধিত বিল ডিলিট করা যাবে না।')
-            return redirect('all_bills')
-
-        bill.is_hidden_from_chairman = True
-        bill.save()
-
-        log_activity(request.user, 'Bill hidden from chairman',
-                    f'Bill {bill.bill_number} hidden from chairman view')
-        messages.success(request, f'বিল {bill.bill_number} চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হয়েছে।')
-        return redirect('all_bills')
+        return redirect('my_bills' if was_draft else 'bill_status')
 
 
 @login_required

@@ -7,10 +7,10 @@ SECRET_KEY = 'django-insecure-0(y0o9u=ml@n6&i^qcpn0b)ad41#eotn-+@*@loo+v=+%gk-ne
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', '.onrender.com']
+ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    'jazzmin',     
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -58,18 +58,10 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 LANGUAGE_CODE = 'en-us'
@@ -92,7 +84,7 @@ LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'home'
 
 # WeasyPrint configuration
-WEASYPRINT_BASEURL = 'http://localhost:8000'  # For development
+WEASYPRINT_BASEURL = 'http://localhost:8000'
 
 # Font configuration
 FONT_CONFIG = {
@@ -101,15 +93,12 @@ FONT_CONFIG = {
 }
 
 
-
-
-
 JAZZMIN_SETTINGS = {
     # ── Branding ───────────────────────────────────────────────
     "site_title": "BillM Admin",
     "site_header": "বিল ম্যানেজমেন্ট",
     "site_brand": "BillM",
-    "site_logo": None,  # put your logo path here if you have one e.g. "img/logo.png"
+    "site_logo": None,
     "login_logo": None,
     "login_logo_dark": None,
     "site_logo_classes": "img-circle",
@@ -118,13 +107,12 @@ JAZZMIN_SETTINGS = {
     "copyright": "BillM © 2026",
     "search_model": ["auth.user", "core.Bill"],
     "user_avatar": None,
-    "custom_css": "admin/css/custom_dark.css", 
 
     # ── Top Menu ───────────────────────────────────────────────
     "topmenu_links": [
-        {"name": "হোম", "url": "/", "new_window": False},
+        {"name": "হোম",        "url": "/",             "new_window": False},
         {"name": "বিল স্ট্যাটাস", "url": "/bill-status/", "new_window": False},
-        {"name": "সব বিল", "url": "/all-bills/", "new_window": False},
+        {"name": "সব বিল",     "url": "/all-bills/",   "new_window": False},
         {"model": "auth.User"},
         {"app": "core"},
     ],
@@ -154,30 +142,30 @@ JAZZMIN_SETTINGS = {
     ],
 
     "icons": {
-        "auth":                     "fas fa-users-cog",
-        "auth.user":                "fas fa-user",
-        "auth.Group":               "fas fa-users",
-        "core.Bill":                "fas fa-file-invoice-dollar",
-        "core.Task":                "fas fa-tasks",
-        "core.WorkType":            "fas fa-briefcase",
-        "core.Benefit":             "fas fa-coins",
-        "core.Profile":             "fas fa-id-card",
-        "core.SliderImage":         "fas fa-images",
-        "core.ActivityLog":         "fas fa-history",
-        "core.SystemSetting":       "fas fa-cogs",
+        "auth":               "fas fa-users-cog",
+        "auth.user":          "fas fa-user",
+        "auth.Group":         "fas fa-users",
+        "core.Bill":          "fas fa-file-invoice-dollar",
+        "core.Task":          "fas fa-tasks",
+        "core.WorkType":      "fas fa-briefcase",
+        "core.Benefit":       "fas fa-coins",
+        "core.Profile":       "fas fa-id-card",
+        "core.SliderImage":   "fas fa-images",
+        "core.ActivityLog":   "fas fa-history",
+        "core.SystemSetting": "fas fa-cogs",
     },
     "default_icon_parents": "fas fa-folder",
     "default_icon_children": "fas fa-circle",
 
     # ── UI Tweaks ──────────────────────────────────────────────
     "related_modal_active": True,
-    "custom_css": None,
+    "custom_css": "admin/css/admin_custom.css",   # ← single, correct path
     "custom_js": None,
     "use_google_fonts_cdn": True,
-    "show_ui_builder": False,  # set True temporarily to visually tweak theme
+    "show_ui_builder": False,
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
-        "auth.user": "collapsible",
+        "auth.user":  "collapsible",
         "auth.group": "vertical_tabs",
     },
     "language_chooser": False,
@@ -188,23 +176,24 @@ JAZZMIN_UI_TWEAKS = {
     "footer_small_text": False,
     "body_small_text": False,
     "brand_small_text": False,
-    "brand_colour": "navbar-success",   # green brand bar
-    "accent": "accent-teal",            # teal accent throughout
+    "brand_colour": "navbar-success",
+    "accent": "accent-teal",
     "navbar": "navbar-dark",
     "no_navbar_border": True,
-    "navbar_fixed": True,               # sticky top navbar
+    "navbar_fixed": True,
     "layout_boxed": False,
     "footer_fixed": False,
-    "sidebar_fixed": True,              # sticky sidebar
-    "sidebar": "sidebar-dark-teal",     # dark sidebar with teal
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-teal",
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": True,
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
-    "theme": "darkly",                  # dark theme base (options below)
-    "dark_mode_theme": "darkly",
+    "theme": "darkly",
+    # "dark_mode_theme": "darkly",  ← REMOVED (deprecated, causes warning)
+    "default_theme_mode": "dark",   # ← NEW replacement
     "button_classes": {
         "primary":   "btn-primary",
         "secondary": "btn-secondary",

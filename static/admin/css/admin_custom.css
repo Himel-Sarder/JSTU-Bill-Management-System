@@ -1,0 +1,147 @@
+/* ── Fix: Select2 / native select dropdowns in dark Jazzmin theme ── */
+
+/* Native <select> elements */
+select,
+select option {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(78, 205, 196, 0.25) !important;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+    background-color: #4ECDC4 !important;
+    color: #1a1d23 !important;
+}
+
+/* Select2 dropdown container */
+.select2-container--default .select2-results__option {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option--highlighted[data-selected] {
+    background-color: #4ECDC4 !important;
+    color: #1a1d23 !important;
+}
+
+.select2-container--default .select2-results__option[aria-selected="true"],
+.select2-container--default .select2-results__option[data-selected="true"] {
+    background-color: rgba(78, 205, 196, 0.2) !important;
+    color: #4ECDC4 !important;
+}
+
+/* Select2 dropdown panel */
+.select2-dropdown,
+.select2-search--dropdown {
+    background-color: #2b2f3a !important;
+    border: 1px solid rgba(78, 205, 196, 0.3) !important;
+}
+
+/* Select2 search input inside dropdown */
+.select2-search--dropdown .select2-search__field {
+    background-color: #1a1d23 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(78, 205, 196, 0.3) !important;
+    outline: none !important;
+}
+
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #4ECDC4 !important;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.15) !important;
+}
+
+/* Select2 selected value in the trigger */
+.select2-container--default .select2-selection--single {
+    background-color: #2b2f3a !important;
+    border-color: rgba(78, 205, 196, 0.25) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: rgba(255, 255, 255, 0.5) transparent transparent transparent !important;
+}
+
+/* Multiple select */
+.select2-container--default .select2-selection--multiple {
+    background-color: #2b2f3a !important;
+    border-color: rgba(78, 205, 196, 0.25) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: rgba(78, 205, 196, 0.2) !important;
+    border-color: rgba(78, 205, 196, 0.4) !important;
+    color: #4ECDC4 !important;
+}
+
+/* Django admin filter sidebar selects */
+#changelist-filter select {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(78, 205, 196, 0.25) !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+}
+
+/* Date/time widget inputs */
+.vDateField, .vTimeField,
+input[type="text"].vDateField,
+input[type="text"].vTimeField {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(78, 205, 196, 0.25) !important;
+}
+
+/* General input/textarea in dark mode */
+.form-control,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(78, 205, 196, 0.25) !important;
+}
+
+.form-control:focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-color: #4ECDC4 !important;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.15) !important;
+}
+
+/* Placeholder text */
+::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* ── Changelist filter bar dropdowns specifically ── */
+#changelist .actions select,
+#changelist .actions label,
+.object-tools + form select {
+    background-color: #2b2f3a !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* ── Select2 results scrollbar ── */
+.select2-results__options::-webkit-scrollbar {
+    width: 6px;
+}
+.select2-results__options::-webkit-scrollbar-track {
+    background: #1a1d23;
+}
+.select2-results__options::-webkit-scrollbar-thumb {
+    background: rgba(78, 205, 196, 0.4);
+    border-radius: 3px;
+}

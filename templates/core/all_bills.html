@@ -152,7 +152,7 @@
                                     <i class="fas fa-edit"></i> স্ট্যাটাস
                                 </a>
                                 
-                                <!-- Sakkhor Button for Approved Bills -->
+                                <!-- Signature Button for Approved Bills -->
                                 {% if bill.status == 'approved' and request.user.profile.user_type == 'চেয়ারম্যান' %}
                                 <a href="{% url 'add_signature_to_bill' bill.id %}" 
                                    class="btn btn-primary" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #4ECDC4, #44A08D);">
@@ -160,13 +160,11 @@
                                 </a>
                                 {% endif %}
                                 
-                                <!-- Delete Button for Pending and Rejected Bills -->
-                                {% if bill.status == 'pending' or bill.status == 'rejected' %}
+                                <!-- Delete Button: ALWAYS visible for chairman on all_bills page -->
                                 <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}')" 
                                         class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">
                                     <i class="fas fa-trash"></i> ডিলিট
                                 </button>
-                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -210,17 +208,25 @@
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
     <div class="glass-card" style="max-width: 450px; margin: 20px; text-align: center;">
-        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #FFC107; margin-bottom: 20px;"></i>
+        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #F44336; margin-bottom: 20px;"></i>
         <h3 style="color: white; margin-bottom: 15px;">নিশ্চিত করুন</h3>
-        <div id="modalMessage">
-            <p style="color: white; margin-bottom: 20px;">আপনি কি এই বিলটি ডিলিট করতে চান?</p>
+        <p id="billInfo" style="color: #FFC107; margin-bottom: 10px; font-size: 16px; font-weight: bold;"></p>
+        <div style="background: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244,67,54,0.4); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="fas fa-exclamation-circle" style="color: #F44336;"></i>
+            <p style="color: white; margin: 6px 0 0; font-size: 14px;">
+                এই বিলটি <strong>স্থায়ীভাবে</strong> ডেটাবেস থেকে মুছে ফেলা হবে।<br>
+                এই action পূর্বাবস্থায় ফেরানো <strong>যাবে না।</strong>
+            </p>
         </div>
-        <p id="billInfo" style="color: #FFC107; margin-bottom: 20px;"></p>
         <div style="display: flex; gap: 10px; justify-content: center;">
-            <button onclick="closeDeleteModal()" class="btn btn-secondary">বাতিল</button>
+            <button onclick="closeDeleteModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i> বাতিল
+            </button>
             <form id="deleteForm" method="post" style="display: inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">ডিলিট করুন</button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> স্থায়ীভাবে ডিলিট করুন
+                </button>
             </form>
         </div>
     </div>
@@ -234,113 +240,43 @@
         font-size: 12px;
         font-weight: bold;
     }
+    .status-pending  { background: #FFC107; color: #000; }
+    .status-approved { background: #4CAF50; color: white; }
+    .status-rejected { background: #F44336; color: white; }
+    .status-paid     { background: #2196F3; color: white; }
     
-    .status-pending {
-        background: #FFC107;
-        color: #000;
-    }
-    
-    .status-approved {
-        background: #4CAF50;
-        color: white;
-    }
-    
-    .status-rejected {
-        background: #F44336;
-        color: white;
-    }
-    
-    .status-paid {
-        background: #2196F3;
-        color: white;
-    }
-    
-    table {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 10px;
-    }
-    
-    table tr:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .btn-primary {
-        background: linear-gradient(45deg, #4ECDC4, #44A08D);
-    }
+    table { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+    table tr:hover { background: rgba(255, 255, 255, 0.05); }
+    .btn-primary { background: linear-gradient(45deg, #4ECDC4, #44A08D); }
 </style>
 
 <script>
 function confirmDelete(billId, billNumber, billStatus) {
-    const modal = document.getElementById('deleteModal');
+    const modal    = document.getElementById('deleteModal');
     const billInfo = document.getElementById('billInfo');
-    const modalMessage = document.getElementById('modalMessage');
-    const deleteForm = document.getElementById('deleteForm');
-    
-    billInfo.innerHTML = `বিল নম্বর: ${billNumber}`;
-    
-    // Different messages based on user type and bill status
-    const isChairman = '{{ request.user.profile.user_type }}' === 'চেয়ারম্যান';
-    
-    if (isChairman) {
-        if (billStatus === 'pending') {
-            modalMessage.innerHTML = `
-                <div style="background: rgba(255, 193, 7, 0.2); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <i class="fas fa-info-circle" style="color: #FFC107;"></i>
-                    <p style="color: white; margin-top: 5px;">শুধুমাত্র বাতিল বা অনুমোদিত বিল ডিলিট করা যাবে।</p>
-                </div>
-            `;
-            setTimeout(() => {
-                closeDeleteModal();
-            }, 2000);
-            return;
-        } else if (billStatus === 'approved') {
-            modalMessage.innerHTML = `
-                <div style="background: rgba(78, 205, 196, 0.2); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <i class="fas fa-info-circle" style="color: #4ECDC4;"></i>
-                    <p style="color: white; margin-top: 5px;">
-                        <strong>সতর্কতা:</strong> এই অনুমোদিত বিলটি শুধুমাত্র চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হবে।<br>
-                        শিক্ষক তাদের স্ট্যাটাস পৃষ্ঠায় এই বিলটি দেখতে পাবেন।
-                    </p>
-                </div>
-            `;
-        } else if (billStatus === 'rejected') {
-            modalMessage.innerHTML = `
-                <div style="background: rgba(244, 67, 54, 0.2); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <i class="fas fa-info-circle" style="color: #F44336;"></i>
-                    <p style="color: white; margin-top: 5px;">
-                        <strong>সতর্কতা:</strong> এই বাতিল বিলটি শুধুমাত্র চেয়ারম্যানের প্যানেল থেকে মুছে ফেলা হবে।<br>
-                        শিক্ষক তাদের স্ট্যাটাস পৃষ্ঠায় এই বিলটি দেখতে পাবেন।
-                    </p>
-                </div>
-            `;
-        }
-    } else {
-        modalMessage.innerHTML = `
-            <div style="background: rgba(244, 67, 54, 0.2); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                <i class="fas fa-exclamation-circle" style="color: #F44336;"></i>
-                <p style="color: white; margin-top: 5px;">
-                    <strong>সতর্কতা:</strong> এই বিলটি স্থায়ীভাবে ডেটাবেস থেকে মুছে ফেলা হবে।<br>
-                    এই action পূর্বাবস্থায় ফেরানো যাবে না।
-                </p>
-            </div>
-        `;
-    }
-    
-    deleteForm.action = `/bill/delete/${billId}/`;
+    const form     = document.getElementById('deleteForm');
+
+    const statusLabels = {
+        pending:  'অপেক্ষমান',
+        approved: 'অনুমোদিত',
+        rejected: 'বাতিল',
+        paid:     'পরিশোধিত',
+        draft:    'খসড়া',
+    };
+    const label = statusLabels[billStatus] || billStatus;
+
+    billInfo.innerHTML = `বিল নম্বর: ${billNumber} &nbsp;|&nbsp; স্ট্যাটাস: ${label}`;
+    form.action = `/bill/delete/${billId}/`;
     modal.style.display = 'flex';
 }
 
 function closeDeleteModal() {
-    const modal = document.getElementById('deleteModal');
-    modal.style.display = 'none';
+    document.getElementById('deleteModal').style.display = 'none';
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
+window.onclick = function(e) {
     const modal = document.getElementById('deleteModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
+    if (e.target === modal) modal.style.display = 'none';
 }
 </script>
 {% endblock %}

@@ -182,7 +182,7 @@
             font-size: 10px;
         }
 
-        /* COLUMN WIDTHS */
+        /* COLUMN WIDTHS — exact same as before to preserve alignment */
         .serial-column {
             width: 35px;
             text-align: center;
@@ -212,29 +212,42 @@
             text-align: center;
         }
 
-        /* Total Amount - Now below amount column */
+        /* NEW: TOTAL AMOUNT CONTAINER — aligned under amount column on the right */
         .total-container {
-            margin-top: 10px;
-            margin-bottom: 10px;
+            margin-top: 12px;
+            margin-bottom: 15px;
             display: flex;
             justify-content: flex-end;
             width: 100%;
         }
 
-        .total-box {
-            width: auto;
-            border-collapse: collapse;
-        }
-
-        /* Calculate exact width to match amount column position */
-        /* Total box will align with amount column */
+        /* Use flex to push total-box exactly to the rightmost side,
+           matching the width of the amount column's visual alignment */
         .total-wrapper {
             display: flex;
             justify-content: flex-end;
             width: 100%;
         }
 
-        /* Total box width matches the amount column area */
+        /* The total box uses a table that naturally aligns its right edge with
+           the right edge of the .amount-column region. To perfectly align with
+           the "টাকার পরিমাণ" column, we use a right-aligned flex approach.
+           The total-box itself will occupy the same relative width as the
+           amount column area (85px plus some padding) but we want it to sit
+           flush right — the right edge of .total-box will be exactly where
+           the right edge of the "টাকার পরিমাণ" column is. */
+        .total-box {
+            border-collapse: collapse;
+            /* Let the table width be based on content, but we'll keep it
+               naturally sized. For perfect alignment we rely on flex-end.
+               Adding a small margin-right: 0 ensures no extra gap. */
+            margin-right: 0;
+            /* Slight fine-tuning: the amount column has some internal padding,
+               to match exactly we can optionally align the total box's right
+               edge with the column's right edge. The flex-end approach works
+               because the parent .total-wrapper spans full width. */
+        }
+
         .total-box td {
             padding: 6px 12px;
             border: 1px solid #333;
@@ -247,6 +260,7 @@
             text-align: right;
             background: #e8e8e8;
             border-right: 1px solid #333;
+            white-space: nowrap;
         }
 
         .total-amount-cell {
@@ -255,6 +269,33 @@
             color: #000;
             background: #ffffff;
             min-width: 80px;
+        }
+
+        /* Provide fallback for older prints: ensure total stays right-aligned */
+        @media print {
+            .total-container {
+                margin-top: 12px;
+                margin-bottom: 15px;
+                display: flex;
+                justify-content: flex-end;
+                width: 100%;
+            }
+            .total-wrapper {
+                display: flex;
+                justify-content: flex-end;
+                width: 100%;
+            }
+            .total-box {
+                margin-right: 0;
+            }
+            .signature-section {
+                page-break-before: avoid;
+                margin-bottom: 6cm;
+            }
+            body::before {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
 
         .bank-info {
@@ -323,18 +364,6 @@
 
         .content-protector {
             margin-bottom: 3cm;
-        }
-
-        @media print {
-            .signature-section {
-                page-break-before: avoid;
-                margin-bottom: 6cm;
-            }
-            
-            body::before {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
         }
     </style>
 </head>
@@ -412,7 +441,7 @@
                 </table>
             </div>
 
-            <!-- Total Amount - Now exactly below amount column -->
+            <!-- TOTAL AMOUNT: Exactly placed to the right side of the page, aligning with "টাকার পরিমাণ" column -->
             <div class="total-container">
                 <div class="total-wrapper">
                     <table class="total-box">

@@ -21,11 +21,11 @@
     <div style="flex: 1; min-width: 300px; max-width: 400px;">
       <h2 style="text-align: center; color: white; margin-bottom: 30px;">রেজিস্ট্রেশন</h2>
 
-      <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+      <form method="post" style="display: flex; flex-direction: column; gap: 15px;" id="registrationForm">
         {% csrf_token %}
 
         {% for field in form %}
-        <div>
+        <div class="form-field-wrapper">
           <label style="color: white; display: block; margin-bottom: 5px; font-weight: 500;">
             {{ field.label }}
             {% if field.field.required %}<span style="color: #FF6B6B;">*</span>{% endif %}
@@ -42,12 +42,24 @@
               {% endfor %}
             </select>
           {% elif field.name == 'password1' or field.name == 'password2' %}
-            <!-- Password input fields -->
-            <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}"
-                   value="{{ field.value|default:'' }}"
-                   style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-                          background: rgba(255,255,255,0.1); color: white; font-size: 16px;
-                          backdrop-filter: blur(5px); outline: none; transition: all 0.3s;">
+            <!-- Password input fields with toggle visibility -->
+            <div class="password-wrapper" style="position: relative;">
+              <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}"
+                     value="{{ field.value|default:'' }}"
+                     class="password-input"
+                     autocomplete="off"
+                     style="width: 100%; padding: 12px; padding-right: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
+                            background: rgba(255,255,255,0.1); color: white; font-size: 16px;
+                            backdrop-filter: blur(5px); outline: none; transition: all 0.3s;
+                            box-sizing: border-box;">
+              <button type="button" class="toggle-password" 
+                      style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+                             background: none; border: none; color: rgba(255,255,255,0.6);
+                             cursor: pointer; font-size: 18px; padding: 0;"
+                      onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
           {% else %}
             <!-- Regular text input fields -->
             <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}"
@@ -55,7 +67,8 @@
                    placeholder="আপনার {{ field.label }} লিখুন"
                    style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
                           background: rgba(255,255,255,0.1); color: white; font-size: 16px;
-                          backdrop-filter: blur(5px); outline: none; transition: all 0.3s;">
+                          backdrop-filter: blur(5px); outline: none; transition: all 0.3s;
+                          box-sizing: border-box;">
           {% endif %}
 
           <!-- Help text -->
@@ -112,24 +125,104 @@ select option {
   box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
 }
 
-/* Password strength indicator (optional) */
+/* Password strength indicator */
 .password-strength {
   height: 5px;
   border-radius: 5px;
   margin-top: 5px;
   transition: all 0.3s;
 }
+
+/* Prevent text selection issues */
+.form-field-wrapper {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+}
+
+.password-input {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  letter-spacing: normal;
+  font-family: monospace;
+}
+
+/* Fix for password field */
+input[type="password"] {
+  font-family: monospace !important;
+  letter-spacing: 2px;
+}
+
+/* Fix for glass-card text selection */
+.glass-card {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Ensure proper cursor in password fields */
+.password-input {
+  cursor: text !important;
+}
+
+.toggle-password:hover {
+  color: #4ECDC4 !important;
+}
+
+.toggle-password i {
+  pointer-events: none;
+}
 </style>
 
 <script>
+// Font Awesome CDN for icons
+const fontAwesomeLink = document.createElement('link');
+fontAwesomeLink.rel = 'stylesheet';
+fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+document.head.appendChild(fontAwesomeLink);
+
+// Toggle password visibility function
+function togglePasswordVisibility(inputId, button) {
+  const passwordInput = document.getElementById(inputId);
+  const icon = button.querySelector('i');
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    passwordInput.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+  
+  // Prevent any unwanted selection when toggling
+  passwordInput.focus();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  // Add password strength indicator
+  // Password strength indicator
   const password1 = document.querySelector('input[name="password1"]');
   const password2 = document.querySelector('input[name="password2"]');
 
   if (password1) {
-    password1.addEventListener('input', function() {
+    password1.addEventListener('input', function(e) {
       checkPasswordStrength(this.value);
+      // Prevent event bubbling that might cause selection issues
+      e.stopPropagation();
+    });
+    
+    // Additional fix: prevent accidental text selection on double click
+    password1.addEventListener('mousedown', function(e) {
+      e.stopPropagation();
+    });
+  }
+  
+  if (password2) {
+    password2.addEventListener('mousedown', function(e) {
+      e.stopPropagation();
     });
   }
 
@@ -141,31 +234,73 @@ document.addEventListener('DOMContentLoaded', function() {
     if (password.match(/[0-9]+/)) strength++;
     if (password.match(/[$@#&!]+/)) strength++;
 
-    const strengthBar = document.getElementById('password-strength-bar');
-    if (!strengthBar) {
+    let strengthBar = document.getElementById('password-strength-bar');
+    if (!strengthBar && password1 && password1.parentNode) {
       const bar = document.createElement('div');
       bar.id = 'password-strength-bar';
       bar.className = 'password-strength';
       password1.parentNode.appendChild(bar);
+      strengthBar = bar;
     }
 
-    const bar = document.getElementById('password-strength-bar');
-    const colors = ['#FF6B6B', '#FF6B6B', '#FFA06B', '#FFD56B', '#4ECDC4'];
-    const width = (strength / 5) * 100;
-    bar.style.width = width + '%';
-    bar.style.backgroundColor = colors[strength];
+    if (strengthBar) {
+      const colors = ['#FF6B6B', '#FF6B6B', '#FFA06B', '#FFD56B', '#4ECDC4'];
+      const width = (strength / 5) * 100;
+      strengthBar.style.width = width + '%';
+      strengthBar.style.backgroundColor = colors[strength];
+    }
   }
 
   // Password match validation
   if (password1 && password2) {
-    password2.addEventListener('input', function() {
+    password2.addEventListener('input', function(e) {
       if (password1.value !== password2.value) {
         password2.style.borderColor = '#FF6B6B';
       } else {
         password2.style.borderColor = '#4ECDC4';
       }
+      e.stopPropagation();
     });
   }
+  
+  // Disable text selection on the entire form container but allow input fields
+  const container = document.querySelector('.glass-card');
+  if (container) {
+    container.style.userSelect = 'text';
+    container.style.webkitUserSelect = 'text';
+  }
+  
+  // Fix: Prevent copy event from capturing entire page
+  document.addEventListener('copy', function(e) {
+    const selection = window.getSelection();
+    let selectedText = selection.toString();
+    
+    // If selected text is too long (more than 200 chars) or contains HTML-like content,
+    // it might be the page source. Allow only normal text copying.
+    if (selectedText && selectedText.length > 500) {
+      e.preventDefault();
+      // Try to get only the actual selected text from input fields
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        const start = activeElement.selectionStart;
+        const end = activeElement.selectionEnd;
+        if (start !== end) {
+          const actualText = activeElement.value.substring(start, end);
+          e.clipboardData.setData('text/plain', actualText);
+          e.preventDefault();
+        }
+      }
+    }
+  });
+  
+  // Fix for right-click context menu on password fields
+  const allPasswordInputs = document.querySelectorAll('input[type="password"]');
+  allPasswordInputs.forEach(input => {
+    input.addEventListener('contextmenu', function(e) {
+      // Allow normal context menu but don't let it bubble
+      e.stopPropagation();
+    });
+  });
 });
 </script>
 {% endblock %}

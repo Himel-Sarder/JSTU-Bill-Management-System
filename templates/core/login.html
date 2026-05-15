@@ -59,7 +59,7 @@
         color: rgba(255, 255, 255, 0.9);
     }
     
-    .password-toggle {
+    .password-wrapper {
         position: relative;
     }
     
@@ -72,6 +72,7 @@
         color: #666;
         background: none;
         border: none;
+        z-index: 10;
     }
     
     .toggle-password:hover {
@@ -97,11 +98,26 @@
         outline: none;
         background: rgba(255, 255, 255, 0.9);
         transition: all 0.3s ease;
+        box-sizing: border-box;
     }
     
     .form-group input:focus {
         background: white;
         box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.3);
+    }
+    
+    /* Fix for password field selection issues */
+    input[type="password"] {
+        font-family: monospace !important;
+        letter-spacing: 2px;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+    }
+    
+    /* Prevent text selection issues on the whole page */
+    body, .container, .glass-card {
+        user-select: text;
+        -webkit-user-select: text;
     }
     
     .checkbox-group {
@@ -119,6 +135,7 @@
     .checkbox-group label {
         margin: 0;
         font-size: 14px;
+        cursor: pointer;
     }
     
     .forgot-password {
@@ -134,6 +151,34 @@
     
     .forgot-password a:hover {
         text-decoration: underline;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 0.6s ease-in-out infinite;
+        margin-right: 8px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Remember me info tooltip */
+    .remember-info {
+        font-size: 11px;
+        color: rgba(255,255,255,0.5);
+        margin-left: 5px;
+        cursor: help;
+    }
+    
+    .remember-info:hover {
+        color: #4ECDC4;
     }
     
     @media (max-width: 768px) {
@@ -177,7 +222,7 @@
     <div style="flex: 1; min-width: 300px; max-width: 450px;">
       <h2 style="text-align: center; color: white; margin-bottom: 30px;">লগইন করুন</h2>
 
-      <form method="post" style="display: flex; flex-direction: column; gap: 20px;">
+      <form method="post" style="display: flex; flex-direction: column; gap: 20px;" id="loginForm">
         {% csrf_token %}
         
         <!-- Login Type Selection -->
@@ -190,7 +235,7 @@
             <label class="login-option" id="chairmanOption">
               <input type="radio" name="login_type" value="chairman" required>
               <i class="fas fa-user-tie"></i>
-              <div class="option-title">সভাপতি</div>
+              <div class="option-title">পরীক্ষা কমিটির সভাপতি</div>
               <div class="option-desc">Chairman</div>
             </label>
             
@@ -222,15 +267,17 @@
         <div class="form-group">
           <label>ব্যবহারকারীর নাম</label>
           <input type="text" name="username" id="username" 
-                 placeholder="আপনার ইউজারনেম লিখুন" required autofocus>
+                 placeholder="আপনার ইউজারনেম লিখুন" required autofocus
+                 autocomplete="username">
         </div>
 
         <!-- Password Field with Toggle -->
         <div class="form-group">
           <label>পাসওয়ার্ড</label>
-          <div style="position: relative;">
+          <div class="password-wrapper">
             <input type="password" name="password" id="password" 
-                   placeholder="আপনার পাসওয়ার্ড লিখুন" required>
+                   placeholder="আপনার পাসওয়ার্ড লিখুন" required
+                   autocomplete="current-password">
             <button type="button" class="toggle-password" onclick="togglePassword()">
               <i class="fas fa-eye"></i>
             </button>
@@ -240,11 +287,14 @@
         <!-- Remember Me & Forgot Password -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div class="checkbox-group">
-            <input type="checkbox" name="remember_me" id="remember_me">
+            <input type="checkbox" name="remember_me" id="remember_me" value="true">
             <label for="remember_me">মনে রাখুন</label>
+            <span class="remember-info" title="3 দিনের জন্য লগইন করা থাকবে">
+              <i class="fas fa-question-circle"></i>
+            </span>
           </div>
           <div class="forgot-password">
-            <a href="#">পাসওয়ার্ড ভুলে গেছেন?</a>
+            <a href="javascript:void(0)" onclick="alert('দয়া করে অ্যাডমিনের সাথে যোগাযোগ করুন।')">পাসওয়ার্ড ভুলে গেছেন?</a>
           </div>
         </div>
 
@@ -266,6 +316,12 @@
 </div>
 
 <script>
+// Font Awesome CDN for icons
+const fontAwesomeLink = document.createElement('link');
+fontAwesomeLink.rel = 'stylesheet';
+fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+document.head.appendChild(fontAwesomeLink);
+
 // Toggle password visibility
 function togglePassword() {
   const passwordInput = document.getElementById('password');
@@ -280,6 +336,9 @@ function togglePassword() {
     toggleBtn.classList.remove('fa-eye-slash');
     toggleBtn.classList.add('fa-eye');
   }
+  
+  // Keep focus on the input after toggling
+  passwordInput.focus();
 }
 
 // Handle login option selection styling
@@ -289,7 +348,8 @@ const loginHint = document.getElementById('loginHint');
 loginOptions.forEach(option => {
   const radio = option.querySelector('input[type="radio"]');
   
-  option.addEventListener('click', function() {
+  option.addEventListener('click', function(e) {
+    e.stopPropagation();
     // Remove selected class from all options
     loginOptions.forEach(opt => opt.classList.remove('selected'));
     // Add selected class to clicked option
@@ -300,76 +360,211 @@ loginOptions.forEach(option => {
     // Update hint message based on selection
     const value = radio.value;
     if (value === 'chairman') {
-      loginHint.innerHTML = '<i class="fas fa-user-tie me-1"></i> চেয়ারম্যান হিসাবে লগইন করুন। শুধুমাত্র চেয়ারম্যান পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
+      loginHint.innerHTML = '<i class="fas fa-user-tie"></i> পরীক্ষা কমিটির সভাপতি হিসাবে লগইন করুন। শুধুমাত্র সভাপতি পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
       loginHint.style.borderLeftColor = '#FF9800';
     } else if (value === 'controller') {
-      loginHint.innerHTML = '<i class="fas fa-user-graduate me-1"></i> কন্ট্রোলার হিসাবে লগইন করুন। শুধুমাত্র কন্ট্রোলার পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
+      loginHint.innerHTML = '<i class="fas fa-user-graduate"></i> কন্ট্রোলার হিসাবে লগইন করুন। শুধুমাত্র কন্ট্রোলার পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
       loginHint.style.borderLeftColor = '#9C27B0';
     } else {
-      loginHint.innerHTML = '<i class="fas fa-user me-1"></i> অ্যাসিস্ট্যান্ট প্রফেসর, লেকচারার বা অফিস সহকারী হিসাবে লগইন করুন।';
+      loginHint.innerHTML = '<i class="fas fa-user"></i> অ্যাসিস্ট্যান্ট প্রফেসর, লেকচারার বা অফিস সহকারী হিসাবে লগইন করুন।';
       loginHint.style.borderLeftColor = '#4ECDC4';
     }
   });
 });
 
-// Remember me functionality
+// Remember me functionality with 3 days expiry
 const rememberMeCheckbox = document.getElementById('remember_me');
 const usernameInput = document.getElementById('username');
 
-// Load saved username if exists
-if (localStorage.getItem('saved_username')) {
-  usernameInput.value = localStorage.getItem('saved_username');
-  rememberMeCheckbox.checked = true;
+// Function to set cookie with expiry days
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
-// Save username when checkbox is checked
+// Function to get cookie by name
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// Function to delete cookie
+function deleteCookie(name) {
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+}
+
+// Load saved username and login type from cookies if remember me was checked
+const savedUsername = getCookie('saved_username');
+const savedLoginType = getCookie('saved_login_type');
+const rememberMeActive = getCookie('remember_me_active');
+
+if (savedUsername && rememberMeActive === 'true') {
+    usernameInput.value = savedUsername;
+    rememberMeCheckbox.checked = true;
+    
+    // Auto-select the saved login type
+    if (savedLoginType) {
+        const radioToSelect = document.querySelector(`input[type="radio"][value="${savedLoginType}"]`);
+        if (radioToSelect) {
+            radioToSelect.checked = true;
+            const parentLabel = radioToSelect.closest('.login-option');
+            if (parentLabel) {
+                loginOptions.forEach(opt => opt.classList.remove('selected'));
+                parentLabel.classList.add('selected');
+            }
+            // Update hint
+            if (savedLoginType === 'chairman') {
+                loginHint.innerHTML = '<i class="fas fa-user-tie"></i> পরীক্ষা কমিটির সভাপতি হিসাবে লগইন করুন। শুধুমাত্র সভাপতি পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
+                loginHint.style.borderLeftColor = '#FF9800';
+            } else if (savedLoginType === 'controller') {
+                loginHint.innerHTML = '<i class="fas fa-user-graduate"></i> কন্ট্রোলার হিসাবে লগইন করুন। শুধুমাত্র কন্ট্রোলার পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
+                loginHint.style.borderLeftColor = '#9C27B0';
+            } else {
+                loginHint.innerHTML = '<i class="fas fa-user"></i> অ্যাসিস্ট্যান্ট প্রফেসর, লেকচারার বা অফিস সহকারী হিসাবে লগইন করুন।';
+                loginHint.style.borderLeftColor = '#4ECDC4';
+            }
+        }
+    }
+}
+
+// Save username and login type when checkbox is checked
 rememberMeCheckbox.addEventListener('change', function() {
-  if (this.checked) {
-    localStorage.setItem('saved_username', usernameInput.value);
-  } else {
-    localStorage.removeItem('saved_username');
-  }
+    if (this.checked) {
+        setCookie('saved_username', usernameInput.value, 3);
+        const selectedLoginType = document.querySelector('input[name="login_type"]:checked');
+        if (selectedLoginType) {
+            setCookie('saved_login_type', selectedLoginType.value, 3);
+        }
+        setCookie('remember_me_active', 'true', 3);
+    } else {
+        deleteCookie('saved_username');
+        deleteCookie('saved_login_type');
+        deleteCookie('remember_me_active');
+    }
 });
 
 // Update saved username when typing
 usernameInput.addEventListener('input', function() {
-  if (rememberMeCheckbox.checked) {
-    localStorage.setItem('saved_username', this.value);
-  }
+    if (rememberMeCheckbox.checked) {
+        setCookie('saved_username', this.value, 3);
+    }
+});
+
+// Update saved login type when selection changes
+const loginTypeRadios = document.querySelectorAll('input[name="login_type"]');
+loginTypeRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (rememberMeCheckbox.checked && this.checked) {
+            setCookie('saved_login_type', this.value, 3);
+        }
+    });
 });
 
 // Add loading effect on form submit
-const loginForm = document.querySelector('form');
-loginForm.addEventListener('submit', function() {
-  const submitBtn = this.querySelector('button[type="submit"]');
-  const originalText = submitBtn.innerHTML;
-  submitBtn.setAttribute('data-original-text', originalText);
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> লগইন হচ্ছে...';
-  submitBtn.disabled = true;
-});
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> লগইন হচ্ছে...';
+            submitBtn.disabled = true;
+        }
+        
+        // Save remember me preference before submit
+        if (rememberMeCheckbox.checked) {
+            setCookie('saved_username', usernameInput.value, 3);
+            const selectedLoginType = document.querySelector('input[name="login_type"]:checked');
+            if (selectedLoginType) {
+                setCookie('saved_login_type', selectedLoginType.value, 3);
+            }
+            setCookie('remember_me_active', 'true', 3);
+        } else {
+            deleteCookie('saved_username');
+            deleteCookie('saved_login_type');
+            deleteCookie('remember_me_active');
+        }
+    });
+}
 
 // Auto-focus on username field
 document.getElementById('username').focus();
 
 // Optional: Add keyboard navigation
 document.addEventListener('keydown', function(e) {
-  if (e.key === '1' && e.ctrlKey) {
-    document.querySelector('input[value="chairman"]').checked = true;
-    document.querySelector('#chairmanOption').click();
-    e.preventDefault();
-  } else if (e.key === '2' && e.ctrlKey) {
-    document.querySelector('input[value="controller"]').checked = true;
-    document.querySelector('#controllerOption').click();
-    e.preventDefault();
-  } else if (e.key === '3' && e.ctrlKey) {
-    document.querySelector('input[value="others"]').checked = true;
-    document.querySelector('#othersOption').click();
-    e.preventDefault();
-  }
+    if (e.key === '1' && e.ctrlKey) {
+        e.preventDefault();
+        document.querySelector('input[value="chairman"]').checked = true;
+        document.querySelector('#chairmanOption').click();
+    } else if (e.key === '2' && e.ctrlKey) {
+        e.preventDefault();
+        document.querySelector('input[value="controller"]').checked = true;
+        document.querySelector('#controllerOption').click();
+    } else if (e.key === '3' && e.ctrlKey) {
+        e.preventDefault();
+        document.querySelector('input[value="others"]').checked = true;
+        document.querySelector('#othersOption').click();
+    }
 });
+
+// Fix: Prevent copy event from capturing entire page
+document.addEventListener('copy', function(e) {
+    const selection = window.getSelection();
+    let selectedText = selection.toString();
+    
+    // If selected text is too long (more than 500 chars) or contains HTML-like content,
+    // it might be the page source. Allow only normal text copying.
+    if (selectedText && selectedText.length > 500) {
+        e.preventDefault();
+        // Try to get only the actual selected text from input fields
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+            const start = activeElement.selectionStart;
+            const end = activeElement.selectionEnd;
+            if (start !== end && activeElement.value) {
+                const actualText = activeElement.value.substring(start, end);
+                if (actualText && actualText.length > 0 && actualText.length < 100) {
+                    e.clipboardData.setData('text/plain', actualText);
+                    e.preventDefault();
+                }
+            }
+        }
+    }
+});
+
+// Fix for right-click context menu on password fields
+const passwordInput = document.getElementById('password');
+if (passwordInput) {
+    passwordInput.addEventListener('contextmenu', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Prevent mouse events from causing selection issues
+    passwordInput.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
+    });
+}
+
+// Prevent any unwanted text selection on the whole container
+const glassCard = document.querySelector('.glass-card');
+if (glassCard) {
+    glassCard.addEventListener('selectstart', function(e) {
+        // Allow selection only from input fields
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            // Don't prevent default, just let it happen
+            return true;
+        }
+    });
+}
 </script>
 {% endblock %}
-
-
-
-{% comment %} username='JSTUChairman', password='CHAIRm@n26-JSTU', email='chairman@jstu.com', first_name='Chairman' {% endcomment %}

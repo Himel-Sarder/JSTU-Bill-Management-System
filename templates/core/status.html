@@ -9,11 +9,13 @@
 
         <!-- Status Filter Buttons -->
         <div class="status-filter">
-            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count |bangla_number}})</a>
-            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">অপেক্ষমান ({{ pending_count |bangla_number}})</a>
-            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">অনুমোদিত ({{ approved_count |bangla_number}})</a>
-            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">বাতিল ({{ rejected_count |bangla_number}})</a>
-            <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">পরিশোধিত ({{ paid_count |bangla_number}})</a>
+            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|bangla_number }})</a>
+            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">অপেক্ষমান ({{ pending_count|bangla_number }})</a>
+            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">অনুমোদিত ({{ approved_count|bangla_number }})</a>
+            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">বাতিল ({{ rejected_count|bangla_number }})</a>
+            <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">পরিশোধিত ({{ paid_count|bangla_number }})</a>
+            <a href="?status=approved_by_controller" class="filter-btn {% if request.GET.status == 'approved_by_controller' %}active{% endif %}" style="background: #00ACC1;">কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0|bangla_number }})</a>
+            <a href="?status=rejected_by_controller" class="filter-btn {% if request.GET.status == 'rejected_by_controller' %}active{% endif %}" style="background: #FF5722;">কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0|bangla_number }})</a>
         </div>
 
         <!-- Bills Container -->
@@ -34,10 +36,13 @@
                     </div>
                     <span class="status-badge status-{{ bill.status }}">
                         {% if bill.status == 'pending' %}অপেক্ষমান
-                        {% elif bill.status == 'approved' %}অনুমোদিত
-                        {% elif bill.status == 'rejected' %}বাতিল
+                        {% elif bill.status == 'approved' %}অনুমোদিত (চেয়ারম্যান)
+                        {% elif bill.status == 'rejected' %}বাতিল (চেয়ারম্যান)
                         {% elif bill.status == 'paid' %}পরিশোধিত
                         {% elif bill.status == 'draft' %}খসড়া
+                        {% elif bill.status == 'sent_to_controller' %}কন্ট্রোলারে প্রেরিত
+                        {% elif bill.status == 'approved_by_controller' %}✓ কন্ট্রোলার কর্তৃক অনুমোদিত
+                        {% elif bill.status == 'rejected_by_controller' %}✗ কন্ট্রোলার কর্তৃক বাতিল
                         {% endif %}
                     </span>
                 </div>
@@ -60,18 +65,40 @@
                     </div>
                 </div>
 
+                <!-- Chairman Approval Info -->
+                {% if bill.approved_by %}
+                <div class="approval-info chairman-approval">
+                    <i class="fas fa-user-check"></i>
+                    <div>
+                        <p><strong>চেয়ারম্যানের অনুমোদন:</strong></p>
+                        <p><i class="fas fa-user"></i> অনুমোদনকারী: {{ bill.approved_by.get_full_name|default:bill.approved_by.username }}</p>
+                        <p><i class="fas fa-clock"></i> অনুমোদের সময়: {{ bill.approved_at|date:"d-m-Y H:i"|bangla_number }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Controller Approval Info -->
+                {% if bill.controller_approved_by %}
+                <div class="approval-info controller-approval">
+                    <i class="fas fa-user-shield"></i>
+                    <div>
+                        <p><strong>কন্ট্রোলারের সিদ্ধান্ত:</strong></p>
+                        <p><i class="fas fa-user"></i> কর্মকর্তা: {{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</p>
+                        <p><i class="fas fa-clock"></i> সময়: {{ bill.controller_approved_at|date:"d-m-Y H:i"|bangla_number }}</p>
+                        {% if bill.status == 'approved_by_controller' %}
+                        <p><i class="fas fa-check-circle" style="color: #4CAF50;"></i> <strong style="color: #4CAF50;">বিলটি চূড়ান্তভাবে অনুমোদিত হয়েছে</strong></p>
+                        {% elif bill.status == 'rejected_by_controller' %}
+                        <p><i class="fas fa-times-circle" style="color: #F44336;"></i> <strong style="color: #F44336;">বিলটি চূড়ান্তভাবে বাতিল করা হয়েছে</strong></p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
                 {% if bill.remarks %}
                 <div class="remarks-section">
                     <i class="fas fa-comment"></i>
                     <span class="detail-label">মন্তব্য:</span>
-                    <p>{{ bill.remarks }}</p>
-                </div>
-                {% endif %}
-
-                {% if bill.approved_by %}
-                <div class="approval-info">
-                    <p><i class="fas fa-check-circle"></i> অনুমোদনকারী: {{ bill.approved_by.get_full_name|default:bill.approved_by.username }}</p>
-                    <p><i class="fas fa-clock"></i> অনুমোদের সময়: {{ bill.approved_at|date:"d-m-Y H:i" }}</p>
+                    <p>{{ bill.remarks|linebreaksbr }}</p>
                 </div>
                 {% endif %}
 
@@ -83,9 +110,9 @@
                         <i class="fas fa-download"></i> ডাউনলোড
                     </a>
 
-                    <!-- Delete for Regular Users - Only Rejected and Approved Bills (Hard Delete) -->
+                    <!-- Delete for Regular Users - Rejected, Approved, and Controller Approved Bills -->
                     {% if request.user == bill.user %}
-                        {% if bill.status == 'rejected' or bill.status == 'approved' %}
+                        {% if bill.status == 'rejected' or bill.status == 'approved' or bill.status == 'rejected_by_controller' or bill.status == 'approved_by_controller' %}
                         <form method="post" action="{% url 'delete_bill' bill.id %}" style="display: inline;"
                               onsubmit="return confirmDeleteBill('{{ bill.bill_number }}', '{{ bill.status }}');">
                             {% csrf_token %}
@@ -298,6 +325,18 @@
     background: #9E9E9E;
 }
 
+.status-sent_to_controller {
+    background: #9C27B0;
+}
+
+.status-approved_by_controller {
+    background: #00ACC1;
+}
+
+.status-rejected_by_controller {
+    background: #FF5722;
+}
+
 /* Bill Details Grid */
 .bill-details-grid {
     display: grid;
@@ -331,6 +370,42 @@
     font-weight: 600;
 }
 
+/* Approval Info Sections */
+.approval-info {
+    padding: 15px;
+    border-radius: 10px;
+    margin: 15px 0;
+    display: flex;
+    gap: 15px;
+}
+
+.approval-info i {
+    font-size: 24px;
+}
+
+.approval-info p {
+    margin: 5px 0;
+    color: #333;
+}
+
+.chairman-approval {
+    background: #e8f5e9;
+    border-left: 4px solid #4CAF50;
+}
+
+.chairman-approval i {
+    color: #4CAF50;
+}
+
+.controller-approval {
+    background: #e3f2fd;
+    border-left: 4px solid #2196F3;
+}
+
+.controller-approval i {
+    color: #2196F3;
+}
+
 /* Remarks Section */
 .remarks-section {
     background: #f0f9f8;
@@ -353,26 +428,7 @@
     margin: 10px 0 0 25px;
     color: #333;
     font-weight: 500;
-}
-
-/* Approval Info */
-.approval-info {
-    background: #f1f9f1;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 15px 0;
-    font-size: 14px;
-    border-left: 4px solid #4CAF50;
-}
-
-.approval-info i {
-    color: #4CAF50;
-    margin-right: 8px;
-}
-
-.approval-info p {
-    margin: 5px 0;
-    color: #333;
+    white-space: pre-wrap;
 }
 
 /* Status Actions */
@@ -494,6 +550,22 @@
     font-size: 14px;
 }
 
+/* Loading Spinner */
+.loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.6s ease-in-out infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
@@ -527,15 +599,23 @@
         flex-direction: column;
         gap: 10px;
     }
+    
+    .approval-info {
+        flex-direction: column;
+    }
+    
+    .approval-info i {
+        align-self: flex-start;
+    }
 }
 </style>
 
 <script>
 function confirmDeleteBill(billNumber, billStatus) {
     let message = '';
-    if (billStatus === 'rejected') {
+    if (billStatus === 'rejected' || billStatus === 'rejected_by_controller') {
         message = `সতর্কতা: বিল #${billNumber} স্থায়ীভাবে ডেটাবেস থেকে মুছে ফেলা হবে।\n\nএই action পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?`;
-    } else if (billStatus === 'approved') {
+    } else if (billStatus === 'approved' || billStatus === 'approved_by_controller') {
         message = `সতর্কতা: বিল #${billNumber} স্থায়ীভাবে ডেটাবেস থেকে মুছে ফেলা হবে।\n\nএই action পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?`;
     }
     return confirm(message);
@@ -618,8 +698,10 @@ const deleteForm = document.getElementById('deleteForm');
 if (deleteForm) {
     deleteForm.addEventListener('submit', function() {
         const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.innerHTML = '<span class="loading"></span> মুছে ফেলা হচ্ছে...';
-        submitBtn.disabled = true;
+        if (submitBtn) {
+            submitBtn.innerHTML = '<span class="loading"></span> মুছে ফেলা হচ্ছে...';
+            submitBtn.disabled = true;
+        }
     });
 }
 </script>

@@ -85,9 +85,7 @@
                     <h3 style="color: white; margin-bottom: 20px;">কাজের তালিকা তৈরি করুন</h3>
                 </div>
 
-                <div id="tasks-container">
-                    <!-- Tasks will be added here dynamically -->
-                </div>
+                <div id="tasks-container"></div>
 
                 <div class="total-section">
                     <h3 style="color: white;">মোট টাকা: <span id="total-amount">০</span> টাকা</h3>
@@ -102,13 +100,13 @@
     </div>
 </div>
 
-<!-- Floating Action Button (FAB) -->
+<!-- Floating Action Button -->
 <button type="button" id="fab-add-task" class="fab-btn" disabled>
     <span class="fab-icon">+</span>
     <span class="fab-text">কাজ যোগ করুন</span>
 </button>
 
-<!-- Task Template (Hidden - MUST be outside tasks-container) -->
+<!-- Task Template (Hidden) - Update the number input section -->
 <div id="task-template" style="display: none;">
     <div class="task-item">
         <div class="task-header">
@@ -131,7 +129,7 @@
                     <div class="number-input-container" style="display: none;">
                         <div class="number-input-group">
                             <button type="button" class="btn-number btn-decrease">-</button>
-                            <input type="number" class="number-input form-control" value="1" min="1" max="100">
+                            <input type="number" class="number-input form-control" value="1" min="1" max="100" step="1">
                             <button type="button" class="btn-number btn-increase">+</button>
                         </div>
                     </div>
@@ -158,750 +156,479 @@
     margin-bottom: 25px;
     backdrop-filter: blur(10px);
 }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-group { display: flex; flex-direction: column; }
+.form-group label { color: white; margin-bottom: 8px; font-weight: 500; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 
-.form-grid-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.form-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group label {
-    color: white;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-/* Floating Action Button Styles */
 .fab-btn {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
+    position: fixed; bottom: 30px; right: 30px;
     background: linear-gradient(135deg, #4ECDC4, #44A08D);
-    border: none;
-    border-radius: 50px;
-    padding: 15px 25px;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    z-index: 1000;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.31);
+    border: none; border-radius: 50px; padding: 15px 25px;
+    color: white; cursor: pointer; display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: bold; z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border: 1px solid rgba(255,255,255,0.31);
 }
-
-.fab-btn:not(:disabled):hover {
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-    background: linear-gradient(135deg, #5dd9d0, #4eb899);
-}
-
-.fab-btn:not(:disabled):active {
-    transform: translateY(0px) scale(0.98);
-}
-
-.fab-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    background: linear-gradient(135deg, #999, #777);
-}
-
-.fab-icon {
-    font-size: 24px;
-    font-weight: bold;
-    line-height: 1;
-}
-
-.fab-text {
-    font-size: 16px;
-    letter-spacing: 0.5px;
-}
-
-/* Responsive FAB for mobile */
-@media (max-width: 768px) {
-    .fab-btn {
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 20px;
-    }
-    
-    .fab-text {
-        display: inline;
-    }
-    
-    .fab-icon {
-        font-size: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    .fab-btn {
-        padding: 12px 18px;
-    }
-    
-    .fab-text {
-        font-size: 14px;
-    }
-}
+.fab-btn:not(:disabled):hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+.fab-btn:not(:disabled):active { transform: translateY(0) scale(0.98); }
+.fab-btn:disabled { opacity: 0.5; cursor: not-allowed; background: linear-gradient(135deg,#999,#777); }
+.fab-icon { font-size: 24px; font-weight: bold; line-height: 1; }
+.fab-text { font-size: 16px; letter-spacing: 0.5px; }
 
 .task-item {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 15px;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.task-item:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(78, 205, 196, 0.5);
-}
-
-.task-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.btn-remove {
-    background: linear-gradient(45deg, #FF6B6B, #C44D58);
-    border: none;
-    padding: 5px 10px;
-    border-radius: 15px;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.3s ease;
-}
-
-.btn-remove:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
-}
-
-.total-section {
-    text-align: center;
-    padding: 20px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    margin-top: 20px;
-}
-
-.total-section h3 {
-    margin: 0;
-    font-size: 1.5em;
-}
-
-.form-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.btn-primary {
-    background: linear-gradient(45deg, #4ECDC4, #44A08D);
-    padding: 12px 40px;
-    border: none;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-radius: 8px;
-    font-weight: bold;
-}
-
-.btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-secondary {
-    background: linear-gradient(45deg, #666, #999);
-    padding: 12px 40px;
-    border: none;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-    border-radius: 8px;
-    font-weight: bold;
-}
-
-.btn-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-@media (max-width: 768px) {
-    .form-grid-3, .form-grid-2 {
-        grid-template-columns: 1fr;
-    }
-
-    .section-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .btn-primary, .btn-secondary {
-        width: 100%;
-    }
-}
-
-/* Number input styles */
-.number-input-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 5px;
-}
-
-.btn-number {
-    background: linear-gradient(45deg, #4ECDC4, #44A08D);
-    border: none;
-    color: white;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.btn-number:hover {
-    transform: scale(1.1);
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-}
-
-.number-input {
-    text-align: center;
-    width: 80px;
-    font-weight: bold;
-}
-
-.number-input-container label {
-    color: white;
-    margin-bottom: 8px;
-    font-weight: 500;
-    display: block;
-}
-
-/* Remarks field styles */
-.remarks-group {
-    margin-top: 15px;
-}
-
-.task-remarks {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 14px;
-    resize: vertical;
-    font-family: inherit;
-}
-
-.task-remarks:focus {
-    outline: none;
-    border-color: #4ECDC4;
-    background: rgba(255,255,255,0.1);
-}
-
-.task-remarks::placeholder {
-    color: rgba(255,255,255,0.5);
-}
-
-/* Animation for new tasks */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.task-item {
+    border-radius: 10px; padding: 20px; margin-bottom: 15px;
+    position: relative; transition: all 0.3s ease;
     animation: slideIn 0.3s ease-out;
 }
+.task-item:hover { background: rgba(255,255,255,0.08); border-color: rgba(78,205,196,0.5); }
+.task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.btn-remove { background: linear-gradient(45deg,#FF6B6B,#C44D58); border: none; padding: 5px 10px; border-radius: 15px; color: white; cursor: pointer; font-size: 12px; transition: all 0.3s ease; }
+.btn-remove:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(255,107,107,0.4); }
 
-.alert-info {
-    background: rgba(78, 205, 196, 0.1);
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    color: white;
-    margin: 10px 0;
+.total-section { text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 20px; }
+.total-section h3 { margin: 0; font-size: 1.5em; }
+
+.form-actions { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
+.btn-primary { background: linear-gradient(45deg,#4ECDC4,#44A08D); padding: 12px 40px; border: none; color: white; cursor: pointer; transition: all 0.3s ease; border-radius: 8px; font-weight: bold; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: linear-gradient(45deg,#666,#999); padding: 12px 40px; border: none; color: white; cursor: pointer; transition: all 0.3s ease; text-decoration: none; display: inline-block; border-radius: 8px; font-weight: bold; }
+.btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+.number-input-group { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.btn-number { background: linear-gradient(45deg,#4ECDC4,#44A08D); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.3s ease; }
+.btn-number:hover { transform: scale(1.1); box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+.number-input { text-align: center; width: 80px; font-weight: bold; }
+
+.remarks-group { margin-top: 15px; }
+.task-remarks { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; padding: 10px; font-size: 14px; resize: vertical; font-family: inherit; }
+.task-remarks:focus { outline: none; border-color: #4ECDC4; background: rgba(255,255,255,0.1); }
+.task-remarks::placeholder { color: rgba(255,255,255,0.5); }
+
+.alert-info { background: rgba(78,205,196,0.1); border-radius: 10px; padding: 20px; text-align: center; color: white; margin: 10px 0; }
+.work-type-option-honors { color: #4ECDC4; font-weight: 500; }
+.work-type-option-masters { color: #FF6B6B; font-weight: 500; }
+
+@keyframes slideIn { from { opacity:0; transform:translateX(50px); } to { opacity:1; transform:translateX(0); } }
+
+@media (max-width: 768px) {
+    .form-grid-3, .form-grid-2 { grid-template-columns: 1fr; }
+    .form-actions { flex-direction: column; }
+    .btn-primary, .btn-secondary { width: 100%; }
+    .fab-btn { bottom: 20px; right: 20px; padding: 12px 20px; }
 }
-
-.work-type-option-honors {
-    color: #4ECDC4;
-    font-weight: 500;
-}
-
-.work-type-option-masters {
-    color: #FF6B6B;
-    font-weight: 500;
+@media (max-width: 480px) {
+    .fab-btn { padding: 12px 18px; }
+    .fab-text { font-size: 14px; }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded - starting bill create script');
+
     let taskCounter = 0;
     let isSubmitting = false;
-    
+
     const tasksContainer = document.getElementById('tasks-container');
     const taskTemplate = document.getElementById('task-template');
     const totalAmountElement = document.getElementById('total-amount');
     const billForm = document.getElementById('bill-form');
-    const fabAddTask = document.getElementById('fab-add-task');
+    const addTaskBtn = document.getElementById('fab-add-task');  // ← FIXED: using FAB button
     const degreeSelect = document.getElementById('degree_type');
     const submitBtn = document.getElementById('submit-btn');
-    
+
+    // Helper: convert to Bangla digits
+    function toBangla(num) {
+        const map = {'0':'০','1':'১','2':'২','3':'৩','4':'৪',
+                     '5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+        return Math.round(num).toString().split('').map(c => map[c] ?? c).join('');
+    }
+
+    // Reset submit button
     function resetSubmitButton() {
         isSubmitting = false;
         submitBtn.disabled = false;
-        submitBtn.innerHTML = 'বিল তৈরি করুন';
+        submitBtn.textContent = 'বিল তৈরি করুন';
     }
-    
-    window.addEventListener('pageshow', resetSubmitButton);
-    
-    // Bangla number conversion
-    function toBangla(num) {
-        const digits = {'0':'০','1':'১','2':'২','3':'৩','4':'৪',
-                       '5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
-        return Math.round(num).toString().split('').map(c => digits[c] || c).join('');
-    }
-    
-    // Calculate total amount
+
+    // Calculate total
     function calculateTotal() {
         let total = 0;
-        document.querySelectorAll('#tasks-container .amount-hidden').forEach(input => {
-            if (input.value) total += parseFloat(input.value);
+        document.querySelectorAll('.amount-hidden').forEach(h => {
+            const v = parseFloat(h.value);
+            if (!isNaN(v)) total += v;
         });
         totalAmountElement.textContent = toBangla(total);
     }
-    
+
+    // Recompute amount for a task
+    function recomputeTaskAmount(taskEl) {
+        const baseAmount = parseFloat(taskEl.dataset.baseAmount) || 0;
+        const calcType = taskEl.dataset.calculationType || 'fixed';
+        const amountInput = taskEl.querySelector('.amount-input');
+        const amountHidden = taskEl.querySelector('.amount-hidden');
+        const numContainer = taskEl.querySelector('.number-input-container');
+        const numberInput = taskEl.querySelector('.number-input');
+
+        let amount = 0;
+
+        if (calcType === 'fixed' || !numContainer || numContainer.style.display === 'none') {
+            amount = baseAmount;
+        } else {
+            let qty = 1;
+            if (numberInput) {
+                qty = parseInt(numberInput.value) || 1;
+            }
+            amount = baseAmount * qty;
+        }
+
+        if (amountInput) {
+            amountInput.value = toBangla(amount);
+        }
+        if (amountHidden) {
+            amountHidden.value = amount;
+        }
+        
+        calculateTotal();
+    }
+
     // Update quantity amount
-    function updateQuantityAmount(taskElement, baseAmount, quantity) {
-        const amountInput = taskElement.querySelector('.amount-input');
-        const amountHidden = taskElement.querySelector('.amount-hidden');
-        if (!amountInput || !amountHidden) return;
+    function updateQuantityAmount(taskEl, baseAmount, quantity) {
+        const amountInput = taskEl.querySelector('.amount-input');
+        const amountHidden = taskEl.querySelector('.amount-hidden');
+        
         const qty = parseInt(quantity) || 1;
         const base = parseFloat(baseAmount) || 0;
         const amount = base * qty;
-        amountInput.value = toBangla(amount);
-        amountHidden.value = amount;
+
+        if (amountInput) amountInput.value = toBangla(amount);
+        if (amountHidden) amountHidden.value = amount;
         calculateTotal();
     }
-    
+
     // Update task numbers
     function updateTaskNumbers() {
-        const tasks = tasksContainer.querySelectorAll('.task-item');
-        tasks.forEach((task, idx) => {
-            const numSpan = task.querySelector('.task-number');
-            if (numSpan) numSpan.textContent = idx + 1;
+        tasksContainer.querySelectorAll('.task-item').forEach((t, i) => {
+            const s = t.querySelector('.task-number');
+            if (s) s.textContent = i + 1;
         });
-        taskCounter = tasks.length;
+        taskCounter = tasksContainer.querySelectorAll('.task-item').length;
     }
-    
+
+    // Show message
     function showMessage(message) {
+        const msgDiv = tasksContainer.querySelector('.alert-info');
+        if (msgDiv) msgDiv.remove();
+        
         const messageDiv = document.createElement('div');
         messageDiv.className = 'alert-info';
         messageDiv.innerHTML = message;
         tasksContainer.appendChild(messageDiv);
     }
-    
+
     // Populate work types
-    function populateWorkTypes(taskElement) {
-        const workTypeSelect = taskElement.querySelector('.work-type-select');
-        const degreeType = degreeSelect.value;
-        
-        if (!degreeType) {
-            workTypeSelect.innerHTML = '<option value="">প্রথমে ডিগ্রি নির্বাচন করুন</option>';
-            workTypeSelect.disabled = true;
+    function populateWorkTypes(taskEl) {
+        const sel = taskEl.querySelector('.work-type-select');
+        const deg = degreeSelect.value;
+
+        if (!deg) {
+            sel.innerHTML = '<option value="">প্রথমে ডিগ্রি নির্বাচন করুন</option>';
+            sel.disabled = true;
             return;
         }
-        
-        workTypeSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
-        workTypeSelect.disabled = true;
-        
-        fetch(`/get-work-types-by-degree/?degree_type=${degreeType}`)
-            .then(response => response.json())
+
+        sel.innerHTML = '<option value="">লোড হচ্ছে...</option>';
+        sel.disabled = true;
+
+        fetch(`/get-work-types-by-degree/?degree_type=${deg}`)
+            .then(r => r.json())
             .then(data => {
-                workTypeSelect.innerHTML = '<option value="">কাজের ধরণ নির্বাচন করুন</option>';
-                if (data.work_types && data.work_types.length > 0) {
-                    data.work_types.forEach(workType => {
-                        const option = document.createElement('option');
-                        option.value = workType.value;
-                        option.textContent = workType.display;
-                        if (workType.degree_type === 'honors') {
-                            option.classList.add('work-type-option-honors');
-                        } else if (workType.degree_type === 'masters') {
-                            option.classList.add('work-type-option-masters');
-                        }
-                        workTypeSelect.appendChild(option);
+                sel.innerHTML = '<option value="">কাজের ধরণ নির্বাচন করুন</option>';
+                if (data.work_types && data.work_types.length) {
+                    data.work_types.forEach(wt => {
+                        const o = document.createElement('option');
+                        o.value = wt.value;
+                        o.textContent = wt.display;
+                        if (wt.degree_type === 'honors') o.classList.add('work-type-option-honors');
+                        if (wt.degree_type === 'masters') o.classList.add('work-type-option-masters');
+                        sel.appendChild(o);
                     });
-                    workTypeSelect.disabled = false;
+                    sel.disabled = false;
                 } else {
-                    workTypeSelect.innerHTML = '<option value="">এই ডিগ্রির জন্য কোন কাজ পাওয়া যায়নি</option>';
-                    workTypeSelect.disabled = true;
+                    sel.innerHTML = '<option value="">এই ডিগ্রির জন্য কোন কাজ পাওয়া যায়নি</option>';
+                    sel.disabled = true;
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                workTypeSelect.innerHTML = '<option value="">ত্রুটি হয়েছে</option>';
-                workTypeSelect.disabled = true;
+            .catch(() => {
+                sel.innerHTML = '<option value="">ত্রুটি হয়েছে</option>';
+                sel.disabled = true;
             });
     }
-    
-    // Handle work type change
-    function handleWorkTypeChange() {
-        const taskItem = this.closest('.task-item');
-        const benefitSelect = taskItem.querySelector('.benefit-select');
-        const numberInputContainer = taskItem.querySelector('.number-input-container');
-        const amountInput = taskItem.querySelector('.amount-input');
-        const amountHidden = taskItem.querySelector('.amount-hidden');
-        const degreeType = degreeSelect.value;
-        
-        benefitSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
-        benefitSelect.disabled = true;
-        numberInputContainer.style.display = 'none';
-        amountInput.value = '';
-        amountHidden.value = '';
-        
-        const selectedWork = this.value;
-        
-        if (selectedWork && degreeType) {
-            fetch(`/get-benefit-choices-by-degree/?work_type=${encodeURIComponent(selectedWork)}&degree_type=${degreeType}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        benefitSelect.innerHTML = `<option value="">${data.error}</option>`;
-                        benefitSelect.disabled = true;
-                        return;
-                    }
-                    
-                    benefitSelect.innerHTML = '<option value="">উপকাজ নির্বাচন করুন</option>';
-                    
-                    if (!data.needs_benefit) {
-                        const option = document.createElement('option');
-                        option.value = 'no_benefit';
-                        option.textContent = (data.benefits && data.benefits.length > 0) ? data.benefits[0][1] : selectedWork;
-                        benefitSelect.appendChild(option);
-                        benefitSelect.disabled = false;
-                        benefitSelect.value = 'no_benefit';
-                        benefitSelect.dispatchEvent(new Event('change'));
-                    } else if (data.benefits && data.benefits.length > 0) {
-                        data.benefits.forEach(benefit => {
-                            const option = document.createElement('option');
-                            option.value = benefit[0];
-                            option.textContent = benefit[1];
-                            benefitSelect.appendChild(option);
-                        });
-                        benefitSelect.disabled = false;
-                    } else {
-                        benefitSelect.innerHTML = '<option value="">কোন উপকাজ পাওয়া যায়নি</option>';
-                        benefitSelect.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    benefitSelect.innerHTML = '<option value="">ত্রুটি হয়েছে</option>';
-                    benefitSelect.disabled = true;
-                });
-        }
-    }
-    
-    // Handle benefit change
-    function handleBenefitChange() {
-        const taskItem = this.closest('.task-item');
-        const workTypeSelect = taskItem.querySelector('.work-type-select');
-        const amountInput = taskItem.querySelector('.amount-input');
-        const amountHidden = taskItem.querySelector('.amount-hidden');
-        const numberInputContainer = taskItem.querySelector('.number-input-container');
-        const benefitLabel = taskItem.querySelector('.benefit-label');
-        const degreeType = degreeSelect.value;
-        
-        if (this.value === 'no_benefit') {
-            const selectedWork = workTypeSelect.value;
-            fetch(`/get-work-type-amount/?work_type=${encodeURIComponent(selectedWork)}&degree_type=${degreeType}`)
-                .then(response => response.json())
-                .then(data => {
-                    const amount = data.amount || 0;
-                    amountInput.value = toBangla(amount);
-                    amountHidden.value = amount;
-                    calculateTotal();
-                    numberInputContainer.style.display = 'none';
-                })
-                .catch(error => console.error('Error:', error));
-        } else if (this.value) {
-            fetch(`/get-benefit-details/?benefit_id=${encodeURIComponent(this.value)}`)
-                .then(response => response.json())
-                .then(data => {
-                    taskItem.dataset.baseAmount = data.base_amount;
-                    taskItem.dataset.calculationType = data.calculation_type;
-                    
-                    if (data.calculation_type === 'fixed') {
-                        numberInputContainer.style.display = 'none';
-                        const amount = parseFloat(data.base_amount) || 0;
-                        amountInput.value = toBangla(amount);
-                        amountHidden.value = amount;
-                        calculateTotal();
-                    } else {
-                        numberInputContainer.style.display = 'block';
-                        if (benefitLabel) benefitLabel.textContent = data.unit_label || 'পরিমাণ';
-                        
-                        const quantityInput = taskItem.querySelector('.number-input');
-                        if (quantityInput) {
-                            quantityInput.min = data.min_unit || 1;
-                            quantityInput.max = data.max_unit || 100;
-                            quantityInput.value = data.min_unit || 1;
-                            updateQuantityAmount(taskItem, data.base_amount, quantityInput.value);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    amountInput.value = 'ত্রুটি';
-                });
-        }
-    }
-    
-    // Add new task
+
+    // Add a new task
     function addTask() {
-        const messageDiv = tasksContainer.querySelector('.alert-info');
-        if (messageDiv) messageDiv.remove();
-        
+        const msgDiv = tasksContainer.querySelector('.alert-info');
+        if (msgDiv) msgDiv.remove();
+
         taskCounter++;
         const newTask = taskTemplate.cloneNode(true);
         newTask.style.display = 'block';
         newTask.id = 'task-' + taskCounter;
         newTask.querySelector('.task-number').textContent = taskCounter;
+
+        // Initialize datasets
+        newTask.dataset.baseAmount = '0';
+        newTask.dataset.calculationType = 'fixed';
+
+        // Clear any existing values
+        const amountInput = newTask.querySelector('.amount-input');
+        const amountHidden = newTask.querySelector('.amount-hidden');
+        const workTypeSel = newTask.querySelector('.work-type-select');
+        const benefitSel = newTask.querySelector('.benefit-select');
+        const numContainer = newTask.querySelector('.number-input-container');
         
-        // Set up event listeners
-        const workTypeSelect = newTask.querySelector('.work-type-select');
-        workTypeSelect.addEventListener('change', handleWorkTypeChange);
+        if (amountInput) amountInput.value = '';
+        if (amountHidden) amountHidden.value = '';
+        if (numContainer) numContainer.style.display = 'none';
         
-        const benefitSelect = newTask.querySelector('.benefit-select');
-        benefitSelect.addEventListener('change', handleBenefitChange);
-        
-        // Remove button
-        const removeBtn = newTask.querySelector('.btn-remove');
-        removeBtn.addEventListener('click', function() {
-            const allTasks = tasksContainer.querySelectorAll('.task-item');
-            if (allTasks.length > 1) {
-                newTask.remove();
-                updateTaskNumbers();
-                calculateTotal();
-            } else {
-                alert('কমপক্ষে একটি কাজ থাকতে হবে!');
-            }
-        });
-        
-        // Number input buttons
-        const decreaseBtn = newTask.querySelector('.btn-decrease');
-        const increaseBtn = newTask.querySelector('.btn-increase');
-        const numberInput = newTask.querySelector('.number-input');
-        
-        if (decreaseBtn) {
-            decreaseBtn.addEventListener('click', function() {
-                if (numberInput) {
-                    let val = parseInt(numberInput.value) || 1;
-                    if (val > parseInt(numberInput.min || 1)) {
-                        numberInput.value = val - 1;
-                        const baseAmount = newTask.dataset.baseAmount;
-                        if (baseAmount) updateQuantityAmount(newTask, baseAmount, numberInput.value);
-                    }
-                }
-            });
-        }
-        
-        if (increaseBtn) {
-            increaseBtn.addEventListener('click', function() {
-                if (numberInput) {
-                    let val = parseInt(numberInput.value) || 1;
-                    if (val < parseInt(numberInput.max || 100)) {
-                        numberInput.value = val + 1;
-                        const baseAmount = newTask.dataset.baseAmount;
-                        if (baseAmount) updateQuantityAmount(newTask, baseAmount, numberInput.value);
-                    }
-                }
-            });
-        }
-        
-        if (numberInput) {
-            numberInput.addEventListener('change', function() {
-                let val = parseInt(this.value) || 1;
-                val = Math.max(parseInt(this.min || 1), Math.min(parseInt(this.max || 100), val));
-                this.value = val;
-                const baseAmount = newTask.dataset.baseAmount;
-                if (baseAmount) updateQuantityAmount(newTask, baseAmount, val);
-            });
-        }
-        
-        populateWorkTypes(newTask);
+        workTypeSel.disabled = true;
+        benefitSel.disabled = true;
+        benefitSel.innerHTML = '<option value="">প্রথমে কাজের ধরণ নির্বাচন করুন</option>';
+
         tasksContainer.appendChild(newTask);
+        populateWorkTypes(newTask);
         updateTaskNumbers();
         newTask.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    
-    // Validate form - ONLY validates tasks inside container
-    function validateForm() {
-        let firstInvalid = null;
-        let allValid = true;
-        
-        const tasks = tasksContainer.querySelectorAll('.task-item');
-        
-        tasks.forEach(task => {
-            const workType = task.querySelector('.work-type-select').value;
-            const benefit = task.querySelector('.benefit-select').value;
-            const amount = task.querySelector('.amount-hidden').value;
-            const isValid = workType && benefit && amount && parseFloat(amount) > 0;
-            
-            task.style.border = isValid ? '1px solid rgba(255,255,255,0.1)' : '2px solid #FF6B6B';
-            task.style.backgroundColor = isValid ? 'rgba(255,255,255,0.05)' : 'rgba(255,107,107,0.1)';
-            
-            if (!isValid && !firstInvalid) firstInvalid = task;
-            if (!isValid) allValid = false;
-        });
-        
-        return { allValid, firstInvalid };
-    }
-    
-    // Prepare form data
-    function prepareFormData() {
-        const tasks = [];
-        const taskItems = tasksContainer.querySelectorAll('.task-item');
-        
-        taskItems.forEach(task => {
-            const workType = task.querySelector('.work-type-select');
-            const benefitSelect = task.querySelector('.benefit-select');
-            const amount = task.querySelector('.amount-hidden').value;
-            const quantityInput = task.querySelector('.number-input');
-            const quantityContainer = task.querySelector('.number-input-container');
-            const remarksTextarea = task.querySelector('.task-remarks');
-            
-            if (workType.value && benefitSelect.value && amount && parseFloat(amount) > 0) {
-                const workTypeName = workType.options[workType.selectedIndex]?.text || '';
-                const benefitName = benefitSelect.options[benefitSelect.selectedIndex]?.text || '';
-                
-                let quantity = 1;
-                let unit = '';
-                
-                if (quantityInput && quantityContainer && quantityContainer.style.display !== 'none') {
-                    quantity = parseInt(quantityInput.value) || 1;
-                    const benefitLabel = task.querySelector('.benefit-label');
-                    unit = benefitLabel ? (benefitLabel.textContent || '') : '';
+
+    // ─── EVENT DELEGATION ─────────────────────────────────────────────
+    function setupEventDelegation() {
+        // Work type change - using event delegation
+        document.addEventListener('change', function(e) {
+            if (e.target.classList && e.target.classList.contains('work-type-select')) {
+                if (isSubmitting) resetSubmitButton();
+                const taskEl = e.target.closest('.task-item');
+                const benefitSelect = taskEl.querySelector('.benefit-select');
+                const numContainer = taskEl.querySelector('.number-input-container');
+                const amountInput = taskEl.querySelector('.amount-input');
+                const amountHidden = taskEl.querySelector('.amount-hidden');
+                const deg = degreeSelect.value;
+
+                // Reset
+                benefitSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
+                benefitSelect.disabled = true;
+                if (numContainer) numContainer.style.display = 'none';
+                if (amountInput) amountInput.value = '';
+                if (amountHidden) amountHidden.value = '';
+                taskEl.dataset.baseAmount = '0';
+                taskEl.dataset.calculationType = 'fixed';
+                calculateTotal();
+
+                const wt = e.target.value;
+                if (!wt || !deg) return;
+
+                fetch(`/get-benefit-choices-by-degree/?work_type=${encodeURIComponent(wt)}&degree_type=${deg}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            benefitSelect.innerHTML = `<option value="">${data.error}</option>`;
+                            return;
+                        }
+
+                        benefitSelect.innerHTML = '<option value="">উপকাজ নির্বাচন করুন</option>';
+
+                        if (!data.needs_benefit) {
+                            const o = document.createElement('option');
+                            o.value = 'no_benefit';
+                            o.textContent = (data.benefits && data.benefits.length) ? data.benefits[0][1] : wt;
+                            benefitSelect.appendChild(o);
+                            benefitSelect.disabled = false;
+                            benefitSelect.value = 'no_benefit';
+                            benefitSelect.dispatchEvent(new Event('change'));
+                        } else if (data.benefits && data.benefits.length) {
+                            data.benefits.forEach(b => {
+                                const o = document.createElement('option');
+                                o.value = b[0];
+                                o.textContent = b[1];
+                                benefitSelect.appendChild(o);
+                            });
+                            benefitSelect.disabled = false;
+                        } else {
+                            benefitSelect.innerHTML = '<option value="">কোন উপকাজ পাওয়া যায়নি</option>';
+                        }
+                    })
+                    .catch(() => {
+                        benefitSelect.innerHTML = '<option value="">ত্রুটি হয়েছে</option>';
+                    });
+            }
+
+            // Benefit change
+            if (e.target.classList && e.target.classList.contains('benefit-select')) {
+                if (isSubmitting) resetSubmitButton();
+                const taskEl = e.target.closest('.task-item');
+                const workTypeSel = taskEl.querySelector('.work-type-select');
+                const numContainer = taskEl.querySelector('.number-input-container');
+                const benefitLabel = taskEl.querySelector('.benefit-label');
+                const numberInput = taskEl.querySelector('.number-input');
+                const amountInput = taskEl.querySelector('.amount-input');
+                const amountHidden = taskEl.querySelector('.amount-hidden');
+                const deg = degreeSelect.value;
+
+                taskEl.dataset.baseAmount = '0';
+                taskEl.dataset.calculationType = 'fixed';
+                if (numContainer) numContainer.style.display = 'none';
+                if (amountInput) amountInput.value = '';
+                if (amountHidden) amountHidden.value = '';
+                calculateTotal();
+
+                if (!e.target.value) return;
+
+                if (e.target.value === 'no_benefit') {
+                    fetch(`/get-work-type-amount/?work_type=${encodeURIComponent(workTypeSel.value)}&degree_type=${deg}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            const amount = parseFloat(data.amount) || 0;
+                            taskEl.dataset.baseAmount = amount;
+                            taskEl.dataset.calculationType = 'fixed';
+                            if (numContainer) numContainer.style.display = 'none';
+                            recomputeTaskAmount(taskEl);
+                        })
+                        .catch(console.error);
+                } else {
+                    fetch(`/get-benefit-details/?benefit_id=${encodeURIComponent(e.target.value)}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            const baseAmount = parseFloat(data.base_amount) || 0;
+                            const calcType = data.calculation_type || 'fixed';
+                            
+                            taskEl.dataset.baseAmount = baseAmount;
+                            taskEl.dataset.calculationType = calcType;
+
+                            if (calcType !== 'fixed' && numContainer) {
+                                numContainer.style.display = 'block';
+                                if (benefitLabel) benefitLabel.textContent = data.unit_label || 'পরিমাণ';
+                                if (numberInput) {
+                                    numberInput.min = data.min_unit || 1;
+                                    numberInput.max = data.max_unit || 100;
+                                    numberInput.value = data.min_unit || 1;
+                                    updateQuantityAmount(taskEl, baseAmount, numberInput.value);
+                                }
+                            } else {
+                                if (numContainer) numContainer.style.display = 'none';
+                                recomputeTaskAmount(taskEl);
+                            }
+                        })
+                        .catch(console.error);
                 }
-                
-                const cleanWorkTypeName = workTypeName.replace(/\s*\([^)]*\)\s*/g, '').trim();
-                const cleanBenefitName = benefitName.replace(/\s*\([^)]*\)\s*/g, '').replace(' (স্বয়ংক্রিয়)', '').trim();
-                
-                tasks.push({
-                    work_type: cleanWorkTypeName,
-                    benefit: cleanBenefitName,
-                    quantity: quantity,
-                    unit: unit,
-                    amount: amount,
-                    remarks: remarksTextarea ? remarksTextarea.value.trim() : ''
-                });
             }
         });
-        
-        // Add degree type
-        let degreeInput = document.querySelector('input[name="degree_type"]');
-        if (!degreeInput) {
-            degreeInput = document.createElement('input');
-            degreeInput.type = 'hidden';
-            degreeInput.name = 'degree_type';
-            billForm.appendChild(degreeInput);
-        }
-        degreeInput.value = degreeSelect.value;
-        
-        // Add tasks
-        let tasksInput = document.querySelector('input[name="tasks"]');
-        if (!tasksInput) {
-            tasksInput = document.createElement('input');
-            tasksInput.type = 'hidden';
-            tasksInput.name = 'tasks';
-            billForm.appendChild(tasksInput);
-        }
-        tasksInput.value = JSON.stringify(tasks);
-        
-        console.log('Form data prepared:', { degree_type: degreeSelect.value, tasks: tasks });
+
+        // Click events for buttons
+        document.addEventListener('click', function(e) {
+            // Increase button
+            if (e.target.classList && e.target.classList.contains('btn-increase')) {
+                e.preventDefault();
+                const taskEl = e.target.closest('.task-item');
+                const numberInput = taskEl.querySelector('.number-input');
+                if (numberInput) {
+                    let v = parseInt(numberInput.value) || 1;
+                    const max = parseInt(numberInput.max) || 100;
+                    if (v < max) {
+                        numberInput.value = v + 1;
+                        const baseAmount = taskEl.dataset.baseAmount;
+                        if (baseAmount) {
+                            updateQuantityAmount(taskEl, baseAmount, numberInput.value);
+                        }
+                    }
+                }
+            }
+            
+            // Decrease button
+            if (e.target.classList && e.target.classList.contains('btn-decrease')) {
+                e.preventDefault();
+                const taskEl = e.target.closest('.task-item');
+                const numberInput = taskEl.querySelector('.number-input');
+                if (numberInput) {
+                    let v = parseInt(numberInput.value) || 1;
+                    const min = parseInt(numberInput.min) || 1;
+                    if (v > min) {
+                        numberInput.value = v - 1;
+                        const baseAmount = taskEl.dataset.baseAmount;
+                        if (baseAmount) {
+                            updateQuantityAmount(taskEl, baseAmount, numberInput.value);
+                        }
+                    }
+                }
+            }
+            
+            // Remove button
+            if (e.target.classList && e.target.classList.contains('btn-remove')) {
+                const taskEl = e.target.closest('.task-item');
+                const allTasks = document.querySelectorAll('.task-item');
+                if (allTasks.length > 1) {
+                    taskEl.remove();
+                    taskCounter--;
+                    updateTaskNumbers();
+                    calculateTotal();
+                } else {
+                    alert('কমপক্ষে একটি কাজ থাকতে হবে!');
+                }
+            }
+        });
+
+        // Number input change
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('number-input')) {
+                const taskEl = e.target.closest('.task-item');
+                let v = parseInt(e.target.value) || 1;
+                const min = parseInt(e.target.min) || 1;
+                const max = parseInt(e.target.max) || 100;
+                v = Math.max(min, Math.min(max, v));
+                e.target.value = v;
+                const baseAmount = taskEl.dataset.baseAmount;
+                if (baseAmount) {
+                    updateQuantityAmount(taskEl, baseAmount, v);
+                }
+            }
+        });
     }
-    
-    // Event Listeners
+
+    // Degree selection change
     degreeSelect.addEventListener('change', function() {
-        const degreeType = this.value;
-        
-        if (degreeType) {
-            fabAddTask.disabled = false;
+        if (isSubmitting) resetSubmitButton();
+
+        if (this.value) {
+            addTaskBtn.disabled = false;  // Enable FAB button
             tasksContainer.innerHTML = '';
             taskCounter = 0;
-            setTimeout(function() {
-                addTask();
-            }, 100);
+            setTimeout(addTask, 100);
         } else {
-            fabAddTask.disabled = true;
+            addTaskBtn.disabled = true;  // Disable FAB button
             tasksContainer.innerHTML = '';
             taskCounter = 0;
             showMessage('দয়া করে প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
         }
     });
-    
-    fabAddTask.addEventListener('click', function() {
+
+    // Add task button - FAB button click
+    addTaskBtn.addEventListener('click', function() {
         if (!degreeSelect.value) {
             alert('প্রথমে ডিগ্রির ধরণ নির্বাচন করুন');
             return;
         }
+        if (isSubmitting) resetSubmitButton();
         addTask();
     });
-    
-    // Submit button handler
-    submitBtn.addEventListener('click', function() {
+
+    // Form submission
+    submitBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
         if (isSubmitting) return;
         
         if (!degreeSelect.value) {
@@ -910,36 +637,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const tasks = tasksContainer.querySelectorAll('.task-item');
+        let isValid = true;
+        
         if (tasks.length === 0) {
             alert('কমপক্ষে একটি কাজ যোগ করুন');
             return;
         }
         
-        // Validate - button still enabled at this point
-        const { allValid, firstInvalid } = validateForm();
-        if (!allValid) {
-            if (firstInvalid) {
-                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        tasks.forEach(task => {
+            const wt = task.querySelector('.work-type-select').value;
+            const ben = task.querySelector('.benefit-select').value;
+            const amount = task.querySelector('.amount-hidden').value;
+            
+            if (!wt || !ben || !amount || parseFloat(amount) <= 0) {
+                isValid = false;
+                task.style.border = '2px solid #FF6B6B';
+            } else {
+                task.style.border = '1px solid rgba(255,255,255,0.1)';
             }
+        });
+        
+        if (!isValid) {
             alert('দয়া করে সব কাজের তথ্য সঠিকভাবে পূরণ করুন।');
-            return; // Stop here, button not disabled
+            return;
         }
         
-        // Only reach here if validation passes
         isSubmitting = true;
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> প্রক্রিয়া হচ্ছে...';
+        submitBtn.innerHTML = '<span class="loading-spinner"></span> প্রক্রিয়া হচ্ছে...';
         
-        try {
-            prepareFormData();
-            HTMLFormElement.prototype.submit.call(billForm);
-        } catch (err) {
-            console.error('Submit failed:', err);
-            alert('সাবমিট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
-            resetSubmitButton();
+        // Prepare form data
+        const tasksData = [];
+        tasks.forEach(task => {
+            const workTypeSel = task.querySelector('.work-type-select');
+            const benefitSel = task.querySelector('.benefit-select');
+            const amountHidden = task.querySelector('.amount-hidden');
+            const numContainer = task.querySelector('.number-input-container');
+            const numberInput = task.querySelector('.number-input');
+            
+            const workTypeName = workTypeSel.options[workTypeSel.selectedIndex]?.text || '';
+            const benefitName = benefitSel.options[benefitSel.selectedIndex]?.text || '';
+            
+            let quantity = 1;
+            let unit = '';
+            
+            if (numContainer && numContainer.style.display !== 'none' && numberInput) {
+                quantity = parseInt(numberInput.value) || 1;
+                const benefitLabel = task.querySelector('.benefit-label');
+                unit = benefitLabel ? benefitLabel.textContent : '';
+            }
+            
+            tasksData.push({
+                work_type: workTypeName.replace(/\s*\([^)]*\)\s*/g, '').trim(),
+                benefit: benefitName.replace(/\s*\([^)]*\)\s*/g, '').replace(' (স্বয়ংক্রিয়)', '').trim(),
+                quantity: quantity,
+                unit: unit,
+                amount: amountHidden.value
+            });
+        });
+        
+        // Add hidden fields
+        let degInput = billForm.querySelector('input[name="degree_type"]');
+        if (!degInput) {
+            degInput = document.createElement('input');
+            degInput.type = 'hidden';
+            degInput.name = 'degree_type';
+            billForm.appendChild(degInput);
         }
+        degInput.value = degreeSelect.value;
+        
+        let tasksInput = billForm.querySelector('input[name="tasks"]');
+        if (!tasksInput) {
+            tasksInput = document.createElement('input');
+            tasksInput.type = 'hidden';
+            tasksInput.name = 'tasks';
+            billForm.appendChild(tasksInput);
+        }
+        tasksInput.value = JSON.stringify(tasksData);
+        
+        // Submit the form
+        HTMLFormElement.prototype.submit.call(billForm);
     });
     
+    // Initialize
+    setupEventDelegation();
     resetSubmitButton();
 });
 </script>

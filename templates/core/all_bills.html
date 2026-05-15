@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load bangla_number %}
 
-{% block title %}সকল বিল - বিল ব্যবস্থাপনা সিস্টেম{% endblock %}
+{% block title %}সকল বিল - চেয়ারম্যান প্যানেল{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="glass-card">
         <h2 style="color: white; margin-bottom: 20px;">
-            <i class="fas fa-file-invoice"></i> সকল বিল
+            <i class="fas fa-file-invoice"></i> সকল বিল - চেয়ারম্যান প্যানেল
         </h2>
         
         <!-- Statistics Cards -->
@@ -33,9 +33,19 @@
                 <p style="color: white; margin: 5px 0 0; font-size: 14px;">বাতিল</p>
             </div>
             <div class="glass-card" style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(33, 150, 243, 0.1));">
-                <i class="fas fa-money-bill-wave" style="font-size: 32px; color: #2196F3; margin-bottom: 10px;"></i>
-                <h3 style="color: #ffffff; margin: 0; font-size: 28px;">{{ paid_count|bangla_number }}</h3>
-                <p style="color: white; margin: 5px 0 0; font-size: 14px;">পরিশোধিত</p>
+                <i class="fas fa-paper-plane" style="font-size: 32px; color: #2196F3; margin-bottom: 10px;"></i>
+                <h3 style="color: #ffffff; margin: 0; font-size: 28px;">{{ sent_to_controller_count|default:0|bangla_number }}</h3>
+                <p style="color: white; margin: 5px 0 0; font-size: 14px;">কন্ট্রোলারে প্রেরিত</p>
+            </div>
+            <div class="glass-card" style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(156, 39, 176, 0.2), rgba(156, 39, 176, 0.1));">
+                <i class="fas fa-check-double" style="font-size: 32px; color: #9C27B0; margin-bottom: 10px;"></i>
+                <h3 style="color: #ffffff; margin: 0; font-size: 28px;">{{ approved_by_controller_count|default:0|bangla_number }}</h3>
+                <p style="color: white; margin: 5px 0 0; font-size: 14px;">কন্ট্রোলার কর্তৃক অনুমোদিত</p>
+            </div>
+            <div class="glass-card" style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255, 87, 34, 0.2), rgba(255, 87, 34, 0.1));">
+                <i class="fas fa-ban" style="font-size: 32px; color: #FF5722; margin-bottom: 10px;"></i>
+                <h3 style="color: #ffffff; margin: 0; font-size: 28px;">{{ rejected_by_controller_count|default:0|bangla_number }}</h3>
+                <p style="color: white; margin: 5px 0 0; font-size: 14px;">কন্ট্রোলার কর্তৃক বাতিল</p>
             </div>
         </div>
         
@@ -62,6 +72,18 @@
                    style="padding: 8px 20px;">
                     <i class="fas fa-money-bill-wave"></i> পরিশোধিত ({{ paid_count }})
                 </a>
+                <a href="?status=sent_to_controller" class="btn {% if status_filter == 'sent_to_controller' %}btn-primary{% else %}btn-secondary{% endif %}"
+                   style="padding: 8px 20px;">
+                    <i class="fas fa-paper-plane"></i> কন্ট্রোলারে প্রেরিত ({{ sent_to_controller_count|default:0 }})
+                </a>
+                <a href="?status=approved_by_controller" class="btn {% if status_filter == 'approved_by_controller' %}btn-purple{% else %}btn-secondary{% endif %}"
+                   style="padding: 8px 20px;">
+                    <i class="fas fa-check-double"></i> কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0 }})
+                </a>
+                <a href="?status=rejected_by_controller" class="btn {% if status_filter == 'rejected_by_controller' %}btn-orange{% else %}btn-secondary{% endif %}"
+                   style="padding: 8px 20px;">
+                    <i class="fas fa-ban"></i> কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0 }})
+                </a>
             </div>
         </div>
         
@@ -74,6 +96,9 @@
                     <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>অনুমোদিত</option>
                     <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>বাতিল</option>
                     <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>পরিশোধিত</option>
+                    <option value="sent_to_controller" {% if status_filter == 'sent_to_controller' %}selected{% endif %}>কন্ট্রোলারে প্রেরিত</option>
+                    <option value="approved_by_controller" {% if status_filter == 'approved_by_controller' %}selected{% endif %}>কন্ট্রোলার কর্তৃক অনুমোদিত</option>
+                    <option value="rejected_by_controller" {% if status_filter == 'rejected_by_controller' %}selected{% endif %}>কন্ট্রোলার কর্তৃক বাতিল</option>
                 </select>
                 
                 <input type="text" name="user" class="form-control" placeholder="ব্যবহারকারীর নাম" 
@@ -128,6 +153,12 @@
                                 <span class="status-badge status-rejected">বাতিল</span>
                             {% elif bill.status == 'paid' %}
                                 <span class="status-badge status-paid">পরিশোধিত</span>
+                            {% elif bill.status == 'sent_to_controller' %}
+                                <span class="status-badge status-sent-to-controller">কন্ট্রোলারে প্রেরিত</span>
+                            {% elif bill.status == 'approved_by_controller' %}
+                                <span class="status-badge status-approved-by-controller">✓ কন্ট্রোলার কর্তৃক অনুমোদিত</span>
+                            {% elif bill.status == 'rejected_by_controller' %}
+                                <span class="status-badge status-rejected-by-controller">✗ কন্ট্রোলার কর্তৃক বাতিল</span>
                             {% endif %}
                         </td>
                         <td style="padding: 12px;">
@@ -147,20 +178,30 @@
                                    class="btn btn-success" style="padding: 5px 10px; font-size: 12px;">
                                     <i class="fas fa-download"></i> ডাউনলোড
                                 </a>
-                                <a href="{% url 'update_bill_status' bill.id %}" 
-                                   class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">
-                                    <i class="fas fa-edit"></i> স্ট্যাটাস
-                                </a>
+                                
+                                <!-- Show different actions based on status -->
+                                {% if bill.status == 'pending' %}
+                                    <a href="{% url 'update_bill_status' bill.id %}" 
+                                       class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">
+                                        <i class="fas fa-edit"></i> রিভিউ
+                                    </a>
+                                {% elif bill.status == 'approved' %}
+                                    <!-- Send to Controller Button -->
+                                    <button onclick="openSendToControllerModal('{{ bill.id }}', '{{ bill.bill_number }}')" 
+                                            class="btn btn-primary" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #2196F3, #1976D2);">
+                                        <i class="fas fa-paper-plane"></i> কন্ট্রোলারে পাঠান
+                                    </button>
+                                {% endif %}
                                 
                                 <!-- Signature Button for Approved Bills -->
                                 {% if bill.status == 'approved' and request.user.profile.user_type == 'চেয়ারম্যান' %}
-                                <a href="{% url 'add_signature_to_bill' bill.id %}" 
+                                <a href="{% url 'add_signature_to_bill_chairman' bill.id %}" 
                                    class="btn btn-primary" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #4ECDC4, #44A08D);">
                                     <i class="fas fa-signature"></i> সাক্ষর
                                 </a>
                                 {% endif %}
                                 
-                                <!-- Delete Button: ALWAYS visible for chairman on all_bills page -->
+                                <!-- Delete Button for Chairman (Show for all statuses except maybe paid?) -->
                                 <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}')" 
                                         class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">
                                     <i class="fas fa-trash"></i> ডিলিট
@@ -205,8 +246,35 @@
     </div>
 </div>
 
+<!-- Send to Controller Modal -->
+<div id="sendToControllerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="glass-card" style="max-width: 500px; margin: 20px; text-align: center;">
+        <i class="fas fa-paper-plane" style="font-size: 64px; color: #2196F3; margin-bottom: 20px;"></i>
+        <h3 style="color: white; margin-bottom: 15px;">কন্ট্রোলারে পাঠান</h3>
+        <p id="sendBillInfo" style="color: #FFC107; margin-bottom: 15px; font-size: 16px; font-weight: bold;"></p>
+        <div style="background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33,150,243,0.4); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="fas fa-info-circle" style="color: #2196F3;"></i>
+            <p style="color: white; margin: 6px 0 0; font-size: 14px;">
+                এই বিলটি কন্ট্রোলারের অনুমোদনের জন্য প্রেরণ করা হবে।<br>
+                কন্ট্রোলার অনুমোদন দিলে বিলটি পরিশোধযোগ্য হবে।
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="closeSendToControllerModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i> বাতিল
+            </button>
+            <form id="sendToControllerForm" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(45deg, #2196F3, #1976D2);">
+                    <i class="fas fa-paper-plane"></i> নিশ্চিত করুন
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
-<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
     <div class="glass-card" style="max-width: 450px; margin: 20px; text-align: center;">
         <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #F44336; margin-bottom: 20px;"></i>
         <h3 style="color: white; margin-bottom: 15px;">নিশ্চিত করুন</h3>
@@ -240,10 +308,16 @@
         font-size: 12px;
         font-weight: bold;
     }
-    .status-pending  { background: #FFC107; color: #000; }
+    .status-pending { background: #FFC107; color: #000; }
     .status-approved { background: #4CAF50; color: white; }
     .status-rejected { background: #F44336; color: white; }
-    .status-paid     { background: #2196F3; color: white; }
+    .status-paid { background: #2196F3; color: white; }
+    .status-sent-to-controller { background: #9C27B0; color: white; }
+    .status-approved-by-controller { background: #00ACC1; color: white; }
+    .status-rejected-by-controller { background: #FF5722; color: white; }
+    
+    .btn-purple { background: linear-gradient(45deg, #9C27B0, #7B1FA2); color: white; }
+    .btn-orange { background: linear-gradient(45deg, #FF5722, #E64A19); color: white; }
     
     table { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
     table tr:hover { background: rgba(255, 255, 255, 0.05); }
@@ -251,6 +325,24 @@
 </style>
 
 <script>
+let currentBillId = null;
+
+function openSendToControllerModal(billId, billNumber) {
+    currentBillId = billId;
+    const modal = document.getElementById('sendToControllerModal');
+    const billInfo = document.getElementById('sendBillInfo');
+    const form = document.getElementById('sendToControllerForm');
+    
+    billInfo.innerHTML = `বিল নম্বর: ${billNumber}`;
+    form.action = `/bill/send-to-controller/${billId}/`;
+    modal.style.display = 'flex';
+}
+
+function closeSendToControllerModal() {
+    document.getElementById('sendToControllerModal').style.display = 'none';
+    currentBillId = null;
+}
+
 function confirmDelete(billId, billNumber, billStatus) {
     const modal    = document.getElementById('deleteModal');
     const billInfo = document.getElementById('billInfo');
@@ -262,6 +354,9 @@ function confirmDelete(billId, billNumber, billStatus) {
         rejected: 'বাতিল',
         paid:     'পরিশোধিত',
         draft:    'খসড়া',
+        sent_to_controller: 'কন্ট্রোলারে প্রেরিত',
+        approved_by_controller: 'কন্ট্রোলার কর্তৃক অনুমোদিত',
+        rejected_by_controller: 'কন্ট্রোলার কর্তৃক বাতিল',
     };
     const label = statusLabels[billStatus] || billStatus;
 
@@ -275,8 +370,10 @@ function closeDeleteModal() {
 }
 
 window.onclick = function(e) {
-    const modal = document.getElementById('deleteModal');
-    if (e.target === modal) modal.style.display = 'none';
+    const sendModal = document.getElementById('sendToControllerModal');
+    const deleteModal = document.getElementById('deleteModal');
+    if (e.target === sendModal) sendModal.style.display = 'none';
+    if (e.target === deleteModal) deleteModal.style.display = 'none';
 }
 </script>
 {% endblock %}

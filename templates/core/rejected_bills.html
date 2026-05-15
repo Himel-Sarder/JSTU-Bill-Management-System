@@ -1,0 +1,857 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load bangla_number %}
+
+{% block title %}কন্ট্রোলার প্যানেল - বাতিল বিল{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card">
+        <!-- Header Section -->
+        <div class="page-header">
+            <div class="header-text">
+                <h2>বাতিল বিলসমূহ</h2>
+                <p>কন্ট্রোলার কর্তৃক বাতিলকৃত বিলের তালিকা</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'cont_bills' %}" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> পিছনে
+                </a>
+            </div>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card total">
+                <div class="stat-info">
+                    <h3>মোট বাতিল</h3>
+                    <p class="stat-number">{{ total_rejected|default:0|bangla_number }}</p>
+                </div>
+            </div>
+            <div class="stat-card amount">
+                <div class="stat-info">
+                    <h3>মোট পরিমাণ</h3>
+                    <p class="stat-number">৳ {{ total_amount|default:0|bangla_number }}</p>
+                </div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-info">
+                    <h3>বিচারাধীন</h3>
+                    <p class="stat-number">{{ pending_count|default:0|bangla_number }}</p>
+                </div>
+            </div>
+            <div class="stat-card approved">
+                <div class="stat-info">
+                    <h3>অনুমোদিত</h3>
+                    <p class="stat-number">{{ approved_count|default:0|bangla_number }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-title">
+                <i class="fas fa-filter"></i>
+                <span>বিল ফিল্টার</span>
+            </div>
+            <form method="get" class="filter-form">
+                <div class="form-group">
+                    <label>বর্ষ নির্বাচন</label>
+                    <select name="year" class="form-control">
+                        <option value="">সব বর্ষ</option>
+                        <option value="1st" {% if year_filter == '1st' %}selected{% endif %}>১ম বর্ষ</option>
+                        <option value="2nd" {% if year_filter == '2nd' %}selected{% endif %}>২য় বর্ষ</option>
+                        <option value="3rd" {% if year_filter == '3rd' %}selected{% endif %}>৩য় বর্ষ</option>
+                        <option value="4th" {% if year_filter == '4th' %}selected{% endif %}>৪র্থ বর্ষ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ব্যবহারকারী</label>
+                    <input type="text" name="user" class="form-control" placeholder="ইউজারনেম" value="{{ user_filter }}">
+                </div>
+                <div class="form-group">
+                    <label>তারিখ থেকে</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="form-group">
+                    <label>তারিখ পর্যন্ত</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-search">
+                        <i class="fas fa-search"></i> অনুসন্ধান
+                    </button>
+                    <a href="{% url 'rejected_bills' %}" class="btn-reset">
+                        <i class="fas fa-redo"></i> রিসেট
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Rejected Bills Table -->
+        <div class="bills-table-container">
+            <div class="table-header">
+                <h3><i class="fas fa-times-circle"></i> বাতিল বিলের তালিকা</h3>
+                <div class="table-info">
+                    <span>মোট {{ rejected_bills|length|bangla_number }} টি বিল</span>
+                </div>
+            </div>
+            
+            {% if rejected_bills %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>বিল নম্বর</th>
+                            <th>প্রার্থীর নাম</th>
+                            <th>পদবী</th>
+                            <th>বর্ষ</th>
+                            <th>সেমিস্টার</th>
+                            <th>পরিমাণ</th>
+                            <th>বাতিলের তারিখ</th>
+                            <th>স্ট্যাটাস</th>
+                            <th>কার্যক্রম</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in rejected_bills %}
+                        <tr>
+                            <td>{{ forloop.counter|bangla_number }}</td>
+                            <td class="bill-number">{{ bill.bill_number|bangla_number }}</td>
+                            <td>
+                                <div class="user-info">
+                                    <strong>{{ bill.user.get_full_name|default:bill.user.username }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="user-type">{{ bill.user.profile.user_type }}</span>
+                            </td>
+                            <td>
+                                <span class="year-badge year-{{ bill.year }}">
+                                    {% if bill.year == '1st' %}১ম বর্ষ
+                                    {% elif bill.year == '2nd' %}২য় বর্ষ
+                                    {% elif bill.year == '3rd' %}৩য় বর্ষ
+                                    {% elif bill.year == '4th' %}৪র্থ বর্ষ
+                                    {% else %}{{ bill.year }}{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ bill.semester }}</td>
+                            <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
+                            <td>{{ bill.controller_approved_at|date:"d/m/Y h:i A"|bangla_number }}</td>
+                            <td>
+                                <span class="status-badge status-rejected">
+                                    <i class="fas fa-times-circle"></i> বাতিল
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button onclick="viewBill({{ bill.id }})" class="btn-action btn-view" title="বিল দেখুন">
+                                        <i class="fas fa-eye"></i> দেখুন
+                                    </button>
+                                    <button onclick="downloadBill({{ bill.id }})" class="btn-action btn-download" title="ডাউনলোড">
+                                        <i class="fas fa-download"></i> ডাউনলোড
+                                    </button>
+                                    <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn-action btn-delete" title="ডিলিট">
+                                        <i class="fas fa-trash"></i> ডিলিট
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if rejected_bills.has_other_pages %}
+            <div class="pagination">
+                {% if rejected_bills.has_previous %}
+                    <a href="?page=1{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">&laquo; প্রথম</a>
+                    <a href="?page={{ rejected_bills.previous_page_number }}{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">‹ পূর্ববর্তী</a>
+                {% endif %}
+                
+                <span class="current-page">
+                    পৃষ্ঠা {{ rejected_bills.number }} / {{ rejected_bills.paginator.num_pages }}
+                </span>
+                
+                {% if rejected_bills.has_next %}
+                    <a href="?page={{ rejected_bills.next_page_number }}{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">পরবর্তী ›</a>
+                    <a href="?page={{ rejected_bills.paginator.num_pages }}{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">শেষ &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-times-circle"></i>
+                <h3>কোন বাতিল বিল নেই</h3>
+                <p>এখন পর্যন্ত কোনো বিল কন্ট্রোলার কর্তৃক বাতিল হয়নি।</p>
+                <a href="{% url 'cont_bills' %}" class="btn-primary">
+                    <i class="fas fa-arrow-left"></i> প্রাপ্ত বিল দেখুন
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fas fa-exclamation-triangle" style="color: #F44336;"></i>
+                <h3>বিল ডিলিট নিশ্চিতকরণ</h3>
+            </div>
+            <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="delete-warning">
+                <i class="fas fa-trash-alt"></i>
+                <p id="deleteBillInfo"></p>
+                <div class="warning-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>সতর্কতা: এই বিলটি স্থায়ীভাবে ডিলিট করা হবে। এই action পূর্বাবস্থায় ফেরানো যাবে না!</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeDeleteModal()" class="btn-cancel">
+                <i class="fas fa-times"></i> বাতিল
+            </button>
+            <form id="deleteForm" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-confirm-delete">
+                    <i class="fas fa-trash"></i> স্থায়ীভাবে ডিলিট করুন
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page Header */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+    position: relative;
+}
+
+.header-text h2 {
+    color: white;
+    margin: 0 0 5px 0;
+    font-size: 24px;
+}
+
+.header-text p {
+    color: rgba(255,255,255,0.7);
+    margin: 0;
+    font-size: 14px;
+}
+
+.header-actions {
+    margin-left: auto;
+}
+
+.btn-back {
+    background: rgba(255,255,255,0.2);
+    padding: 8px 20px;
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateX(-3px);
+}
+
+/* Statistics Cards */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.stat-info h3 {
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-number {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.stat-card.total .stat-icon { background: rgba(244, 67, 54, 0.3); }
+.stat-card.amount .stat-icon { background: rgba(255, 193, 7, 0.3); }
+.stat-card.pending .stat-icon { background: rgba(243, 156, 18, 0.3); }
+.stat-card.approved .stat-icon { background: rgba(40, 167, 69, 0.3); }
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.filter-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #F44336;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.filter-title i {
+    color: #F44336;
+    font-size: 18px;
+}
+
+.filter-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.filter-form .form-group {
+    margin-bottom: 0;
+}
+
+.filter-form label {
+    display: block;
+    margin-bottom: 5px;
+    color: #495057;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filter-form .form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.filter-form .form-control:focus {
+    outline: none;
+    border-color: #F44336;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-search, .btn-reset {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-search {
+    background: linear-gradient(45deg, #F44336, #d32f2f);
+    color: white;
+}
+
+.btn-search:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+}
+
+.btn-reset {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.btn-reset:hover {
+    background: #dee2e6;
+}
+
+/* Bills Table */
+.bills-table-container {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #F44336;
+}
+
+.table-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-header h3 i {
+    color: #F44336;
+}
+
+.table-info {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    color: #2c3e50;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.data-table td {
+    padding: 15px 12px;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 14px;
+}
+
+.data-table tr:hover {
+    background: #f8f9fa;
+}
+
+.bill-number {
+    font-weight: 600;
+    color: #F44336;
+    font-size: 14px;
+}
+
+.user-info strong {
+    color: #2c3e50;
+}
+
+.user-type {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #e9ecef;
+    border-radius: 12px;
+    font-size: 11px;
+    color: #495057;
+}
+
+.year-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.year-1st { background: #FFD700; color: #333; }
+.year-2nd { background: #4ECDC4; color: white; }
+.year-3rd { background: #9C27B0; color: white; }
+.year-4th { background: #FF5722; color: white; }
+
+.amount {
+    font-weight: 600;
+    color: #dc3545;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-rejected {
+    background: rgba(244, 67, 54, 0.15);
+    color: #F44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-view { background: rgba(52, 152, 219, 0.15); color: #3498DB; border: 1px solid rgba(52, 152, 219, 0.3); }
+.btn-view:hover { background: #3498DB; color: white; transform: translateY(-2px); }
+
+.btn-download { background: rgba(46, 204, 113, 0.15); color: #2ECC71; border: 1px solid rgba(46, 204, 113, 0.3); }
+.btn-download:hover { background: #2ECC71; color: white; transform: translateY(-2px); }
+
+.btn-delete { background: rgba(244, 67, 54, 0.15); color: #F44336; border: 1px solid rgba(244, 67, 54, 0.3); }
+.btn-delete:hover { background: #F44336; color: white; transform: translateY(-2px); }
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state i {
+    font-size: 80px;
+    color: #F44336;
+    opacity: 0.5;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 25px;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #4ECDC4, #44A08D);
+    color: white;
+    padding: 10px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78,205,196,0.3);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.page-link {
+    padding: 8px 15px;
+    background: white;
+    color: #F44336;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background: #F44336;
+    color: white;
+    border-color: #F44336;
+}
+
+.current-page {
+    padding: 8px 15px;
+    background: linear-gradient(45deg, #F44336, #d32f2f);
+    color: white;
+    border-radius: 6px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-title i {
+    font-size: 24px;
+}
+
+.modal-title h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    color: #333;
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.delete-warning {
+    text-align: center;
+}
+
+.delete-warning i {
+    font-size: 48px;
+    color: #F44336;
+    margin-bottom: 15px;
+}
+
+.delete-warning p {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.warning-message {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.warning-message i {
+    font-size: 20px;
+    color: #856404;
+    margin: 0;
+}
+
+.warning-message span {
+    color: #856404;
+    font-size: 12px;
+    text-align: left;
+}
+
+.btn-cancel {
+    background: #e9ecef;
+    color: #495057;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+    background: #dee2e6;
+}
+
+.btn-confirm-delete {
+    background: #F44336;
+    color: white;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-confirm-delete:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filter-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        grid-column: 1;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        justify-content: center;
+    }
+    
+    .data-table {
+        font-size: 12px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 8px;
+    }
+    
+    .modal-content {
+        width: 95%;
+    }
+}
+</style>
+
+<script>
+function viewBill(billId) {
+    window.open(`/bill/view/${billId}/`, '_blank');
+}
+
+function downloadBill(billId) {
+    window.location.href = `/bill/download/${billId}/`;
+}
+
+let currentBillId = null;
+
+function confirmDelete(billId, billNumber) {
+    currentBillId = billId;
+    const modal = document.getElementById('deleteModal');
+    const billInfo = document.getElementById('deleteBillInfo');
+    const form = document.getElementById('deleteForm');
+    
+    billInfo.innerHTML = `আপনি কি নিশ্চিত যে <strong>বিল নম্বর: ${billNumber}</strong> স্থায়ীভাবে ডিলিট করতে চান?`;
+    form.action = `/controller/delete-bill/${billId}/`;
+    modal.style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    currentBillId = null;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const deleteModal = document.getElementById('deleteModal');
+    if (event.target === deleteModal) {
+        deleteModal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

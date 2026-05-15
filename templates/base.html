@@ -298,62 +298,78 @@
 
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
 
+            <!-- Replace the entire nav-links div content in base.html with this: -->
+
             <div class="nav-links" id="navLinks">
-                <!-- Home link for all users -->
-                <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
-                
-                {% if user.is_authenticated %}
-                    {% if user.profile.user_type == 'চেয়ারম্যান' %}
-                        <!-- Chairman based on username -->
-                        {% if user.username == 'JSTUChairman1' %}
-                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                            <a href="{% url 'signature_upload_chairman1' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
-                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
-                        {% elif user.username == 'JSTUChairman2' %}
-                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                            <a href="{% url 'signature_upload_chairman2' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
-                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
-                        {% elif user.username == 'JSTUChairman3' %}
-                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                            <a href="{% url 'signature_upload_chairman3' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
-                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
-                        {% elif user.username == 'JSTUChairman4' %}
-                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                            <a href="{% url 'signature_upload_chairman4' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
-                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
-                        {% else %}
-                            <!-- Other Chairmen -->
-                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                            <a href="{% url 'signature_upload' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                            <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
-                            <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
-                        {% endif %}
-                        
+ 
+            {% if user.is_authenticated %}
+        
+                {% if user.profile.user_type == 'চেয়ারম্যান' %}
+                    <!-- ── Chairman ── -->
+                    <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
+        
+                    {% if user.username == 'JSTUChairman1' %}
+                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                        <a href="{% url 'signature_upload_chairman1' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                    {% elif user.username == 'JSTUChairman2' %}
+                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                        <a href="{% url 'signature_upload_chairman2' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                    {% elif user.username == 'JSTUChairman3' %}
+                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                        <a href="{% url 'signature_upload_chairman3' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                    {% elif user.username == 'JSTUChairman4' %}
+                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                        <a href="{% url 'signature_upload_chairman4' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
                     {% else %}
-                        <!-- All Others (Controller, Office Assistant, Assistant Professor, Lecturer): See all navbar items -->
-                        <a href="{% url 'bill_create' %}" {% if 'create' in request.path %}class="active"{% endif %}>বিল তৈরী</a>
-                        <a href="{% url 'my_bills' %}" {% if 'my-bills' in request.path %}class="active"{% endif %}>আমার বিল</a>
-                        <a href="{% url 'bill_status' %}" {% if 'bill-status' in request.path %}class="active"{% endif %}>স্ট্যাটাস</a>
-                        <a href="{% url 'signature_upload_general' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                        <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
-                        <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
-                        
-                        <!-- Additional admin links for Controller and Office Assistant -->
-                        {% if user.profile.user_type == 'কন্ট্রোলার' or user.profile.user_type == 'অফিস সহকারী' %}
-                            <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                        {% endif %}
+                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                        <a href="{% url 'signature_upload' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
                     {% endif %}
-                    
-                    <span class="user-welcome">স্বাগতম, {{ user.first_name }}</span>
+        
+                    <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                    <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+        
+                {% elif user.profile.user_type == 'কন্ট্রোলার' %}
+                    <!-- Controller Navigation -->
+                    <a href="{% url 'controller_home' %}" {% if 'controller' in request.path or 'home_con' in request.path %}class="active"{% endif %}>
+                        <i class="fas fa-home"></i> হোম
+                    </a>
+                    <a href="{% url 'cont_bills' %}" {% if 'cont_bills' in request.path %}class="active"{% endif %}>
+                        <i class="fas fa-file-invoice-dollar"></i> বিল গুলা
+                    </a>
+                     <a href="{% url 'accepted_bills' %}">অনুমোদিত বিল</a>
+                      <a href="{% url 'rejected_bills' %}">বাতিল বিল</a>
+                    <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>
+                        <i class="fas fa-user-circle"></i> প্রোফাইল
+                    </a>
+                    <a href="{% url 'logout' %}" class="btn-danger">
+                        <i class="fas fa-sign-out-alt"></i> লগআউট
+                    </a>
+        
                 {% else %}
-                    <a href="{% url 'login' %}" {% if 'login' in request.path %}class="active"{% endif %}>লগইন</a>
-                    <a href="{% url 'register' %}" {% if 'register' in request.path %}class="active"{% endif %}>রেজিস্টার</a>
+                    <!-- ── All others (Assistant Professor, Lecturer, Office Assistant) ── -->
+                    <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
+                    <a href="{% url 'bill_create' %}" {% if 'create' in request.path %}class="active"{% endif %}>বিল তৈরী</a>
+                    <a href="{% url 'my_bills' %}" {% if 'my-bills' in request.path %}class="active"{% endif %}>আমার বিল</a>
+                    <a href="{% url 'bill_status' %}" {% if 'bill-status' in request.path %}class="active"{% endif %}>স্ট্যাটাস</a>
+                    <a href="{% url 'signature_upload_general' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
+                    <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
+                    <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
+        
+                    {% if user.profile.user_type == 'অফিস সহকারী' %}
+                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                    {% endif %}
                 {% endif %}
-            </div>
+        
+                <span class="user-welcome">স্বাগতম, {{ user.first_name }}</span>
+        
+            {% else %}
+                <!-- ── Unauthenticated ── -->
+                <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
+                <a href="{% url 'login' %}" {% if 'login' in request.path %}class="active"{% endif %}>লগইন</a>
+                <a href="{% url 'register' %}" {% if 'register' in request.path %}class="active"{% endif %}>রেজিস্টার</a>
+            {% endif %}
+        
+        </div>
         </div>
     </nav>
 

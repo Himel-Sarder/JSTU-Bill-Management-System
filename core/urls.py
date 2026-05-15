@@ -80,6 +80,26 @@ urlpatterns = [
     path('debug-bill/<int:bill_id>/', views.debug_bill_signature, name='debug_bill_signature'),
 
     path('bill/edit/<int:bill_id>/', views.edit_bill, name='edit_bill'),
+
+    # path('controller/', views.controller_home, name='controller_home'),
+    path('bill/send-to-controller/<int:bill_id>/', views.send_bill_to_controller, name='send_bill_to_controller'),
+
+
+    path('', views.controller_home, name='controller_home'),
+    path('bills/', views.cont_bills, name='cont_bills'),
+    path('controller/update-bill-status/<int:bill_id>/', views.controller_update_bill_status, name='controller_update_bill_status'),
+    path('controller/delete-bill/<int:bill_id>/', views.controller_delete_bill, name='controller_delete_bill'),
+
+    path('accepted-bills/', views.accepted_bills, name='accepted_bills'),
+    path('rejected-bills/', views.rejected_bills, name='rejected_bills'),
+    path('bill/details/<int:bill_id>/', views.bill_details_api, name='bill_details_api'),
+    
+    # API — notification polling (FIX: login_required added in views.py)
+    path('api/bill-counts/', views.bill_counts_api, name='bill_counts_api'),
+ 
+    # Notification mark-seen
+    path('api/mark-notification-seen/', views.mark_notification_seen, name='mark_notification_seen'),
+
 ]
 
 # Error handlers

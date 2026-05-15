@@ -56,18 +56,36 @@ def save_user_profile(sender, instance, **kwargs):
 # Slider Image Model
 # --------------------------
 class SliderImage(models.Model):
-    title = models.CharField(max_length=200, verbose_name='শিরোনাম')
-    image = models.ImageField(upload_to='slider_images/', verbose_name='ছবি')
-    description = models.TextField(verbose_name='বর্ণনা')
-    is_active = models.BooleanField(default=True, verbose_name='সক্রিয়')
-    order = models.PositiveIntegerField(default=0, verbose_name='ক্রম')
+    title = models.CharField(
+        max_length=200, 
+        verbose_name='শিরোনাম',
+        blank=True,
+        null=True
+    )
+    image = models.ImageField(
+        upload_to='slider_images/', 
+        verbose_name='ছবি'
+    )
+    description = models.TextField(
+        verbose_name='বর্ণনা',
+        blank=True,
+        null=True
+    )
+    is_active = models.BooleanField(
+        default=True, 
+        verbose_name='সক্রিয়'
+    )
+    order = models.PositiveIntegerField(
+        default=0, 
+        verbose_name='ক্রম'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['order', 'created_at']
 
     def __str__(self):
-        return self.title
+        return self.title if self.title else f"Image {self.id}"
 
 
 # --------------------------
@@ -166,6 +184,7 @@ class Bill(models.Model):
         ('honors', 'অনার্স'),
         ('masters', 'মাস্টার্স'),
     ]
+    
     # Bank Information Fields
     BANK_CHOICES = [
         ('জনতা ব্যাংক', 'জনতা ব্যাংক'),
@@ -193,10 +212,14 @@ class Bill(models.Model):
     ]
 
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('paid', 'Paid'),
+        ('sent_to_controller', 'Sent to Controller'),
+        ('approved_by_controller', 'Approved by Controller'),
+        ('rejected_by_controller', 'Rejected by Controller'),
     ]
 
     bill_number = models.CharField(max_length=50, unique=True, verbose_name='বিল নম্বর')
@@ -206,9 +229,23 @@ class Bill(models.Model):
     department = models.CharField(max_length=100, default='কম্পিউটার বিজ্ঞান এবং প্রকৌশল', verbose_name='বিভাগ')
     bangla_date = models.CharField(max_length=50, verbose_name='বাংলা তারিখ')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='মোট টাকা')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='স্ট্যাটাস')
-    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
-                                    related_name='approved_bills', verbose_name='অনুমোদনকারী')
+    
+    # Status field - Increased max_length to 30 to accommodate longer status values
+    status = models.CharField(
+        max_length=30,  # Changed from 20 to 30
+        choices=STATUS_CHOICES, 
+        default='pending', 
+        verbose_name='স্ট্যাটাস'
+    )
+    
+    approved_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='approved_bills', 
+        verbose_name='অনুমোদনকারী'
+    )
     approved_at = models.DateTimeField(null=True, blank=True, verbose_name='অনুমোদনের সময়')
     remarks = models.TextField(blank=True, null=True, verbose_name='মন্তব্য')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -218,6 +255,18 @@ class Bill(models.Model):
     degree_type = models.CharField(max_length=10, choices=DEGREE_CHOICES, default='honors', verbose_name='ডিগ্রির ধরণ')
     user_signature_added = models.BooleanField(default=False, verbose_name='ব্যবহারকারীর স্বাক্ষর যুক্ত হয়েছে')
     chairman_signature_added = models.BooleanField(default=False, verbose_name='চেয়ারম্যানের স্বাক্ষর যুক্ত হয়েছে')
+    
+    # Controller related fields
+    sent_to_controller_at = models.DateTimeField(null=True, blank=True, verbose_name='কন্ট্রোলে পাঠানোর সময়')
+    controller_approved_at = models.DateTimeField(null=True, blank=True, verbose_name='কন্ট্রোলার অনুমোদনের সময়')
+    controller_approved_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='controller_approved_bills', 
+        verbose_name='কন্ট্রোলার অনুমোদনকারী'
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -243,17 +292,33 @@ class Bill(models.Model):
     def get_status_badge(self):
         """Return styled HTML badge for status"""
         status_colors = {
+            'draft': 'secondary',
             'pending': 'warning',
             'approved': 'success',
             'rejected': 'danger',
-            'paid': 'info'
+            'paid': 'info',
+            'sent_to_controller': 'primary',
+            'approved_by_controller': 'success',
+            'rejected_by_controller': 'danger',
         }
         color = status_colors.get(self.status, 'secondary')
-        return f'<span class="badge bg-{color}">{self.get_status_display()}</span>'
+        
+        status_display = {
+            'draft': 'খসড়া',
+            'pending': 'অপেক্ষমান',
+            'approved': 'অনুমোদিত',
+            'rejected': 'বাতিল',
+            'paid': 'পরিশোধিত',
+            'sent_to_controller': 'কন্ট্রোলারে প্রেরিত',
+            'approved_by_controller': 'কন্ট্রোলার কর্তৃক অনুমোদিত',
+            'rejected_by_controller': 'কন্ট্রোলার কর্তৃক বাতিল',
+        }
+        label = status_display.get(self.status, self.status)
+        
+        return f'<span class="badge bg-{color}">{label}</span>'
 
     def __str__(self):
         return f"বিল {self.bill_number}"
-
 
 # --------------------------
 # Task Model

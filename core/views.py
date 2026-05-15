@@ -41,32 +41,75 @@ def log_activity(user, action, details='', ip_address=None):
 # --------------------------
 
 def home(request):
-    slider_images = SliderImage.objects.filter(is_active=True).order_by('order')
-    total_bills = Bill.objects.count()
-    total_users = User.objects.count()
-    total_amount = Bill.objects.aggregate(total=Sum('total_amount'))['total'] or 0
-
     from django.conf import settings
-    
-    # Check if user is authenticated and is Chairman
+ 
+    slider_images = SliderImage.objects.filter(is_active=True).order_by('order')
+    total_bills   = Bill.objects.count()
+    total_users   = User.objects.count()
+    total_amount  = Bill.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+ 
     if request.user.is_authenticated and hasattr(request.user, 'profile'):
-        if request.user.profile.user_type == 'চেয়ারম্যান':
-            # For Chairman, use home_c.html
+        user_type = request.user.profile.user_type
+ 
+        # ── Controller ──────────────────────────────────────────────
+        if user_type == 'কন্ট্রোলার':
+            bills_list = (
+                Bill.objects
+                .exclude(status='draft')
+                .select_related('user', 'user__profile')
+                .order_by('-created_at')
+            )
+ 
+            status_filter = request.GET.get('status', '')
+            if status_filter:
+                bills_list = bills_list.filter(status=status_filter)
+ 
+            pending_count  = Bill.objects.exclude(status='draft').filter(status='pending').count()
+            approved_count = Bill.objects.exclude(status='draft').filter(status='approved').count()
+            rejected_count = Bill.objects.exclude(status='draft').filter(status='rejected').count()
+            paid_count     = Bill.objects.exclude(status='draft').filter(status='paid').count()
+            con_total      = Bill.objects.exclude(status='draft').count()
+            con_amount     = Bill.objects.exclude(status='draft').aggregate(
+                total=Sum('total_amount')
+            )['total'] or 0
+ 
+            paginator   = Paginator(bills_list, 10)
+            page_number = request.GET.get('page')
+            page_obj    = paginator.get_page(page_number)
+ 
+            sent_to_controller_count = Bill.objects.exclude(status='draft').filter(
+                status='sent_to_controller'
+            ).count()
+
+            context = {
+                'bills':                    page_obj,
+                'pending_count':            pending_count,
+                'approved_count':           approved_count,
+                'rejected_count':           rejected_count,
+                'paid_count':               paid_count,
+                'total_bills':              con_total,
+                'total_amount':             con_amount,
+                'current_filter':           status_filter,
+                'sent_to_controller_count': sent_to_controller_count,
+                'MEDIA_URL':                settings.MEDIA_URL,
+            }
+            return render(request, 'core/home_con.html', context)
+ 
+        # ── Chairman ────────────────────────────────────────────────
+        elif user_type == 'চেয়ারম্যান':
             context = {
                 'slider_images': slider_images,
-                'total_bills': total_bills,
-                'total_users': total_users,
-                'total_amount': total_amount,
-                'MEDIA_URL': settings.MEDIA_URL,
-                'pending_count': Bill.objects.filter(status='pending').count(),
+                'total_bills':   total_bills,
+                'total_users':   total_users,
+                'total_amount':  total_amount,
+                'MEDIA_URL':     settings.MEDIA_URL,
+                'pending_count':  Bill.objects.filter(status='pending').count(),
                 'approved_count': Bill.objects.filter(status='approved').count(),
                 'rejected_count': Bill.objects.filter(status='rejected').count(),
-                'paid_count': Bill.objects.filter(status='paid').count(),
+                'paid_count':     Bill.objects.filter(status='paid').count(),
             }
-            
-            # Add year-specific statistics based on username
+ 
             if request.user.username == 'JSTUChairman1':
-                # 1st Year: 1st and 2nd semesters
                 context['total_bills_1st_year'] = Bill.objects.filter(
                     Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
@@ -74,31 +117,30 @@ def home(request):
                 ).count()
                 context['pending_bills_1st_year'] = Bill.objects.filter(
                     (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                    Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                    Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
+                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
+                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
                     status='pending'
                 ).count()
                 context['approved_bills_1st_year'] = Bill.objects.filter(
                     (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                    Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                    Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
+                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
+                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
                     status='approved'
                 ).count()
                 context['rejected_bills_1st_year'] = Bill.objects.filter(
                     (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                    Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                    Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
+                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
+                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
                     status='rejected'
                 ).count()
                 context['paid_bills_1st_year'] = Bill.objects.filter(
                     (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                    Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                    Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
+                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
+                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
                     status='paid'
                 ).count()
-
+ 
             elif request.user.username == 'JSTUChairman2':
-                # 2nd Year: 3rd and 4th semesters
                 context['total_bills_2nd_year'] = Bill.objects.filter(
                     Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
@@ -106,31 +148,30 @@ def home(request):
                 ).count()
                 context['pending_bills_2nd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                    Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                    Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
+                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
+                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
                     status='pending'
                 ).count()
                 context['approved_bills_2nd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                    Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                    Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
+                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
+                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
                     status='approved'
                 ).count()
                 context['rejected_bills_2nd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                    Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                    Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
+                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
+                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
                     status='rejected'
                 ).count()
                 context['paid_bills_2nd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                    Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                    Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
+                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
+                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
                     status='paid'
                 ).count()
-
+ 
             elif request.user.username == 'JSTUChairman3':
-                # 3rd Year: 5th and 6th semesters
                 context['total_bills_3rd_year'] = Bill.objects.filter(
                     Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
@@ -138,31 +179,30 @@ def home(request):
                 ).count()
                 context['pending_bills_3rd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                    Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                    Q(semester__icontains='5th') | Q(semester__icontains='6th')),
+                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
+                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
                     status='pending'
                 ).count()
                 context['approved_bills_3rd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                    Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                    Q(semester__icontains='5th') | Q(semester__icontains='6th')),
+                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
+                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
                     status='approved'
                 ).count()
                 context['rejected_bills_3rd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                    Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                    Q(semester__icontains='5th') | Q(semester__icontains='6th')),
+                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
+                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
                     status='rejected'
                 ).count()
                 context['paid_bills_3rd_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                    Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                    Q(semester__icontains='5th') | Q(semester__icontains='6th')),
+                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
+                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
                     status='paid'
                 ).count()
-
+ 
             elif request.user.username == 'JSTUChairman4':
-                # 4th Year: 7th and 8th semesters
                 context['total_bills_4th_year'] = Bill.objects.filter(
                     Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
@@ -171,52 +211,42 @@ def home(request):
                 ).count()
                 context['pending_bills_4th_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                    Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                    Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                    Q(semester__icontains='মাস্টার্স')),
+                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
+                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
+                     Q(semester__icontains='মাস্টার্স')),
                     status='pending'
                 ).count()
                 context['approved_bills_4th_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                    Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                    Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                    Q(semester__icontains='মাস্টার্স')),
+                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
+                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
+                     Q(semester__icontains='মাস্টার্স')),
                     status='approved'
                 ).count()
                 context['rejected_bills_4th_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                    Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                    Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                    Q(semester__icontains='মাস্টার্স')),
+                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
+                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
+                     Q(semester__icontains='মাস্টার্স')),
                     status='rejected'
                 ).count()
                 context['paid_bills_4th_year'] = Bill.objects.filter(
                     (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                    Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                    Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                    Q(semester__icontains='মাস্টার্স')),
+                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
+                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
+                     Q(semester__icontains='মাস্টার্স')),
                     status='paid'
                 ).count()
-            
+ 
             return render(request, 'core/home_c.html', context)
-    
-    # For all other users, use home.html
+ 
+    # ── Everyone else (including unauthenticated) ────────────────────
     context = {
         'slider_images': slider_images,
-        'total_bills': total_bills,
-        'total_users': total_users,
-        'total_amount': total_amount,
-        'MEDIA_URL': settings.MEDIA_URL,
-    }
-    return render(request, 'core/home.html', context)
-    
-    # For all other users, use home.html
-    context = {
-        'slider_images': slider_images,
-        'total_bills': total_bills,
-        'total_users': total_users,
-        'total_amount': total_amount,
-        'MEDIA_URL': settings.MEDIA_URL,
+        'total_bills':   total_bills,
+        'total_users':   total_users,
+        'total_amount':  total_amount,
+        'MEDIA_URL':     settings.MEDIA_URL,
     }
     return render(request, 'core/home.html', context)
 
@@ -314,16 +344,30 @@ def custom_logout(request):
 def profile(request):
     """User profile management view"""
     if request.method == 'POST':
-        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
-        password_form = CustomPasswordChangeForm(request.user, request.POST)
-
         if 'profile_update' in request.POST:
+            # Pass FILES only if a new picture was actually uploaded.
+            # If no file was sent, pass the existing instance so the picture
+            # is NOT cleared by Django's ClearableFileInput widget.
+            files = request.FILES if 'profile_picture' in request.FILES else None
+            profile_form = ProfileUpdateForm(
+                request.POST,
+                files,
+                instance=request.user.profile
+            )
+            password_form = CustomPasswordChangeForm(request.user)
+
             if profile_form.is_valid():
                 profile_form.save()
                 log_activity(request.user, 'Profile updated', 'User updated their profile')
                 messages.success(request, 'আপনার প্রোফাইল সফলভাবে আপডেট করা হয়েছে!')
                 return redirect('profile')
+            else:
+                messages.error(request, 'দয়া করে আপনার তথ্য সঠিকভাবে পূরণ করুন।')
+
         elif 'password_change' in request.POST:
+            profile_form = ProfileUpdateForm(instance=request.user.profile)
+            password_form = CustomPasswordChangeForm(request.user, request.POST)
+
             if password_form.is_valid():
                 user = password_form.save()
                 update_session_auth_hash(request, user)
@@ -332,6 +376,9 @@ def profile(request):
                 return redirect('profile')
             else:
                 messages.error(request, 'দয়া করে আপনার তথ্য সঠিকভাবে পূরণ করুন।')
+        else:
+            profile_form = ProfileUpdateForm(instance=request.user.profile)
+            password_form = CustomPasswordChangeForm(request.user)
     else:
         profile_form = ProfileUpdateForm(instance=request.user.profile)
         password_form = CustomPasswordChangeForm(request.user)
@@ -569,11 +616,16 @@ def bill_status(request):
         approved_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved').count()
         rejected_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected').count()
         paid_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='paid').count()
+        # Add controller status counts
+        approved_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved_by_controller').count()
+        rejected_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected_by_controller').count()
     else:
         pending_count = Bill.objects.filter(user=request.user, status='pending').count()
         approved_count = Bill.objects.filter(user=request.user, status='approved').count()
         rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
         paid_count = Bill.objects.filter(user=request.user, status='paid').count()
+        approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
+        rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
 
     status_filter = request.GET.get('status', '')
     if status_filter:
@@ -589,6 +641,8 @@ def bill_status(request):
         'approved_count': approved_count,
         'rejected_count': rejected_count,
         'paid_count': paid_count,
+        'approved_by_controller_count': approved_by_controller_count,
+        'rejected_by_controller_count': rejected_by_controller_count,
         'current_filter': status_filter,
     }
     return render(request, 'core/status.html', context)
@@ -725,21 +779,25 @@ def all_bills(request):
     
     status_filter = request.GET.get('status', '')
     user_filter = request.GET.get('user', '')
-
-    if status_filter:
+    
+    # Handle sent_to_controller filter
+    if status_filter == 'sent_to_controller':
+        bills = bills.filter(status='sent_to_controller')
+    elif status_filter:
         bills = bills.filter(status=status_filter)
     if user_filter:
         bills = bills.filter(user__username__icontains=user_filter)
-
+    
     paginator = Paginator(bills, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
+    
     total_bills = bills.count()
-    pending_count = bills.filter(status='pending').count()
-    approved_count = bills.filter(status='approved').count()
-    rejected_count = bills.filter(status='rejected').count()
-    paid_count = bills.filter(status='paid').count()
+    pending_count = Bill.objects.filter(status='pending').count()
+    approved_count = Bill.objects.filter(status='approved').count()
+    rejected_count = Bill.objects.filter(status='rejected').count()
+    paid_count = Bill.objects.filter(status='paid').count()
+    sent_to_controller_count = Bill.objects.filter(status='sent_to_controller').count()
 
     context = {
         'bills': page_obj,
@@ -750,6 +808,7 @@ def all_bills(request):
         'approved_count': approved_count,
         'rejected_count': rejected_count,
         'paid_count': paid_count,
+        'sent_to_controller_count': sent_to_controller_count,
     }
     return render(request, 'core/all_bills.html', context)
 
@@ -826,7 +885,7 @@ def user_management(request):
 @login_required
 @user_passes_test(lambda u: u.is_authenticated and u.username in ['JSTUChairman1', 'JSTUChairman2', 'JSTUChairman3', 'JSTUChairman4'])
 def add_signature_to_bill_chairman(request, bill_id):
-    """Add chairman's signature to approved bill based on chairman type"""
+    """Add chairman's signature to approved bill based on chairman type - PERMANENT"""
     bill = get_object_or_404(Bill, id=bill_id)
     
     if bill.status != 'approved':
@@ -836,12 +895,13 @@ def add_signature_to_bill_chairman(request, bill_id):
     # Check if signature is already added
     if bill.chairman_signature_added:
         messages.warning(request, 'এই বিলে ইতিমধ্যে চেয়ারম্যানের স্বাক্ষর যুক্ত হয়েছে।')
-        return redirect('all_bills')
+        return redirect('view_bill_pdf', bill_id=bill.id)
     
     if request.method == 'POST':
         chairman_username = request.user.username
         signature_added = False
         
+        # Determine which signature field to check
         if chairman_username == 'JSTUChairman1' and request.user.profile.signature_chairman1:
             signature_added = True
         elif chairman_username == 'JSTUChairman2' and request.user.profile.signature_chairman2:
@@ -852,14 +912,31 @@ def add_signature_to_bill_chairman(request, bill_id):
             signature_added = True
         
         if signature_added:
+            # Mark signature as added - THIS FLAG MAKES THE SIGNATURE PERMANENT
             bill.chairman_signature_added = True
-            signature_note = f"\nচেয়ারম্যানের স্বাক্ষর যুক্ত: {timezone.now().strftime('%d-%m-%Y %H:%M:%S')} ({chairman_username})"
+            
+            # Also store the chairman username in a dedicated field for easier lookup
+            # (You may want to add a chairman_username field to Bill model)
+            # For now, store it clearly in remarks
+            year_text = ''
+            if chairman_username == 'JSTUChairman1':
+                year_text = '১ম বর্ষ'
+            elif chairman_username == 'JSTUChairman2':
+                year_text = '২য় বর্ষ'
+            elif chairman_username == 'JSTUChairman3':
+                year_text = '৩য় বর্ষ'
+            elif chairman_username == 'JSTUChairman4':
+                year_text = '৪র্থ বর্ষ'
+            
+            signature_note = f"\nচেয়ারম্যানের স্বাক্ষর যুক্ত: {timezone.now().strftime('%d-%m-%Y %H:%M:%S')} ({chairman_username} - {year_text})"
             bill.remarks = (bill.remarks or '') + signature_note
             bill.save()
             
             log_activity(request.user, 'Signature added to bill', 
                         f'Chairman signature added to bill {bill.bill_number}')
-            messages.success(request, f'বিল {bill.bill_number} এ আপনার স্বাক্ষর সফলভাবে যুক্ত হয়েছে!')
+            messages.success(request, f'বিল {bill.bill_number} এ আপনার স্বাক্ষর সফলভাবে যুক্ত হয়েছে! এটি স্থায়ীভাবে সংরক্ষিত হবে।')
+            
+            # After adding signature, show the PDF
             return redirect('view_bill_pdf', bill_id=bill.id)
         else:
             messages.error(request, 'আপনার স্বাক্ষর আপলোড করা হয়নি। দয়া করে প্রথমে স্বাক্ষর আপলোড করুন।')
@@ -1583,3 +1660,359 @@ def edit_bill(request, bill_id):
         'edit_mode': True
     }
     return render(request, 'core/bill_edit.html', context)
+
+
+
+
+
+
+def is_controller(user):
+    """Check if user is a Controller"""
+    return user.is_authenticated and hasattr(user, 'profile') and user.profile.user_type == 'কন্ট্রোলার'
+ 
+ 
+# --------------------------
+# Controller Home View
+# --------------------------
+ 
+@login_required
+@user_passes_test(is_controller)
+def controller_home(request):
+    """Controller dashboard - shows all non-draft bills with stats"""
+    all_non_draft_bills = Bill.objects.exclude(status='draft')
+    
+    # Get new bills count (bills sent to controller that haven't been processed)
+    new_bills_count = Bill.objects.filter(status='sent_to_controller').count()
+    
+    bills_list = all_non_draft_bills.select_related('user', 'user__profile').order_by('-created_at')
+    
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        bills_list = bills_list.filter(status=status_filter)
+    
+    total_bills = all_non_draft_bills.count()
+    total_amount = all_non_draft_bills.aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    pending_count = all_non_draft_bills.filter(status='pending').count()
+    approved_count = all_non_draft_bills.filter(status='approved').count()
+    rejected_count = all_non_draft_bills.filter(status='rejected').count()
+    paid_count = all_non_draft_bills.filter(status='paid').count()
+    sent_to_controller_count = all_non_draft_bills.filter(status='sent_to_controller').count()
+    
+    # Get session to track if notification has been shown
+    if 'notification_shown' in request.session and request.session['notification_shown'] < new_bills_count:
+        # Reset notification shown flag if there are more new bills
+        request.session['notification_shown'] = new_bills_count
+    elif 'notification_shown' not in request.session:
+        request.session['notification_shown'] = new_bills_count
+    
+    total_users = User.objects.count()
+    recent_bills = Bill.objects.select_related('user').order_by('-created_at')[:10]
+    
+    paginator = Paginator(bills_list, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'new_bills_count': new_bills_count,
+        'total_bills': total_bills,
+        'total_users': total_users,
+        'total_amount': total_amount,
+        'recent_bills': recent_bills,
+        'bills': page_obj,
+        'current_filter': status_filter,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+        'paid_count': paid_count,
+        'sent_to_controller_count': sent_to_controller_count,
+    }
+    return render(request, 'core/home_con.html', context)
+
+
+@login_required
+@require_POST
+def mark_notification_seen(request):
+    """Mark notification as seen"""
+    if request.user.is_authenticated and request.user.profile.user_type == 'কন্ট্রোলার':
+        new_bills_count = Bill.objects.filter(status='sent_to_controller').count()
+        request.session['notification_shown'] = new_bills_count
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'চেয়ারম্যান')
+def send_bill_to_controller(request, bill_id):
+    """Send approved bill to controller for final approval"""
+    bill = get_object_or_404(Bill, id=bill_id)
+    
+    # Only approved bills can be sent to controller
+    if bill.status != 'approved':
+        messages.error(request, 'শুধুমাত্র অনুমোদিত বিল কন্ট্রোলারে পাঠানো যাবে।')
+        return redirect('all_bills')
+    
+    # Update bill status
+    bill.status = 'sent_to_controller'
+    bill.sent_to_controller_at = timezone.now()
+    bill.save()
+    
+    log_activity(request.user, 'Bill sent to controller', 
+                f'Bill {bill.bill_number} sent to controller for approval')
+    messages.success(request, f'বিল {bill.bill_number} কন্ট্রোলারের অনুমোদনের জন্য প্রেরণ করা হয়েছে!')
+    
+    return redirect('all_bills')
+
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def cont_bills(request):
+    """Controller bills view with year-wise sections"""
+    # Get all bills sent from chairman (status = 'sent_to_controller')
+    all_bills = Bill.objects.filter(status='sent_to_controller').order_by('-sent_to_controller_at')
+    
+    # Helper function to determine year from remarks
+    def get_bill_year(bill):
+        if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
+            return '1st'
+        elif '২য় বর্ষ' in bill.remarks or 'JSTUChairman2' in bill.remarks:
+            return '2nd'
+        elif '৩য় বর্ষ' in bill.remarks or 'JSTUChairman3' in bill.remarks:
+            return '3rd'
+        elif '৪র্থ বর্ষ' in bill.remarks or 'JSTUChairman4' in bill.remarks:
+            return '4th'
+        return None
+    
+    # Separate bills by year
+    first_year_bills = []
+    second_year_bills = []
+    third_year_bills = []
+    fourth_year_bills = []
+    
+    for bill in all_bills:
+        year = get_bill_year(bill)
+        if year == '1st':
+            first_year_bills.append(bill)
+        elif year == '2nd':
+            second_year_bills.append(bill)
+        elif year == '3rd':
+            third_year_bills.append(bill)
+        elif year == '4th':
+            fourth_year_bills.append(bill)
+    
+    context = {
+        'total_bills': all_bills.count(),
+        'pending_count': all_bills.count(),
+        'approved_count': Bill.objects.filter(status='approved_by_controller').count(),
+        'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),
+        'first_year_bills': first_year_bills,
+        'second_year_bills': second_year_bills,
+        'third_year_bills': third_year_bills,
+        'fourth_year_bills': fourth_year_bills,
+    }
+    return render(request, 'core/cont_bills.html', context)  # ← This is correct for templates/core/
+
+
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def controller_update_bill_status(request, bill_id):
+    """Controller updates bill status"""
+    bill = get_object_or_404(Bill, id=bill_id)
+    status = request.POST.get('status')
+    remarks = request.POST.get('remarks', '')
+    
+    if status in ['approved_by_controller', 'rejected_by_controller']:
+        bill.status = status
+        if remarks:
+            bill.remarks = (bill.remarks or '') + f"\nকন্ট্রোলার মন্তব্য: {remarks}"
+        bill.controller_approved_at = timezone.now()
+        bill.controller_approved_by = request.user
+        bill.save()
+        
+        log_activity(request.user, f'Bill {status} by controller', 
+                    f'Bill {bill.bill_number} {status} by controller')
+        
+        status_text = 'অনুমোদিত' if status == 'approved_by_controller' else 'বাতিল'
+        messages.success(request, f'বিল {bill.bill_number} {status_text} করা হয়েছে!')
+    
+    return redirect('cont_bills')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def controller_delete_bill(request, bill_id):
+    """Controller deletes a bill"""
+    bill = get_object_or_404(Bill, id=bill_id)
+    bill_number = bill.bill_number
+    bill.delete()
+    
+    log_activity(request.user, 'Bill deleted by controller', 
+                f'Bill {bill_number} deleted by controller')
+    messages.success(request, f'বিল {bill_number} স্থায়ীভাবে ডিলিট করা হয়েছে!')
+    
+    return redirect('cont_bills')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def accepted_bills(request):
+    """Controller accepted bills view"""
+    # Get all bills approved by controller
+    accepted_bills_list = Bill.objects.filter(status='approved_by_controller').order_by('-controller_approved_at')
+    
+    # Get filter parameters
+    year_filter = request.GET.get('year', '')
+    user_filter = request.GET.get('user', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Apply filters
+    if year_filter:
+        year_text = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ', '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}.get(year_filter, '')
+        if year_text:
+            accepted_bills_list = accepted_bills_list.filter(remarks__icontains=year_text)
+    
+    if user_filter:
+        accepted_bills_list = accepted_bills_list.filter(user__username__icontains=user_filter)
+    
+    if date_from:
+        accepted_bills_list = accepted_bills_list.filter(controller_approved_at__gte=date_from)
+    
+    if date_to:
+        accepted_bills_list = accepted_bills_list.filter(controller_approved_at__lte=date_to)
+    
+    # Calculate year for each bill
+    for bill in accepted_bills_list:
+        if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
+            bill.year = '1st'
+        elif '২য় বর্ষ' in bill.remarks or 'JSTUChairman2' in bill.remarks:
+            bill.year = '2nd'
+        elif '৩য় বর্ষ' in bill.remarks or 'JSTUChairman3' in bill.remarks:
+            bill.year = '3rd'
+        elif '৪র্থ বর্ষ' in bill.remarks or 'JSTUChairman4' in bill.remarks:
+            bill.year = '4th'
+        else:
+            bill.year = ''
+    
+    # Pagination
+    paginator = Paginator(accepted_bills_list, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Calculate total amount
+    total_amount = accepted_bills_list.aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    context = {
+        'accepted_bills': page_obj,
+        'total_accepted': accepted_bills_list.count(),
+        'total_amount': total_amount,
+        'pending_count': Bill.objects.filter(status='sent_to_controller').count(),
+        'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),
+        'year_filter': year_filter,
+        'user_filter': user_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'core/accepted_bills.html', context)
+
+
+@login_required
+def bill_details_api(request, bill_id):
+    """API endpoint for bill details"""
+    bill = get_object_or_404(Bill, id=bill_id)
+    tasks = bill.tasks.all()
+    
+    data = {
+        'bill_number': bill.bill_number,
+        'user_name': bill.user.get_full_name() or bill.user.username,
+        'user_type': bill.user.profile.user_type if hasattr(bill.user, 'profile') else '',
+        'semester': bill.semester,
+        'total_amount': f"{bill.total_amount:,.2f}",
+        'approved_date': bill.controller_approved_at.strftime('%d-%m-%Y %I:%M %p') if bill.controller_approved_at else '',
+        'approved_by': bill.controller_approved_by.get_full_name() or bill.controller_approved_by.username if bill.controller_approved_by else '',
+        'remarks': bill.remarks,
+        'tasks': [{'work_type': t.work_type, 'benefit': t.benefit, 'amount': f"{t.amount:,.2f}"} for t in tasks],
+    }
+    return JsonResponse(data)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def rejected_bills(request):
+    """Controller rejected bills view"""
+    # Get all bills rejected by controller
+    rejected_bills_list = Bill.objects.filter(status='rejected_by_controller').order_by('-controller_approved_at')
+    
+    # Get filter parameters
+    year_filter = request.GET.get('year', '')
+    user_filter = request.GET.get('user', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Apply filters
+    if year_filter:
+        year_text = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ', '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}.get(year_filter, '')
+        if year_text:
+            rejected_bills_list = rejected_bills_list.filter(remarks__icontains=year_text)
+    
+    if user_filter:
+        rejected_bills_list = rejected_bills_list.filter(user__username__icontains=user_filter)
+    
+    if date_from:
+        rejected_bills_list = rejected_bills_list.filter(controller_approved_at__gte=date_from)
+    
+    if date_to:
+        rejected_bills_list = rejected_bills_list.filter(controller_approved_at__lte=date_to)
+    
+    # Calculate year for each bill
+    for bill in rejected_bills_list:
+        if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
+            bill.year = '1st'
+        elif '২য় বর্ষ' in bill.remarks or 'JSTUChairman2' in bill.remarks:
+            bill.year = '2nd'
+        elif '৩য় বর্ষ' in bill.remarks or 'JSTUChairman3' in bill.remarks:
+            bill.year = '3rd'
+        elif '৪র্থ বর্ষ' in bill.remarks or 'JSTUChairman4' in bill.remarks:
+            bill.year = '4th'
+        else:
+            bill.year = ''
+    
+    # Pagination
+    paginator = Paginator(rejected_bills_list, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Calculate total amount
+    total_amount = rejected_bills_list.aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    context = {
+        'rejected_bills': page_obj,
+        'total_rejected': rejected_bills_list.count(),
+        'total_amount': total_amount,
+        'pending_count': Bill.objects.filter(status='sent_to_controller').count(),
+        'approved_count': Bill.objects.filter(status='approved_by_controller').count(),
+        'year_filter': year_filter,
+        'user_filter': user_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'core/rejected_bills.html', context)
+
+@login_required
+def bill_counts_api(request):
+    if not (hasattr(request.user, 'profile') and
+             request.user.profile.user_type == 'কন্ট্রোলার'):
+         return JsonResponse({'error': 'Forbidden'}, status=403)
+    """API endpoint for bill counts - used by JavaScript notification"""
+    from django.db.models import Sum, Count
+    all_non_draft = Bill.objects.exclude(status='draft')
+    return JsonResponse({
+        'total_bills': all_non_draft.count(),
+        'pending_count': all_non_draft.filter(status='pending').count(),
+        'approved_count': all_non_draft.filter(status='approved').count(),
+        'rejected_count': all_non_draft.filter(status='rejected').count(),
+        'sent_to_controller_count': Bill.objects.filter(status='sent_to_controller').count(),
+    })

@@ -151,26 +151,40 @@ def render_to_pdf(template_src, context_dict={}):
                 pass
 
 def get_chairman_signature_for_bill(bill):
-    """Get the appropriate chairman signature as base64"""
+    """Get the appropriate chairman signature as base64 - checks both remarks AND stored chairman info"""
     logger.info(f"=== Getting signature for bill {bill.bill_number} ===")
     logger.info(f"Bill remarks: {bill.remarks}")
+    logger.info(f"Chairman signature added flag: {bill.chairman_signature_added}")
     
-    if not bill.remarks:
-        logger.info(f"No remarks found")
-        return None
-    
-    # Determine which chairman
+    # First try to get chairman info from stored remarks (if available)
     chairman_username = None
     
-    if 'JSTUChairman1' in bill.remarks or '১ম বর্ষ' in bill.remarks:
-        chairman_username = 'JSTUChairman1'
-    elif 'JSTUChairman2' in bill.remarks or '২য় বর্ষ' in bill.remarks:
-        chairman_username = 'JSTUChairman2'
-    elif 'JSTUChairman3' in bill.remarks or '৩য় বর্ষ' in bill.remarks:
-        chairman_username = 'JSTUChairman3'
-    elif 'JSTUChairman4' in bill.remarks or '৪র্থ বর্ষ' in bill.remarks:
-        chairman_username = 'JSTUChairman4'
-    else:
+    # Check remarks for chairman info
+    if bill.remarks:
+        if 'JSTUChairman1' in bill.remarks or '১ম বর্ষ' in bill.remarks:
+            chairman_username = 'JSTUChairman1'
+        elif 'JSTUChairman2' in bill.remarks or '২য় বর্ষ' in bill.remarks:
+            chairman_username = 'JSTUChairman2'
+        elif 'JSTUChairman3' in bill.remarks or '৩য় বর্ষ' in bill.remarks:
+            chairman_username = 'JSTUChairman3'
+        elif 'JSTUChairman4' in bill.remarks or '৪র্থ বর্ষ' in bill.remarks:
+            chairman_username = 'JSTUChairman4'
+    
+    # Also check if the bill has a stored chairman_username (you may want to add this field to Bill model)
+    # For now, if we can't determine from remarks, try to find from bill's approval history
+    if not chairman_username and bill.approved_by:
+        # Check if approved_by is one of the chairmen
+        if bill.approved_by.username == 'JSTUChairman1':
+            chairman_username = 'JSTUChairman1'
+        elif bill.approved_by.username == 'JSTUChairman2':
+            chairman_username = 'JSTUChairman2'
+        elif bill.approved_by.username == 'JSTUChairman3':
+            chairman_username = 'JSTUChairman3'
+        elif bill.approved_by.username == 'JSTUChairman4':
+            chairman_username = 'JSTUChairman4'
+    
+    if not chairman_username:
+        logger.info(f"No chairman username found for bill {bill.bill_number}")
         return None
     
     try:
@@ -198,14 +212,14 @@ def get_chairman_signature_for_bill(bill):
                 mime_type = 'image/png' if ext == '.png' else 'image/jpeg'
                 
                 data_url = f"data:{mime_type};base64,{base64_string}"
-                logger.info(f"Signature converted to base64, length: {len(data_url)}")
+                logger.info(f"Signature converted to base64 for {chairman_username}, length: {len(data_url)}")
                 return data_url
         else:
             logger.warning(f"No signature file for {chairman_username}")
             return None
             
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error getting signature: {e}")
         return None
 
 def generate_bill_pdf_chairman(bill, inline=False):
@@ -287,7 +301,7 @@ def generate_bill_pdf_user(bill, inline=False):
         return HttpResponse(f"Error: {str(e)}", status=500)
 
 def generate_bill_pdf(bill, inline=False):
-    """Generate PDF with both user and chairman signatures only if they were explicitly added"""
+    """Generate PDF with both user and chairman signatures permanently"""
     try:
         tasks = bill.tasks.all()
         
@@ -302,9 +316,10 @@ def generate_bill_pdf(bill, inline=False):
                     mime = 'image/png' if ext == '.png' else 'image/jpeg'
                     user_signature = f"data:{mime};base64,{base64_str}"
         
-        # Get chairman's signature ONLY if chairman_signature_added is True and bill is approved
+        # Get chairman's signature if it was added (permanently - regardless of current status)
+        # This is the key fix - check if signature was added, not just current status
         chairman_signature = None
-        if bill.status == 'approved' and bill.chairman_signature_added:
+        if bill.chairman_signature_added:
             chairman_signature = get_chairman_signature_for_bill(bill)
         
         context = {

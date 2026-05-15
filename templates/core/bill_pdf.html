@@ -1,4 +1,3 @@
-
 {% load static %}
 {% load bangla_number %}
 
@@ -10,11 +9,11 @@
     <style>
         @page {
             size: legal portrait;
-            margin: 1.5cm 1.5cm 2cm 1.5cm;
+            margin-bottom: 20mm;
         }
 
         body {
-            font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', 'Arial Unicode MS', 'Noto Sans Bengali', sans-serif;
+            font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', Arial, sans-serif;
             line-height: 1.4;
             color: #000;
             margin: 0;
@@ -25,20 +24,19 @@
             min-height: 100vh;
         }
 
-        /* Watermark Logo */
         body::before {
             content: "";
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 350px;
-            height: 450px;
+            width: 400px;
+            height: 500px;
             background-image: url('https://i.postimg.cc/Kcg8VSMD/JSTU.png');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            opacity: 0.1;
+            opacity: 0.12;
             pointer-events: none;
             z-index: -1;
         }
@@ -184,6 +182,7 @@
             font-size: 10px;
         }
 
+        /* COLUMN WIDTHS */
         .serial-column {
             width: 35px;
             text-align: center;
@@ -213,12 +212,10 @@
             text-align: center;
         }
 
-        /* ======================================== */
-        /* TOTAL AMOUNT - RIGHT SIDE OF PAGE */
-        /* ======================================== */
+        /* Total Amount - Now below amount column */
         .total-container {
-            margin-top: 15px;
-            margin-bottom: 20px;
+            margin-top: 10px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: flex-end;
             width: 100%;
@@ -229,8 +226,17 @@
             border-collapse: collapse;
         }
 
+        /* Calculate exact width to match amount column position */
+        /* Total box will align with amount column */
+        .total-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        /* Total box width matches the amount column area */
         .total-box td {
-            padding: 8px 20px;
+            padding: 6px 12px;
             border: 1px solid #333;
             background: #f5f5f5;
             font-weight: bold;
@@ -248,7 +254,7 @@
             font-weight: bold;
             color: #000;
             background: #ffffff;
-            min-width: 120px;
+            min-width: 80px;
         }
 
         .bank-info {
@@ -261,117 +267,58 @@
         }
 
         /* ======================================== */
-        /* SIGNATURE SECTION - TEXT IN SINGLE ROW */
+        /* SIGNATURE SECTION - TRANSPARENT (NO WHITE BG) */
         /* ======================================== */
         .signature-section {
-            margin-top: 80px;
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
             width: 100%;
-            page-break-inside: avoid;
         }
 
-        .signature-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .signature-table td {
-            padding: 0;
-            vertical-align: top;
-        }
-
-        /* Left Column */
-        .signature-left-col {
-            width: 45%;
-            text-align: left;
-        }
-
-        /* Right Column */
-        .signature-right-col {
-            width: 45%;
-            text-align: right;
-        }
-
-        /* Spacer Column */
-        .signature-spacer {
-            width: 10%;
-        }
-
-        /* Signature Box - Left */
-        .left-signature-container {
+        .signature {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            width: 45%;
+            /* REMOVED background-color - now transparent */
+            padding: 8px;
+            /* REMOVED border-radius */
+            position: relative;
         }
 
-        /* Signature Box - Right */
-        .right-signature-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+        .signature-line {
+            width: 180px;
+            border-top: 1px solid black;
+            margin-bottom: 5px;
         }
 
-        /* Signature Line - Longer and thicker */
-        .sig-line {
-            width: 220px;
-            border-top: 1.5px solid #000;
+        .signature-title {
+            font-size: 10px;
+            text-align: center;
+            line-height: 1.3;
         }
 
-        /* Left signature line - adjusted margins */
-        .sig-line-left {
-            margin: 5px 0 2px 0;
-        }
-
-        /* Right signature line - adjusted margins */
-        .sig-line-right {
-            margin: 5px 0 2px auto;
-        }
-
-        /* Signature Images */
-        .chairman-sig-img {
+        .chairman-signature-img {
+            margin-bottom: 8px;
             max-width: 160px;
             max-height: 60px;
             object-fit: contain;
-            margin-bottom: 5px;
-            display: block;
         }
 
-        .user-sig-img {
+        .user-signature-img {
+            margin-bottom: 8px;
             max-width: 160px;
             max-height: 60px;
             object-fit: contain;
-            margin-bottom: 5px;
-            display: block;
-            margin-left: auto;
+            position: relative;
+            left: 0px;
         }
 
-        /* Text Styles - Single row, no line break */
-        .sig-title-left {
-            font-size: 10px;
-            text-align: left;
-            line-height: 1.3;
-            margin-top: 2px;
-            margin-bottom: 0;
-            letter-spacing: normal;
-            white-space: nowrap;
-            display: inline-block;
-        }
-
-        .sig-title-right {
-            font-size: 10px;
-            text-align: right;
-            line-height: 1.3;
-            margin-top: 2px;
-            margin-bottom: 0;
-            letter-spacing: normal;
-            white-space: nowrap;
-            display: inline-block;
-        }
-
-        /* Alternative: Use word-break and text properties to prevent breaking */
-        .bangla-text-no-break {
-            white-space: nowrap;
-            display: inline-block;
-            font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', 'Arial Unicode MS', 'Noto Sans Bengali', sans-serif;
+        .signature-with-img {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .content-protector {
@@ -387,10 +334,6 @@
             body::before {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-            }
-            
-            .sig-title-left, .sig-title-right {
-                white-space: nowrap;
             }
         }
     </style>
@@ -454,6 +397,7 @@
                             </td>
                             <td class="quantity-column bangla-text">
                                 {% if task.calculation_type == 'fixed' or task.calculation_type == 'automatic' %}
+                                    <!-- Show blank for fixed or automatic -->
                                 {% elif task.quantity > 1 %}
                                     {{ task.quantity|bangla_number }} {{ task.unit }}
                                 {% elif task.quantity == 1 and task.unit %}
@@ -468,7 +412,7 @@
                 </table>
             </div>
 
-            <!-- Total Amount - Right Side of Page -->
+            <!-- Total Amount - Now exactly below amount column -->
             <div class="total-container">
                 <div class="total-wrapper">
                     <table class="total-box">
@@ -488,44 +432,41 @@
             </div>
             {% endif %}
 
-            <!-- SIGNATURE SECTION - TEXT IN SINGLE ROW -->
+            <!-- Signature Section - TRANSPARENT BACKGROUND -->
             <div class="signature-section">
-                <table class="signature-table">
-                    <tr>
-                        <!-- Left Column -->
-                        <td class="signature-left-col">
-                            <div class="left-signature-container">
-                                {% if chairman_signature %}
-                                    <img src="{{ chairman_signature }}" class="chairman-sig-img" alt="Chairman Signature">
-                                    <div class="sig-line sig-line-left"></div>
-                                {% else %}
-                                    <div class="sig-line sig-line-left"></div>
-                                {% endif %}
-                                <div class="sig-title-left bangla-text" style="white-space: nowrap;">
-                                    পরীক্ষা কমিটির সভাপতির স্বাক্ষর ও সিল
-                                </div>
-                            </div>
-                        </td>
-                        
-                        <!-- Spacer -->
-                        <td class="signature-spacer"></td>
-                        
-                        <!-- Right Column -->
-                        <td class="signature-right-col">
-                            <div class="right-signature-container">
-                                {% if user_signature %}
-                                    <img src="{{ user_signature }}" class="user-sig-img" alt="User Signature">
-                                    <div class="sig-line sig-line-right"></div>
-                                {% else %}
-                                    <div class="sig-line sig-line-right"></div>
-                                {% endif %}
-                                <div class="sig-title-right bangla-text" style="white-space: nowrap;">
-                                    বিল পেশকারীর স্বাক্ষর ও সিল
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+                <div class="signature">
+                    {% if chairman_signature %}
+                    <div class="signature-with-img">
+                        <img src="{{ chairman_signature }}" class="chairman-signature-img" alt="Chairman Signature">
+                        <div class="signature-line"></div>
+                        <div class="signature-title bangla-text">
+                            পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="signature-line"></div>
+                    <div class="signature-title bangla-text">
+                        পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="signature">
+                    {% if user_signature %}
+                    <div class="signature-with-img">
+                        <img src="{{ user_signature }}" class="user-signature-img" alt="User Signature">
+                        <div class="signature-line"></div>
+                        <div class="signature-title bangla-text">
+                            বিল পেশকারীর স্বাক্ষর ও সিল
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="signature-line"></div>
+                    <div class="signature-title bangla-text">
+                        বিল পেশকারীর স্বাক্ষর ও সিল
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

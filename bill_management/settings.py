@@ -205,3 +205,9 @@ JAZZMIN_UI_TWEAKS = {
     },
     "actions_sticky_top": True,
 }
+
+
+# Session settings for "Remember Me" functionality
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Don't expire when browser closes
+SESSION_COOKIE_AGE = 3 * 24 * 60 * 60  # 3 days in seconds (259200 seconds)
+SESSION_SAVE_EVERY_REQUEST = True  # Refresh session expiry on each request

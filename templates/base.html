@@ -355,9 +355,9 @@
                     <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
                     <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
         
-                    {% if user.profile.user_type == 'অফিস সহকারী' %}
+                    <!-- {% if user.profile.user_type == 'অফিস সহকারী' %}
                         <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                    {% endif %}
+                    {% endif %} -->
                 {% endif %}
         
                 <span class="user-welcome">স্বাগতম, {{ user.first_name }}</span>

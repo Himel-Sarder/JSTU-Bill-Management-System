@@ -345,19 +345,24 @@ def profile(request):
     """User profile management view"""
     if request.method == 'POST':
         if 'profile_update' in request.POST:
-            # Pass FILES only if a new picture was actually uploaded.
-            # If no file was sent, pass the existing instance so the picture
-            # is NOT cleared by Django's ClearableFileInput widget.
-            files = request.FILES if 'profile_picture' in request.FILES else None
+            # Create form with POST data and FILES
             profile_form = ProfileUpdateForm(
                 request.POST,
-                files,
+                request.FILES,  # Important: include FILES for image upload
                 instance=request.user.profile
             )
             password_form = CustomPasswordChangeForm(request.user)
 
             if profile_form.is_valid():
+                # Update user fields
+                user = request.user
+                user.first_name = profile_form.cleaned_data['first_name']
+                user.email = profile_form.cleaned_data['email']
+                user.save()
+                
+                # Save profile (this will handle the profile picture)
                 profile_form.save()
+                
                 log_activity(request.user, 'Profile updated', 'User updated their profile')
                 messages.success(request, 'আপনার প্রোফাইল সফলভাবে আপডেট করা হয়েছে!')
                 return redirect('profile')

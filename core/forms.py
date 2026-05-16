@@ -72,16 +72,32 @@ class CustomUserCreationForm(UserCreationForm):
         return user
 
 class ProfileUpdateForm(forms.ModelForm):
+    # Add user fields to the form
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        label='নাম',
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    
     class Meta:
         model = Profile
-        fields = ['user_type', 'profile_picture', 'phone_number', 'joining_date']
+        fields = ['phone_number', 'profile_picture']  # Include profile_picture
         widgets = {
-            'user_type': forms.Select(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ফোন নম্বর'}),
-            'joining_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control'})
+            'profile_picture': forms.FileInput(attrs={'class': 'form-control', 'id': 'id_profile_picture'})
         }
-
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate user fields from the user instance
+        if self.instance and self.instance.user:
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['email'].initial = self.instance.user.email
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     old_password = forms.CharField(

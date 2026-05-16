@@ -25,6 +25,7 @@ class Profile(models.Model):
                                         verbose_name='প্রোফাইল ছবি')
     phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name='ফোন নম্বর')
     joining_date = models.DateField(blank=True, null=True, verbose_name='যোগদানের তারিখ')
+    updated_at = models.DateTimeField(auto_now=True)
     
     # Signature fields for different users
     signature = models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='স্বাক্ষর')

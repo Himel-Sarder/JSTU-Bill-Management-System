@@ -258,15 +258,14 @@
             font-size: 10px;
         }
 
-        /* SIGNATURE SECTION - CENTERED WITH SPACE BETWEEN */
+        /* SIGNATURE SECTION - MAX GAP BETWEEN TWO SECTIONS */
         .signature-section {
             margin-top: 80px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            gap: 150px;
             width: 100%;
-            flex-wrap: wrap;
+            gap: 0;
         }
 
         .signature {
@@ -275,19 +274,31 @@
             align-items: center;
             padding: 8px;
             position: relative;
-            min-width: 200px;
+            flex: 1;
+        }
+
+        .signature:first-child {
+            align-items: flex-start;
+            padding-left: 0;
+        }
+
+        .signature:last-child {
+            align-items: flex-end;
+            padding-right: 0;
         }
 
         .signature-line {
-            width: 200px;
+            width: 220px;
             border-top: 1px solid black;
             margin-bottom: 5px;
         }
 
+        /* TEXT IN SINGLE LINE (ROW WISE) - NO COLUMN BREAK */
         .signature-title {
             font-size: 10px;
             text-align: center;
             line-height: 1.4;
+            white-space: nowrap;
         }
 
         .chairman-signature-img {
@@ -318,7 +329,19 @@
             .signature-section {
                 page-break-before: avoid;
                 margin-bottom: 5cm;
-                gap: 120px;
+                justify-content: space-between;
+            }
+            
+            .signature:first-child {
+                align-items: flex-start;
+            }
+            
+            .signature:last-child {
+                align-items: flex-end;
+            }
+            
+            .signature-title {
+                white-space: nowrap;
             }
             
             body::before {
@@ -332,17 +355,6 @@
             
             .total-box {
                 display: inline-block;
-            }
-        }
-
-        /* Responsive for smaller screens */
-        @media (max-width: 768px) {
-            .signature-section {
-                gap: 50px;
-            }
-            
-            .signature-line {
-                width: 150px;
             }
         }
     </style>
@@ -439,7 +451,7 @@
             </div>
             {% endif %}
 
-            <!-- SIGNATURE SECTION - CENTERED WITH SPACE BETWEEN -->
+            <!-- SIGNATURE SECTION - MAX GAP BETWEEN TWO SECTIONS, TEXT IN SINGLE LINE -->
             <div class="signature-section">
                 <div class="signature">
                     {% if chairman_signature %}
@@ -447,13 +459,13 @@
                         <img src="{{ chairman_signature }}" class="chairman-signature-img" alt="Chairman Signature">
                         <div class="signature-line"></div>
                         <div class="signature-title bangla-text">
-                            পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
+                            পরীক্ষা কমিটির সভাপতির স্বাক্ষর ও সিল
                         </div>
                     </div>
                     {% else %}
                     <div class="signature-line"></div>
                     <div class="signature-title bangla-text">
-                        পরীক্ষা কমিটির সভাপতির<br>স্বাক্ষর ও সিল
+                        পরীক্ষা কমিটির সভাপতির স্বাক্ষর ও সিল
                     </div>
                     {% endif %}
                 </div>

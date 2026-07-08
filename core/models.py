@@ -145,6 +145,8 @@ class Benefit(models.Model):
         ('per_hour', 'প্রতি ঘণ্টা'),
         ('per_student', 'প্রতি শিক্ষার্থী'),
         ('per_semester', 'প্রতি সেমিস্টার'),
+        ('per_person', 'জনপ্রতি'),
+        ('per_day', 'প্রতি দিন')
     ]
 
     work_type = models.ForeignKey(WorkType, on_delete=models.CASCADE, related_name='benefits', verbose_name='কাজের ধরণ')

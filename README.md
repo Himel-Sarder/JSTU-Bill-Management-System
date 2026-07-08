@@ -4,4 +4,4 @@
 <img width="1704" height="1934" alt="image" src="https://github.com/user-attachments/assets/51577e64-5719-43a5-99a6-a13b37040ff1" />
 
 ## Database Design
-<img width="1221" height="807" alt="image" src="https://github.com/user-attachments/assets/89146031-9412-49ca-874c-d33a2b45f8d6" />
+<img width="2852" height="5669" alt="db_schema" src="https://github.com/user-attachments/assets/a9751f5c-1732-47da-aa57-a8aa755857cd" />

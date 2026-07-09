@@ -366,7 +366,7 @@
                 <!-- ── Unauthenticated ── -->
                 <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
                 <a href="{% url 'login' %}" {% if 'login' in request.path %}class="active"{% endif %}>লগইন</a>
-                <a href="{% url 'register' %}" {% if 'register' in request.path %}class="active"{% endif %}>রেজিস্টার</a>
+                <!-- <a href="{% url 'register' %}" {% if 'register' in request.path %}class="active"{% endif %}>রেজিস্টার</a> -->
             {% endif %}
         
         </div>

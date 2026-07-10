@@ -47,6 +47,7 @@ urlpatterns = [
     # Admin Features
     path('dashboard/', views.dashboard, name='dashboard'),
     path('all-bills/', views.all_bills, name='all_bills'),
+    path('all-bills/export-pdf/', views.export_bills_pdf, name='export_bills_pdf'),
     path('bill/update-status/<int:bill_id>/', views.update_bill_status, name='update_bill_status'),
     path('user-management/', views.user_management, name='user_management'),
     path('dashboard/work-types/', views.work_type_management, name='work_type_management'),
@@ -91,6 +92,7 @@ urlpatterns = [
     path('controller/delete-bill/<int:bill_id>/', views.controller_delete_bill, name='controller_delete_bill'),
 
     path('accepted-bills/', views.accepted_bills, name='accepted_bills'),
+    path('accepted-bills/export-pdf/', views.export_accepted_bills_pdf, name='export_accepted_bills_pdf'),
     path('rejected-bills/', views.rejected_bills, name='rejected_bills'),
     path('bill/details/<int:bill_id>/', views.bill_details_api, name='bill_details_api'),
     

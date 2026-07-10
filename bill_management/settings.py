@@ -19,6 +19,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    "cloudinary",
+    "cloudinary_storage",
 ]
 
 MIDDLEWARE = [
@@ -53,12 +55,28 @@ WSGI_APPLICATION = 'bill_management.wsgi.application'
 
 import os
 import dj_database_url
+import cloudinary
 
 DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get("DATABASE_URL")
     )
 }
+
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.environ.get("hrwgb0ik"),
+    "API_KEY": os.environ.get("496472468144582"),
+    "API_SECRET": os.environ.get("BQMQOSH7jaOhiOR3nABteN7U0NY"),
+    "SECURE": True,
+}
+
+cloudinary.config(
+    cloud_name=os.environ.get("hrwgb0ik"),
+    api_key=os.environ.get("496472468144582"),
+    api_secret=os.environ.get("BQMQOSH7jaOhiOR3nABteN7U0NY"),
+    secure=True,
+)
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -77,8 +95,16 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

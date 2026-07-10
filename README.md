@@ -19,10 +19,10 @@
 ## Preview
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c73511e3-6dae-4a0c-a471-789701f20391" width="90%" alt="Home / Bill Creation Screen"/>
+  <img src="https://github.com/user-attachments/assets/87557a19-4577-4da5-8f55-74e2282ebd45" />
 </p>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/f3ef5da7-ec0e-46c3-b7fd-b20f2e0b6168" width="90%" alt="Dashboard / All Bills Screen"/>
+  <img width="1763" height="3034" alt="image" src="https://github.com/user-attachments/assets/b76b4215-647b-4759-a956-335a4664b06f" />
 </p>
 <p align="center">
   <img src="https://github.com/user-attachments/assets/51577e64-5719-43a5-99a6-a13b37040ff1" width="90%" alt="Generated PDF Bill Screen"/>

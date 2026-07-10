@@ -677,6 +677,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const workTypeName = workTypeSel.options[workTypeSel.selectedIndex]?.text || '';
             const benefitName = benefitSel.options[benefitSel.selectedIndex]?.text || '';
+            const remarks = task.querySelector('.task-remarks')?.value || '';
             
             let quantity = 1;
             let unit = '';
@@ -692,7 +693,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 benefit: benefitName.replace(/\s*\([^)]*\)\s*/g, '').replace(' (স্বয়ংক্রিয়)', '').trim(),
                 quantity: quantity,
                 unit: unit,
-                amount: amountHidden.value
+                amount: amountHidden.value,
+                remarks: remarks
             });
         });
         

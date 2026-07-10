@@ -530,9 +530,9 @@ A selection of the most important routes from `core/urls.py`:
 
 ## Screenshots Gallery
 
-| Home / Bill Form | Dashboard | Generated PDF |
+| Home / Bill Form | Admin Dashboard | Generated PDF |
 |---|---|---|
-| ![Home](https://github.com/user-attachments/assets/c73511e3-6dae-4a0c-a471-789701f20391) | ![Dashboard](https://github.com/user-attachments/assets/f3ef5da7-ec0e-46c3-b7fd-b20f2e0b6168) | ![PDF](https://github.com/user-attachments/assets/51577e64-5719-43a5-99a6-a13b37040ff1) |
+| <img width="300" alt="Home" src="https://github.com/user-attachments/assets/9ad6ec0a-1f29-4491-a897-c5bcad8a28e5" /> | <img width="300" alt="Admin Dashboard" src="https://github.com/user-attachments/assets/5155f207-9998-441d-8227-962c97175523" /> | <img width="300" alt="PDF" src="https://github.com/user-attachments/assets/8213c705-3236-4abf-b388-e4cc2de7d469" /> |
 
 ---
 

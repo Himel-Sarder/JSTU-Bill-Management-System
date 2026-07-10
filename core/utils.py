@@ -150,6 +150,72 @@ def render_to_pdf(template_src, context_dict={}):
             except:
                 pass
 
+def render_bills_report_pdf(context):
+    """Render a filtered list of bills as a landscape summary PDF report using WeasyPrint"""
+    try:
+        template = get_template('core/bills_report_pdf.html')
+        html_content = template.render(context)
+
+        font_config, font_css = get_bangla_font_config()
+
+        pdf_css = CSS(string=f'''
+            {font_css}
+            body {{
+                font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', 'Arial Unicode MS', sans-serif;
+                line-height: 1.4;
+                color: #000;
+                margin: 0;
+                padding: 0;
+                font-size: 10px;
+            }}
+
+            .bangla-text, .bangla-digit {{
+                font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', 'Arial Unicode MS', sans-serif;
+            }}
+
+            @page {{
+                size: A4 landscape;
+                margin: 1.2cm;
+                @bottom-center {{
+                    content: "পৃষ্ঠা " counter(page) " / " counter(pages);
+                    font-size: 8px;
+                    color: #666;
+                }}
+            }}
+
+            .report-table {{
+                width: 100%;
+                border-collapse: collapse;
+                border: 1.5px solid #333;
+                font-size: 9.5px;
+            }}
+
+            .report-table th, .report-table td {{
+                border: 1px solid #333;
+                padding: 5px 4px;
+            }}
+
+            .report-table th {{
+                background: #e2e2e2;
+                font-weight: bold;
+                text-align: center;
+            }}
+
+            .report-table tfoot td {{
+                background: #f0f0f0;
+                font-weight: bold;
+            }}
+        ''', font_config=font_config)
+
+        html = HTML(string=html_content, base_url=settings.BASE_DIR, encoding='utf-8')
+        pdf_file = html.write_pdf(stylesheets=[pdf_css], font_config=font_config)
+
+        return pdf_file
+
+    except Exception as e:
+        logger.error(f"Error in render_bills_report_pdf: {e}")
+        return None
+
 def get_chairman_signature_for_bill(bill):
     """Get the appropriate chairman signature as base64 - checks both remarks AND stored chairman info"""
     logger.info(f"=== Getting signature for bill {bill.bill_number} ===")

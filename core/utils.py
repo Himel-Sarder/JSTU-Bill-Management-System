@@ -13,6 +13,31 @@ from weasyprint.text.fonts import FontConfiguration
 
 logger = logging.getLogger(__name__)
 
+def _file_field_to_base64(field):
+    """Read an ImageField/FileField into a base64 data URL.
+
+    Uses Django's storage-agnostic File API (open/read) instead of
+    `.path`, because `.path` raises NotImplementedError on remote
+    storages like Cloudinary (MediaCloudinaryStorage) - it only works
+    for local filesystem storage.
+    """
+    if not field:
+        return None
+    try:
+        field.open('rb')
+        try:
+            image_data = field.read()
+        finally:
+            field.close()
+    except Exception as e:
+        logger.warning(f"Could not read signature file '{getattr(field, 'name', field)}': {e}")
+        return None
+
+    ext = os.path.splitext(field.name)[1].lower()
+    mime_type = 'image/png' if ext == '.png' else 'image/jpeg'
+    base64_string = base64.b64encode(image_data).decode('utf-8')
+    return f"data:{mime_type};base64,{base64_string}"
+
 def convert_to_bangla_digits(number):
     """Convert English digits to Bengali digits"""
     english_to_bangla = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
@@ -267,23 +292,13 @@ def get_chairman_signature_for_bill(bill):
         elif chairman_username == 'JSTUChairman4':
             signature_field = chairman.profile.signature_chairman4
         
-        if signature_field and signature_field.path and os.path.exists(signature_field.path):
-            # Read image and convert to base64
-            with open(signature_field.path, 'rb') as f:
-                image_data = f.read()
-                base64_string = base64.b64encode(image_data).decode('utf-8')
-                
-                # Determine mime type
-                ext = os.path.splitext(signature_field.path)[1].lower()
-                mime_type = 'image/png' if ext == '.png' else 'image/jpeg'
-                
-                data_url = f"data:{mime_type};base64,{base64_string}"
-                logger.info(f"Signature converted to base64 for {chairman_username}, length: {len(data_url)}")
-                return data_url
+        data_url = _file_field_to_base64(signature_field)
+        if data_url:
+            logger.info(f"Signature converted to base64 for {chairman_username}, length: {len(data_url)}")
         else:
             logger.warning(f"No signature file for {chairman_username}")
-            return None
-            
+        return data_url
+
     except Exception as e:
         logger.error(f"Error getting signature: {e}")
         return None
@@ -331,13 +346,7 @@ def generate_bill_pdf_user(bill, inline=False):
         
         user_signature = None
         if hasattr(bill.user, 'profile') and bill.user.profile.signature_general:
-            sig_path = bill.user.profile.signature_general.path
-            if os.path.exists(sig_path):
-                with open(sig_path, 'rb') as f:
-                    base64_str = base64.b64encode(f.read()).decode('utf-8')
-                    ext = os.path.splitext(sig_path)[1].lower()
-                    mime = 'image/png' if ext == '.png' else 'image/jpeg'
-                    user_signature = f"data:{mime};base64,{base64_str}"
+            user_signature = _file_field_to_base64(bill.user.profile.signature_general)
         
         context = {
             'bill': bill,
@@ -374,13 +383,7 @@ def generate_bill_pdf(bill, inline=False):
         # Get user's signature ONLY if user_signature_added is True
         user_signature = None
         if bill.user_signature_added and hasattr(bill.user, 'profile') and bill.user.profile.signature_general:
-            sig_path = bill.user.profile.signature_general.path
-            if os.path.exists(sig_path):
-                with open(sig_path, 'rb') as f:
-                    base64_str = base64.b64encode(f.read()).decode('utf-8')
-                    ext = os.path.splitext(sig_path)[1].lower()
-                    mime = 'image/png' if ext == '.png' else 'image/jpeg'
-                    user_signature = f"data:{mime};base64,{base64_str}"
+            user_signature = _file_field_to_base64(bill.user.profile.signature_general)
         
         # Get chairman's signature if it was added (permanently - regardless of current status)
         # This is the key fix - check if signature was added, not just current status

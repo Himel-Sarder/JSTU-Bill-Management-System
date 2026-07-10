@@ -689,8 +689,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             tasksData.push({
-                work_type: workTypeName.replace(/\s*\([^)]*\)\s*/g, '').trim(),
-                benefit: benefitName.replace(/\s*\([^)]*\)\s*/g, '').replace(' (স্বয়ংক্রিয়)', '').trim(),
+                work_type: workTypeName.trim(),
+                benefit: benefitName.replace(' (স্বয়ংক্রিয়)', '').trim(),
                 quantity: quantity,
                 unit: unit,
                 amount: amountHidden.value,

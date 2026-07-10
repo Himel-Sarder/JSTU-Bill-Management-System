@@ -24,9 +24,6 @@
 <p align="center">
   <img width="1763" height="3034" alt="image" src="https://github.com/user-attachments/assets/b76b4215-647b-4759-a956-335a4664b06f" />
 </p>
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/51577e64-5719-43a5-99a6-a13b37040ff1" width="90%" alt="Generated PDF Bill Screen"/>
-</p>
 
 ---
 

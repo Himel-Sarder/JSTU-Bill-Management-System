@@ -70,6 +70,41 @@
                     <input type="text" name="user" class="form-control" placeholder="ইউজারনেম" value="{{ user_filter }}">
                 </div>
                 <div class="form-group">
+                    <label>সেমিস্টার</label>
+                    <select name="semester" class="form-control">
+                        <option value="">সব সেমিস্টার</option>
+                        {% for value, label in semester_choices %}
+                        <option value="{{ value }}" {% if semester_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ডিগ্রি</label>
+                    <select name="degree_type" class="form-control">
+                        <option value="">সব ডিগ্রি</option>
+                        {% for value, label in degree_choices %}
+                        <option value="{{ value }}" {% if degree_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>বিভাগ</label>
+                    <input type="text" name="department" class="form-control" placeholder="বিভাগের নাম" value="{{ department_filter }}">
+                </div>
+                <div class="form-group">
+                    <label>ব্যাংক</label>
+                    <select name="bank_name" class="form-control">
+                        <option value="">সব ব্যাংক</option>
+                        {% for value, label in bank_choices %}
+                        <option value="{{ value }}" {% if bank_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>বিল/ভাউচার নং</label>
+                    <input type="text" name="bill_number" class="form-control" placeholder="বিল বা ভাউচার নম্বর" value="{{ bill_number_filter }}">
+                </div>
+                <div class="form-group">
                     <label>তারিখ থেকে</label>
                     <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
                 </div>
@@ -77,12 +112,24 @@
                     <label>তারিখ পর্যন্ত</label>
                     <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
                 </div>
+                <div class="form-group">
+                    <label>সর্বনিম্ন টাকা</label>
+                    <input type="number" step="0.01" name="amount_min" class="form-control" placeholder="০.০০" value="{{ amount_min }}">
+                </div>
+                <div class="form-group">
+                    <label>সর্বোচ্চ টাকা</label>
+                    <input type="number" step="0.01" name="amount_max" class="form-control" placeholder="০.০০" value="{{ amount_max }}">
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-search">
                         <i class="fas fa-search"></i> অনুসন্ধান
                     </button>
                     <a href="{% url 'accepted_bills' %}" class="btn-reset">
                         <i class="fas fa-redo"></i> রিসেট
+                    </a>
+                    <a href="{% url 'export_accepted_bills_pdf' %}{% if filter_querystring %}?{{ filter_querystring }}{% endif %}"
+                       class="btn-search" style="background: linear-gradient(45deg, #28a745, #20c997);" target="_blank">
+                        <i class="fas fa-file-pdf"></i> পিডিএফ রিপোর্ট ডাউনলোড
                     </a>
                 </div>
             </form>
@@ -167,8 +214,8 @@
             {% if accepted_bills.has_other_pages %}
             <div class="pagination">
                 {% if accepted_bills.has_previous %}
-                    <a href="?page=1{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">&laquo; প্রথম</a>
-                    <a href="?page={{ accepted_bills.previous_page_number }}{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">‹ পূর্ববর্তী</a>
+                    <a href="?page=1{% if filter_querystring %}&{{ filter_querystring }}{% endif %}" class="page-link">&laquo; প্রথম</a>
+                    <a href="?page={{ accepted_bills.previous_page_number }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}" class="page-link">‹ পূর্ববর্তী</a>
                 {% endif %}
                 
                 <span class="current-page">
@@ -176,8 +223,8 @@
                 </span>
                 
                 {% if accepted_bills.has_next %}
-                    <a href="?page={{ accepted_bills.next_page_number }}{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">পরবর্তী ›</a>
-                    <a href="?page={{ accepted_bills.paginator.num_pages }}{% if year_filter %}&year={{ year_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="page-link">শেষ &raquo;</a>
+                    <a href="?page={{ accepted_bills.next_page_number }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}" class="page-link">পরবর্তী ›</a>
+                    <a href="?page={{ accepted_bills.paginator.num_pages }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}" class="page-link">শেষ &raquo;</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -402,12 +449,15 @@
 }
 
 .form-actions {
+    grid-column: 1 / -1;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 5px;
 }
 
 .btn-search, .btn-reset {
-    padding: 8px 20px;
+    padding: 10px 22px;
     border-radius: 8px;
     border: none;
     cursor: pointer;
@@ -416,6 +466,7 @@
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .btn-search {
@@ -818,7 +869,14 @@
     }
     
     .form-actions {
-        grid-column: 1;
+        grid-column: 1 / -1;
+        flex-direction: column;
+    }
+
+    .form-actions .btn-search,
+    .form-actions .btn-reset {
+        width: 100%;
+        justify-content: center;
     }
     
     .action-buttons {

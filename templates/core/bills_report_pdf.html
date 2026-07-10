@@ -1,0 +1,147 @@
+{% load bangla_number %}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>বিল রিপোর্ট</title>
+    <style>
+        .report-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+        }
+        .report-header .logo {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+            margin-bottom: 4px;
+        }
+        .report-header .university {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .report-header .department {
+            font-size: 12px;
+        }
+        .report-header .report-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 10px;
+        }
+
+        .filters-box {
+            border: 1px solid #999;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin-bottom: 12px;
+            font-size: 9.5px;
+            background: #fafafa;
+        }
+        .filters-box span.chip {
+            display: inline-block;
+            margin: 2px 8px 2px 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 24px;
+            margin-top: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <img class="logo" src="https://i.postimg.cc/Kcg8VSMD/JSTU.png" alt="University Logo">
+        <div class="university bangla-text">জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, জামালপুর</div>
+        <div class="department bangla-text">{{ report_subtitle|default:"বিল ব্যবস্থাপনা - অ্যাডমিন প্যানেল" }}</div>
+        <div class="report-title bangla-text">{{ report_title|default:"ফিল্টারকৃত বিল রিপোর্ট" }}</div>
+    </div>
+
+    <div class="meta-row bangla-text">
+        <div>তৈরি করেছেন: {{ generated_by.get_full_name|default:generated_by.username }}</div>
+        <div>তৈরির সময়: {{ generated_at|date:"d-m-Y H:i" }}</div>
+    </div>
+
+    <div class="filters-box bangla-text">
+        <span class="chip">স্ট্যাটাস: {{ status_label|default:"সব" }}</span>
+        {% if filters.year_filter %}<span class="chip">বর্ষ: {{ year_label|default:filters.year_filter }}</span>{% endif %}
+        {% if filters.user_filter %}<span class="chip">ব্যবহারকারী: {{ filters.user_filter }}</span>{% endif %}
+        {% if filters.semester_filter %}<span class="chip">সেমিস্টার: {{ filters.semester_filter }}</span>{% endif %}
+        {% if filters.degree_filter %}<span class="chip">ডিগ্রি: {{ filters.degree_filter }}</span>{% endif %}
+        {% if filters.department_filter %}<span class="chip">বিভাগ: {{ filters.department_filter }}</span>{% endif %}
+        {% if filters.bank_filter %}<span class="chip">ব্যাংক: {{ filters.bank_filter }}</span>{% endif %}
+        {% if filters.bill_number_filter %}<span class="chip">বিল/ভাউচার নং: {{ filters.bill_number_filter }}</span>{% endif %}
+        {% if filters.date_from %}<span class="chip">তারিখ থেকে: {{ filters.date_from }}</span>{% endif %}
+        {% if filters.date_to %}<span class="chip">তারিখ পর্যন্ত: {{ filters.date_to }}</span>{% endif %}
+        {% if filters.amount_min %}<span class="chip">সর্বনিম্ন টাকা: {{ filters.amount_min }}</span>{% endif %}
+        {% if filters.amount_max %}<span class="chip">সর্বোচ্চ টাকা: {{ filters.amount_max }}</span>{% endif %}
+    </div>
+
+    <table class="report-table bangla-text">
+        <thead>
+            <tr>
+                <th style="width: 4%;">ক্র.নং</th>
+                <th style="width: 10%;">বিল নম্বর</th>
+                <th style="width: 13%;">ব্যবহারকারী</th>
+                <th style="width: 10%;">সেমিস্টার</th>
+                <th style="width: 15%;">বিভাগ</th>
+                <th style="width: 8%;">ডিগ্রি</th>
+                <th style="width: 10%;">ব্যাংক</th>
+                <th style="width: 10%;">পরিমাণ (টাকা)</th>
+                <th style="width: 12%;">স্ট্যাটাস</th>
+                <th style="width: 8%;">তারিখ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bill in bills %}
+            <tr>
+                <td style="text-align: center;">{{ forloop.counter|bangla_number }}</td>
+                <td>{{ bill.bill_number|bangla_number }}</td>
+                <td>{{ bill.user.get_full_name|default:bill.user.username }}</td>
+                <td>{{ bill.semester }}</td>
+                <td>{{ bill.department }}</td>
+                <td>{{ bill.get_degree_type_display }}</td>
+                <td>{{ bill.bank_name|default:"-" }}</td>
+                <td style="text-align: right;">{{ bill.total_amount|floatformat:2|bangla_number }}</td>
+                <td>{{ bill.get_status_display }}</td>
+                <td>
+                    {% if bill.sent_at %}
+                        {{ bill.sent_at|date:"d-m-Y"|bangla_number }}
+                    {% else %}
+                        {{ bill.created_at|date:"d-m-Y"|bangla_number }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 15px;">কোনো বিল পাওয়া যায়নি।</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if bills %}
+        <tfoot>
+            <tr>
+                <td colspan="7" style="text-align: right;">সর্বমোট ({{ total_count|bangla_number }} টি বিল):</td>
+                <td style="text-align: right;">{{ total_amount|floatformat:2|bangla_number }}</td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+
+    <div class="summary-row bangla-text">
+        মোট বিল: {{ total_count|bangla_number }} &nbsp;|&nbsp; মোট পরিমাণ: {{ total_amount|floatformat:2|bangla_number }} টাকা
+    </div>
+</body>
+</html>

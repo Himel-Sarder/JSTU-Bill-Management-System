@@ -12,9 +12,14 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.shortcuts import reverse
 import json
+from decimal import Decimal, InvalidOperation
+from datetime import datetime
 from .models import SliderImage, Bill, Task, Profile, ActivityLog, SystemSetting, WorkType, Benefit
 from .forms import CustomUserCreationForm, ProfileUpdateForm, CustomPasswordChangeForm, BillForm, BillStatusForm
-from .utils import generate_bill_pdf, generate_bill_pdf_download, generate_bill_pdf_view, generate_bill_pdf_chairman
+from .utils import (
+    generate_bill_pdf, generate_bill_pdf_download, generate_bill_pdf_view, generate_bill_pdf_chairman,
+    render_bills_report_pdf, convert_to_bangla_digits, format_bangla_number,
+)
 
 
 # --------------------------
@@ -760,62 +765,188 @@ def add_user_signature_to_bill(request, bill_id):
 # Admin Views
 # --------------------------
 
-@login_required
-@user_passes_test(is_admin)
-def all_bills(request):
-    """View all bills for chairman - filters bills assigned to specific chairman"""
+def _base_admin_bills_queryset(request):
+    """Bills queryset scoped to the logged-in admin/chairman, before any user-chosen filters."""
     chairman_username = request.user.username
-    
+
     year_map = {
         'JSTUChairman1': '১ম বর্ষ',
         'JSTUChairman2': '২য় বর্ষ',
         'JSTUChairman3': '৩য় বর্ষ',
         'JSTUChairman4': '৪র্থ বর্ষ',
     }
-    
+
     year_text = year_map.get(chairman_username, '')
-    
+
     if year_text:
         bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).filter(
             remarks__icontains=year_text
-        ).order_by('-sent_at', '-created_at')
+        ).select_related('user').order_by('-sent_at', '-created_at')
     else:
-        bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).order_by('-sent_at', '-created_at')
-    
-    status_filter = request.GET.get('status', '')
-    user_filter = request.GET.get('user', '')
-    
-    # Handle sent_to_controller filter
-    if status_filter == 'sent_to_controller':
-        bills = bills.filter(status='sent_to_controller')
-    elif status_filter:
+        bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).select_related('user').order_by('-sent_at', '-created_at')
+
+    return bills
+
+
+def apply_bill_filters(request, bills):
+    """Apply every admin-dashboard filter (from GET params) to a Bill queryset.
+
+    Returns (filtered_queryset, filters_dict) where filters_dict holds the
+    cleaned values so templates can re-populate the filter form / build links.
+    """
+    status_filter = request.GET.get('status', '').strip()
+    user_filter = request.GET.get('user', '').strip()
+    semester_filter = request.GET.get('semester', '').strip()
+    degree_filter = request.GET.get('degree_type', '').strip()
+    department_filter = request.GET.get('department', '').strip()
+    bank_filter = request.GET.get('bank_name', '').strip()
+    bill_number_filter = request.GET.get('bill_number', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    amount_min = request.GET.get('amount_min', '').strip()
+    amount_max = request.GET.get('amount_max', '').strip()
+
+    if status_filter:
         bills = bills.filter(status=status_filter)
     if user_filter:
         bills = bills.filter(user__username__icontains=user_filter)
-    
+    if semester_filter:
+        bills = bills.filter(semester=semester_filter)
+    if degree_filter:
+        bills = bills.filter(degree_type=degree_filter)
+    if department_filter:
+        bills = bills.filter(department__icontains=department_filter)
+    if bank_filter:
+        bills = bills.filter(bank_name=bank_filter)
+    if bill_number_filter:
+        bills = bills.filter(
+            Q(bill_number__icontains=bill_number_filter) | Q(voucher_number__icontains=bill_number_filter)
+        )
+
+    if date_from:
+        try:
+            parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+            bills = bills.filter(created_at__date__gte=parsed)
+        except ValueError:
+            date_from = ''
+    if date_to:
+        try:
+            parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+            bills = bills.filter(created_at__date__lte=parsed)
+        except ValueError:
+            date_to = ''
+
+    if amount_min:
+        try:
+            bills = bills.filter(total_amount__gte=Decimal(amount_min))
+        except InvalidOperation:
+            amount_min = ''
+    if amount_max:
+        try:
+            bills = bills.filter(total_amount__lte=Decimal(amount_max))
+        except InvalidOperation:
+            amount_max = ''
+
+    filters = {
+        'status_filter': status_filter,
+        'user_filter': user_filter,
+        'semester_filter': semester_filter,
+        'degree_filter': degree_filter,
+        'department_filter': department_filter,
+        'bank_filter': bank_filter,
+        'bill_number_filter': bill_number_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'amount_min': amount_min,
+        'amount_max': amount_max,
+    }
+    return bills, filters
+
+
+@login_required
+@user_passes_test(is_admin)
+def all_bills(request):
+    """View all bills for chairman - filters bills assigned to specific chairman"""
+    bills = _base_admin_bills_queryset(request)
+    bills, filters = apply_bill_filters(request, bills)
+
     paginator = Paginator(bills, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     total_bills = bills.count()
+    filtered_amount = bills.aggregate(total=Sum('total_amount'))['total'] or 0
+
     pending_count = Bill.objects.filter(status='pending').count()
     approved_count = Bill.objects.filter(status='approved').count()
     rejected_count = Bill.objects.filter(status='rejected').count()
     paid_count = Bill.objects.filter(status='paid').count()
     sent_to_controller_count = Bill.objects.filter(status='sent_to_controller').count()
+    approved_by_controller_count = Bill.objects.filter(status='approved_by_controller').count()
+    rejected_by_controller_count = Bill.objects.filter(status='rejected_by_controller').count()
+
+    # Query string (without 'page') so pagination/PDF links keep the active filters
+    querydict = request.GET.copy()
+    querydict.pop('page', None)
+    filter_querystring = querydict.urlencode()
 
     context = {
         'bills': page_obj,
-        'status_filter': status_filter,
-        'user_filter': user_filter,
         'total_bills': total_bills,
+        'filtered_amount': filtered_amount,
         'pending_count': pending_count,
         'approved_count': approved_count,
         'rejected_count': rejected_count,
         'paid_count': paid_count,
         'sent_to_controller_count': sent_to_controller_count,
+        'approved_by_controller_count': approved_by_controller_count,
+        'rejected_by_controller_count': rejected_by_controller_count,
+        'semester_choices': Bill.SEMESTER_CHOICES,
+        'degree_choices': Bill.DEGREE_CHOICES,
+        'bank_choices': Bill.BANK_CHOICES,
+        'status_choices': Bill.STATUS_CHOICES,
+        'filter_querystring': filter_querystring,
+        **filters,
     }
     return render(request, 'core/all_bills.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_bills_pdf(request):
+    """Generate a landscape PDF report of the currently filtered bills (admin dashboard)."""
+    bills = _base_admin_bills_queryset(request)
+    bills, filters = apply_bill_filters(request, bills)
+
+    total_amount = bills.aggregate(total=Sum('total_amount'))['total'] or 0
+    total_count = bills.count()
+
+    status_labels = dict(Bill.STATUS_CHOICES)
+
+    context = {
+        'bills': bills,
+        'filters': filters,
+        'status_label': status_labels.get(filters['status_filter'], 'সব স্ট্যাটাস' if not filters['status_filter'] else filters['status_filter']),
+        'total_amount': total_amount,
+        'total_count': total_count,
+        'generated_at': timezone.now(),
+        'generated_by': request.user,
+        'convert_to_bangla_digits': convert_to_bangla_digits,
+        'format_bangla_number': format_bangla_number,
+    }
+
+    pdf_content = render_bills_report_pdf(context)
+
+    if not pdf_content:
+        messages.error(request, 'পিডিএফ রিপোর্ট তৈরি করতে সমস্যা হয়েছে।')
+        return redirect('all_bills')
+
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    filename = f"bills_report_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    log_activity(request.user, 'Bills report exported', f'{total_count} filtered bills exported as PDF report')
+    return response
 
 
 @login_required
@@ -1861,35 +1992,92 @@ def controller_delete_bill(request, bill_id):
     return redirect('cont_bills')
 
 
+def apply_accepted_bill_filters(request, bills):
+    """Apply every filter available on the controller's accepted-bills page.
+
+    Returns (filtered_queryset, filters_dict).
+    """
+    year_filter = request.GET.get('year', '').strip()
+    user_filter = request.GET.get('user', '').strip()
+    semester_filter = request.GET.get('semester', '').strip()
+    degree_filter = request.GET.get('degree_type', '').strip()
+    department_filter = request.GET.get('department', '').strip()
+    bank_filter = request.GET.get('bank_name', '').strip()
+    bill_number_filter = request.GET.get('bill_number', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    amount_min = request.GET.get('amount_min', '').strip()
+    amount_max = request.GET.get('amount_max', '').strip()
+
+    if year_filter:
+        year_text = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ', '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}.get(year_filter, '')
+        if year_text:
+            bills = bills.filter(remarks__icontains=year_text)
+    if user_filter:
+        bills = bills.filter(user__username__icontains=user_filter)
+    if semester_filter:
+        bills = bills.filter(semester=semester_filter)
+    if degree_filter:
+        bills = bills.filter(degree_type=degree_filter)
+    if department_filter:
+        bills = bills.filter(department__icontains=department_filter)
+    if bank_filter:
+        bills = bills.filter(bank_name=bank_filter)
+    if bill_number_filter:
+        bills = bills.filter(
+            Q(bill_number__icontains=bill_number_filter) | Q(voucher_number__icontains=bill_number_filter)
+        )
+
+    if date_from:
+        try:
+            parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+            bills = bills.filter(controller_approved_at__date__gte=parsed)
+        except ValueError:
+            date_from = ''
+    if date_to:
+        try:
+            parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+            bills = bills.filter(controller_approved_at__date__lte=parsed)
+        except ValueError:
+            date_to = ''
+
+    if amount_min:
+        try:
+            bills = bills.filter(total_amount__gte=Decimal(amount_min))
+        except InvalidOperation:
+            amount_min = ''
+    if amount_max:
+        try:
+            bills = bills.filter(total_amount__lte=Decimal(amount_max))
+        except InvalidOperation:
+            amount_max = ''
+
+    filters = {
+        'year_filter': year_filter,
+        'user_filter': user_filter,
+        'semester_filter': semester_filter,
+        'degree_filter': degree_filter,
+        'department_filter': department_filter,
+        'bank_filter': bank_filter,
+        'bill_number_filter': bill_number_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'amount_min': amount_min,
+        'amount_max': amount_max,
+    }
+    return bills, filters
+
+
 @login_required
 @user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
 def accepted_bills(request):
     """Controller accepted bills view"""
     # Get all bills approved by controller
-    accepted_bills_list = Bill.objects.filter(status='approved_by_controller').order_by('-controller_approved_at')
-    
-    # Get filter parameters
-    year_filter = request.GET.get('year', '')
-    user_filter = request.GET.get('user', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    
-    # Apply filters
-    if year_filter:
-        year_text = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ', '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}.get(year_filter, '')
-        if year_text:
-            accepted_bills_list = accepted_bills_list.filter(remarks__icontains=year_text)
-    
-    if user_filter:
-        accepted_bills_list = accepted_bills_list.filter(user__username__icontains=user_filter)
-    
-    if date_from:
-        accepted_bills_list = accepted_bills_list.filter(controller_approved_at__gte=date_from)
-    
-    if date_to:
-        accepted_bills_list = accepted_bills_list.filter(controller_approved_at__lte=date_to)
-    
-    # Calculate year for each bill
+    accepted_bills_list = Bill.objects.filter(status='approved_by_controller').select_related('user').order_by('-controller_approved_at')
+
+    accepted_bills_list, filters = apply_accepted_bill_filters(request, accepted_bills_list)
+
+    # Calculate year for each bill (must run before Paginator - see note below)
     for bill in accepted_bills_list:
         if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
             bill.year = '1st'
@@ -1901,27 +2089,74 @@ def accepted_bills(request):
             bill.year = '4th'
         else:
             bill.year = ''
-    
+
     # Pagination
     paginator = Paginator(accepted_bills_list, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     # Calculate total amount
     total_amount = accepted_bills_list.aggregate(total=Sum('total_amount'))['total'] or 0
-    
+
+    # Query string (without 'page') so pagination/PDF links keep the active filters
+    querydict = request.GET.copy()
+    querydict.pop('page', None)
+    filter_querystring = querydict.urlencode()
+
     context = {
         'accepted_bills': page_obj,
         'total_accepted': accepted_bills_list.count(),
         'total_amount': total_amount,
         'pending_count': Bill.objects.filter(status='sent_to_controller').count(),
         'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),
-        'year_filter': year_filter,
-        'user_filter': user_filter,
-        'date_from': date_from,
-        'date_to': date_to,
+        'semester_choices': Bill.SEMESTER_CHOICES,
+        'degree_choices': Bill.DEGREE_CHOICES,
+        'bank_choices': Bill.BANK_CHOICES,
+        'filter_querystring': filter_querystring,
+        **filters,
     }
     return render(request, 'core/accepted_bills.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def export_accepted_bills_pdf(request):
+    """Generate a PDF report of the currently filtered controller-approved bills."""
+    accepted_bills_list = Bill.objects.filter(status='approved_by_controller').select_related('user').order_by('-controller_approved_at')
+    accepted_bills_list, filters = apply_accepted_bill_filters(request, accepted_bills_list)
+
+    total_amount = accepted_bills_list.aggregate(total=Sum('total_amount'))['total'] or 0
+    total_count = accepted_bills_list.count()
+
+    year_labels = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ', '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}
+
+    context = {
+        'bills': accepted_bills_list,
+        'filters': filters,
+        'status_label': 'কন্ট্রোলার কর্তৃক অনুমোদিত',
+        'year_label': year_labels.get(filters['year_filter'], filters['year_filter']),
+        'total_amount': total_amount,
+        'total_count': total_count,
+        'generated_at': timezone.now(),
+        'generated_by': request.user,
+        'report_title': 'অনুমোদিত বিল রিপোর্ট',
+        'report_subtitle': 'কন্ট্রোলার প্যানেল',
+        'convert_to_bangla_digits': convert_to_bangla_digits,
+        'format_bangla_number': format_bangla_number,
+    }
+
+    pdf_content = render_bills_report_pdf(context)
+
+    if not pdf_content:
+        messages.error(request, 'পিডিএফ রিপোর্ট তৈরি করতে সমস্যা হয়েছে।')
+        return redirect('accepted_bills')
+
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    filename = f"accepted_bills_report_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    log_activity(request.user, 'Accepted bills report exported', f'{total_count} filtered accepted bills exported as PDF report')
+    return response
 
 
 @login_required

@@ -225,6 +225,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.round(num).toString().split('').map(c => d[c]||c).join('');
     }
 
+    // Strip any trailing "(...)" so old saved text (without bracket info)
+    // still matches fresh option text (which includes bracket info).
+    function normalize(s) {
+        return (s || '').replace(/\s*\([^)]*\)\s*/g, '').trim();
+    }
+
     function updateTotal() {
         let total = 0;
         document.querySelectorAll('#tasks-container .amount-hidden').forEach(i => {
@@ -325,10 +331,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             sel.disabled = false;
 
-            // pre-select by display text OR by value
+            // pre-select by display text OR by value (bracket-insensitive)
             if (preselectText) {
+                const target = normalize(preselectText);
                 for (const o of sel.options) {
-                    if (o.text === preselectText || o.value === preselectText) {
+                    if (normalize(o.text) === target || o.value === preselectText) {
                         sel.value = o.value;
                         break;
                     }
@@ -373,10 +380,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 benefitSel.disabled = false;
 
-                // pre-select by display text OR value
+                // pre-select by display text OR value (bracket-insensitive)
                 if (preselectText) {
+                    const target = normalize(preselectText);
                     for (const o of benefitSel.options) {
-                        if (o.text === preselectText || o.value === preselectText) {
+                        if (normalize(o.text) === target || o.value === preselectText) {
                             benefitSel.value = o.value;
                             break;
                         }
@@ -533,13 +541,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const qty    = task.querySelector('.qty-input');
             const qtyCont= task.querySelector('.quantity-container');
             const remarks= task.querySelector('.task-remarks')?.value || '';
+            const benefitLabelEl = task.querySelector('.benefit-label');
+
+            const hasQty = qty && qtyCont && qtyCont.style.display !== 'none';
+            const unitText = hasQty && benefitLabelEl
+                ? benefitLabelEl.textContent.replace('*', '').trim()
+                : '';
 
             if (wtSel.value && bSel.value && amt && parseFloat(amt) > 0) {
                 tasks.push({
                     work_type: wtSel.options[wtSel.selectedIndex]?.text || '',
                     benefit  : bSel.options[bSel.selectedIndex]?.text  || '',
-                    quantity : (qty && qtyCont.style.display !== 'none') ? (parseInt(qty.value)||1) : 1,
-                    unit     : '',
+                    quantity : hasQty ? (parseInt(qty.value)||1) : 1,
+                    unit     : unitText,
                     amount   : amt,
                     remarks  : remarks
                 });

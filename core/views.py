@@ -6,7 +6,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Sum, Count, Case, When, IntegerField
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -1555,11 +1555,21 @@ def get_benefit_choices_by_degree(request):
 
     if work_type_name:
         try:
-            work_type = WorkType.objects.get(
-                name=work_type_name,
-                degree_type=degree_type,
+            work_type = WorkType.objects.filter(
+                Q(name=work_type_name),
+                Q(degree_type=degree_type) | Q(degree_type='both'),
                 is_active=True
-            )
+            ).order_by(
+                # exact degree match (honors/masters) first, 'both' as fallback
+                Case(
+                    When(degree_type=degree_type, then=0),
+                    default=1,
+                    output_field=IntegerField()
+                )
+            ).first()
+
+            if not work_type:
+                raise WorkType.DoesNotExist
 
             if not work_type.needs_benefit:
                 dummy_benefit = {
@@ -1599,11 +1609,22 @@ def get_work_type_amount(request):
     degree_type = request.GET.get('degree_type', 'honors')
 
     try:
-        work_type = WorkType.objects.get(
-            name=work_type_name,
-            degree_type=degree_type,
+        work_type = WorkType.objects.filter(
+            Q(name=work_type_name),
+            Q(degree_type=degree_type) | Q(degree_type='both'),
             is_active=True
-        )
+        ).order_by(
+            # exact degree match (honors/masters) first, 'both' as fallback
+            Case(
+                When(degree_type=degree_type, then=0),
+                default=1,
+                output_field=IntegerField()
+            )
+        ).first()
+
+        if not work_type:
+            return JsonResponse({'amount': 0})
+
         if not work_type.needs_benefit:
             return JsonResponse({'amount': float(work_type.default_amount)})
         else:

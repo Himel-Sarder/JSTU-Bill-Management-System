@@ -18,7 +18,7 @@
             </div>
         </div>
         
-        {% if user.profile.signature_chairman1 %}
+        {% if user.profile.signature_chairman3 %}
         <div style="text-align: center; margin-bottom: 30px;">
             <h4 style="color: #FFD700; margin-bottom: 15px;">আপনার বর্তমান স্বাক্ষর:</h4>
             <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
@@ -58,7 +58,7 @@
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i> স্বাক্ষর সংরক্ষণ করুন
                 </button>
-                {% if user.profile.signature_chairman1 %}
+                {% if user.profile.signature_chairman3 %}
                 <a href="{% url 'delete_signature_chairman1' %}" class="btn btn-danger" 
                    onclick="return confirm('আপনার স্বাক্ষর ডিলিট করতে চান?')">
                     <i class="fas fa-trash"></i> স্বাক্ষর ডিলিট করুন

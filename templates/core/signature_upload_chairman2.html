@@ -58,7 +58,7 @@
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i> স্বাক্ষর সংরক্ষণ করুন
                 </button>
-                {% if user.profile.signature_chairman1 %}
+                {% if user.profile.signature_chairman2 %}
                 <a href="{% url 'delete_signature_chairman1' %}" class="btn btn-danger" 
                    onclick="return confirm('আপনার স্বাক্ষর ডিলিট করতে চান?')">
                     <i class="fas fa-trash"></i> স্বাক্ষর ডিলিট করুন

@@ -181,6 +181,31 @@
         color: #4ECDC4;
     }
     
+    /* Error / message box */
+    .login-alert {
+        background: rgba(244, 67, 54, 0.15);
+        border-left: 3px solid #F44336;
+        padding: 12px 14px;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        animation: alertFadeIn 0.25s ease;
+    }
+    
+    .login-alert i {
+        margin-top: 2px;
+        flex-shrink: 0;
+        color: #F44336;
+    }
+    
+    @keyframes alertFadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
     @media (max-width: 768px) {
         .glass-card {
             padding: 20px !important;
@@ -224,6 +249,42 @@
 
       <form method="post" style="display: flex; flex-direction: column; gap: 20px;" id="loginForm">
         {% csrf_token %}
+
+        <!-- Django messages framework: login_type mismatch, "not a chairman/controller", etc. -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="login-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Non-field errors: wrong username/password from Django's AuthenticationForm -->
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+            <div class="login-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Field-specific errors (e.g. required field left blank) -->
+        {% if form.username.errors or form.password.errors %}
+            {% for error in form.username.errors %}
+            <div class="login-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endfor %}
+            {% for error in form.password.errors %}
+            <div class="login-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
         
         <!-- Login Type Selection -->
         <div>
@@ -233,7 +294,8 @@
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
             <!-- Chairman Option -->
             <label class="login-option" id="chairmanOption">
-              <input type="radio" name="login_type" value="chairman" required>
+              <input type="radio" name="login_type" value="chairman" required
+                     {% if request.POST.login_type == 'chairman' %}checked{% endif %}>
               <i class="fas fa-user-tie"></i>
               <div class="option-title">পরীক্ষা কমিটির সভাপতি</div>
               <div class="option-desc">Chairman</div>
@@ -241,7 +303,8 @@
             
             <!-- Controller Option -->
             <label class="login-option" id="controllerOption">
-              <input type="radio" name="login_type" value="controller" required>
+              <input type="radio" name="login_type" value="controller" required
+                     {% if request.POST.login_type == 'controller' %}checked{% endif %}>
               <i class="fas fa-user-graduate"></i>
               <div class="option-title">কন্ট্রোলার</div>
               <div class="option-desc">Controller</div>
@@ -249,7 +312,8 @@
             
             <!-- Others Option -->
             <label class="login-option" id="othersOption">
-              <input type="radio" name="login_type" value="others" required>
+              <input type="radio" name="login_type" value="others" required
+                     {% if request.POST.login_type == 'others' %}checked{% endif %}>
               <i class="fas fa-user"></i>
               <div class="option-title">অন্যান্য</div>
               <div class="option-desc">Others</div>
@@ -268,7 +332,8 @@
           <label>ব্যবহারকারীর নাম</label>
           <input type="text" name="username" id="username" 
                  placeholder="আপনার ইউজারনেম লিখুন" required autofocus
-                 autocomplete="username">
+                 autocomplete="username"
+                 value="{{ request.POST.username|default:'' }}">
         </div>
 
         <!-- Password Field with Toggle -->
@@ -350,6 +415,19 @@ function togglePassword() {
 const loginOptions = document.querySelectorAll('.login-option');
 const loginHint = document.getElementById('loginHint');
 
+function updateHintForValue(value) {
+    if (value === 'chairman') {
+        loginHint.innerHTML = '<i class="fas fa-user-tie"></i> পরীক্ষা কমিটির সভাপতি হিসাবে লগইন করুন। শুধুমাত্র সভাপতি পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
+        loginHint.style.borderLeftColor = '#FF9800';
+    } else if (value === 'controller') {
+        loginHint.innerHTML = '<i class="fas fa-user-graduate"></i> কন্ট্রোলার হিসাবে লগইন করুন। শুধুমাত্র কন্ট্রোলার পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
+        loginHint.style.borderLeftColor = '#9C27B0';
+    } else {
+        loginHint.innerHTML = '<i class="fas fa-user"></i> অ্যাসিস্ট্যান্ট প্রফেসর, লেকচারার বা অফিস সহকারী হিসাবে লগইন করুন।';
+        loginHint.style.borderLeftColor = '#4ECDC4';
+    }
+}
+
 loginOptions.forEach(option => {
   const radio = option.querySelector('input[type="radio"]');
   
@@ -363,18 +441,15 @@ loginOptions.forEach(option => {
     radio.checked = true;
     
     // Update hint message based on selection
-    const value = radio.value;
-    if (value === 'chairman') {
-      loginHint.innerHTML = '<i class="fas fa-user-tie"></i> পরীক্ষা কমিটির সভাপতি হিসাবে লগইন করুন। শুধুমাত্র সভাপতি পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
-      loginHint.style.borderLeftColor = '#FF9800';
-    } else if (value === 'controller') {
-      loginHint.innerHTML = '<i class="fas fa-user-graduate"></i> কন্ট্রোলার হিসাবে লগইন করুন। শুধুমাত্র কন্ট্রোলার পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
-      loginHint.style.borderLeftColor = '#9C27B0';
-    } else {
-      loginHint.innerHTML = '<i class="fas fa-user"></i> অ্যাসিস্ট্যান্ট প্রফেসর, লেকচারার বা অফিস সহকারী হিসাবে লগইন করুন।';
-      loginHint.style.borderLeftColor = '#4ECDC4';
-    }
+    updateHintForValue(radio.value);
   });
+
+  // On page reload after a failed POST, re-apply the "selected" style
+  // for whichever option Django re-checked from request.POST.
+  if (radio.checked) {
+    option.classList.add('selected');
+    updateHintForValue(radio.value);
+  }
 });
 
 // Remember me functionality with 3 days expiry
@@ -410,11 +485,12 @@ function deleteCookie(name) {
 }
 
 // Load saved username and login type from cookies if remember me was checked
+// (skip if the field already has a value repopulated from a failed POST)
 const savedUsername = getCookie('saved_username');
 const savedLoginType = getCookie('saved_login_type');
 const rememberMeActive = getCookie('remember_me_active');
 
-if (savedUsername && rememberMeActive === 'true') {
+if (!usernameInput.value && savedUsername && rememberMeActive === 'true') {
     usernameInput.value = savedUsername;
     rememberMeCheckbox.checked = true;
     
@@ -428,19 +504,12 @@ if (savedUsername && rememberMeActive === 'true') {
                 loginOptions.forEach(opt => opt.classList.remove('selected'));
                 parentLabel.classList.add('selected');
             }
-            // Update hint
-            if (savedLoginType === 'chairman') {
-                loginHint.innerHTML = '<i class="fas fa-user-tie"></i> পরীক্ষা কমিটির সভাপতি হিসাবে লগইন করুন। শুধুমাত্র সভাপতি পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
-                loginHint.style.borderLeftColor = '#FF9800';
-            } else if (savedLoginType === 'controller') {
-                loginHint.innerHTML = '<i class="fas fa-user-graduate"></i> কন্ট্রোলার হিসাবে লগইন করুন। শুধুমাত্র কন্ট্রোলার পদবিধারী ব্যক্তিরা এই অপশন ব্যবহার করতে পারবেন।';
-                loginHint.style.borderLeftColor = '#9C27B0';
-            } else {
-                loginHint.innerHTML = '<i class="fas fa-user"></i> অ্যাসিস্ট্যান্ট প্রফেসর, লেকচারার বা অফিস সহকারী হিসাবে লগইন করুন।';
-                loginHint.style.borderLeftColor = '#4ECDC4';
-            }
+            updateHintForValue(savedLoginType);
         }
     }
+} else if (usernameInput.value && rememberMeActive === 'true') {
+    // Field was repopulated from a failed POST; keep "remember me" checked visually
+    rememberMeCheckbox.checked = true;
 }
 
 // Save username and login type when checkbox is checked

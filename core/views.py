@@ -630,8 +630,13 @@ def view_bill_pdf(request, bill_id):
 @login_required
 def bill_status(request):
     """View for displaying bill status with filtering"""
-    # Get the base queryset based on user type
-    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
+    user_type = request.user.profile.user_type
+    
+    # Check if user is admin (Chairman, Office Assistant, or Controller)
+    is_admin_user = user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']
+    
+    if is_admin_user:
+        # Admins can see all non-draft bills (except hidden ones)
         base_bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True)
         bills_list = base_bills.order_by('-created_at')
         
@@ -646,10 +651,11 @@ def bill_status(request):
         returned_to_user_count = base_bills.filter(status='returned_to_user').count()
         sent_to_controller_count = base_bills.filter(status='sent_to_controller').count()
     else:
+        # Regular users - ONLY their own bills
         base_bills = Bill.objects.filter(user=request.user).exclude(status='draft')
         bills_list = base_bills.order_by('-created_at')
         
-        # Regular user counts
+        # Regular user counts - only their own bills
         pending_count = base_bills.filter(status='pending').count()
         approved_count = base_bills.filter(status='approved').count()
         rejected_count = base_bills.filter(status='rejected').count()

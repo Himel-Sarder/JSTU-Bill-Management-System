@@ -366,15 +366,18 @@ class Bill(models.Model):
         return last_line.split(marker, 1)[1].strip()
 
     def get_chairman_return_note(self):
-        """Return the most recent chairman note added while returning the bill to the user."""
-        if not self.remarks:
+            """Return the most recent chairman note added while returning the bill to the user."""
+            if not self.remarks:
+                return ''
+            markers = ['চেয়ারম্যান মন্তব্য (ফেরত):', 'চেয়ারম্যান কর্তৃক বাতিল (ফেরত):']
+            lines = [line.strip() for line in self.remarks.split('\n') if any(m in line for m in markers)]
+            if not lines:
+                return ''
+            last_line = lines[-1]
+            for m in markers:
+                if m in last_line:
+                    return last_line.split(m, 1)[1].strip()
             return ''
-        marker = 'চেয়ারম্যান মন্তব্য (ফেরত):'
-        lines = [line.strip() for line in self.remarks.split('\n') if marker in line]
-        if not lines:
-            return ''
-        last_line = lines[-1]
-        return last_line.split(marker, 1)[1].strip()
 
     def __str__(self):
         return f"বিল {self.bill_number}"

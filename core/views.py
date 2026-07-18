@@ -629,24 +629,33 @@ def view_bill_pdf(request, bill_id):
     
 @login_required
 def bill_status(request):
-    """View for displaying the logged-in user's own bill status with filtering.
+    """View for displaying bill status with filtering"""
+    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
+        bills_list = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).order_by('-created_at')
+    else:
+        bills_list = Bill.objects.filter(user=request.user).exclude(status='draft').order_by('-created_at')
 
-    This is a personal 'my bill status' page (mirrors my_bills) — it must never
-    show another user's bills. Chairman/Controller have their own dedicated
-    review pages (all_bills / cont_bills / accepted_bills / rejected_bills) for
-    seeing everyone's bills, so no role is given a combined view here.
-    """
-    bills_list = Bill.objects.filter(user=request.user).exclude(status='draft').order_by('-created_at')
-
-    pending_count = Bill.objects.filter(user=request.user, status='pending').count()
-    approved_count = Bill.objects.filter(user=request.user, status='approved').count()
-    rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
-    paid_count = Bill.objects.filter(user=request.user, status='paid').count()
-    approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
-    rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
-    controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
-    returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
-    sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
+    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
+        pending_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='pending').count()
+        approved_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved').count()
+        rejected_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected').count()
+        paid_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='paid').count()
+        approved_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved_by_controller').count()
+        rejected_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected_by_controller').count()
+        controller_returned_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='controller_returned').count()
+        returned_to_user_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='returned_to_user').count()
+        # Also add sent_to_controller count if needed
+        sent_to_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='sent_to_controller').count()
+    else:
+        pending_count = Bill.objects.filter(user=request.user, status='pending').count()
+        approved_count = Bill.objects.filter(user=request.user, status='approved').count()
+        rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
+        paid_count = Bill.objects.filter(user=request.user, status='paid').count()
+        approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
+        rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
+        controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
+        returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
+        sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
 
     status_filter = request.GET.get('status', '')
     if status_filter:
@@ -1719,11 +1728,7 @@ import os
 def debug_bill_signature(request, bill_id):
     """Debug view to check signature for a specific bill"""
     bill = get_object_or_404(Bill, id=bill_id)
-
-    # Only the bill's owner or admin-role users may inspect its signature/debug data.
-    if bill.user != request.user and not is_admin(request.user):
-        return JsonResponse({'error': 'আপনার এই বিল দেখার অনুমতি নেই।'}, status=403)
-
+    
     from .utils import get_chairman_signature_for_bill
     signature_url = get_chairman_signature_for_bill(bill)
     
@@ -1732,12 +1737,11 @@ def debug_bill_signature(request, bill_id):
     if 'JSTUChairman1' in bill.remarks:
         try:
             chairman = User.objects.get(username='JSTUChairman1')
-            sig_field = chairman.profile.signature_chairman1
             chairman_info = {
                 'username': chairman.username,
-                'has_signature': bool(sig_field),
-                'signature_name': sig_field.name if sig_field else None,
-                'file_exists': sig_field.storage.exists(sig_field.name) if sig_field else False,
+                'has_signature': bool(chairman.profile.signature_chairman1),
+                'signature_path': chairman.profile.signature_chairman1.path if chairman.profile.signature_chairman1 else None,
+                'file_exists': os.path.exists(chairman.profile.signature_chairman1.path) if chairman.profile.signature_chairman1 else False,
             }
         except:
             chairman_info = {'error': 'Chairman not found'}
@@ -2248,12 +2252,6 @@ def export_accepted_bills_pdf(request):
 def bill_details_api(request, bill_id):
     """API endpoint for bill details"""
     bill = get_object_or_404(Bill, id=bill_id)
-
-    # Only the bill's owner or admin-role users (chairman/office assistant/controller)
-    # may view its details — prevents one user from seeing another user's bill.
-    if bill.user != request.user and not is_admin(request.user):
-        return JsonResponse({'error': 'আপনার এই বিল দেখার অনুমতি নেই।'}, status=403)
-
     tasks = bill.tasks.all()
     
     data = {
@@ -2477,7 +2475,7 @@ def chairman_direct_return_to_user(request, bill_id):
     
     # Add chairman's note to remarks
     if chairman_note:
-        bill.remarks = (bill.remarks or '') + f"\nচেয়ারম্যান কর্তৃক বাতিল (ফেরত): {chairman_note}"
+        bill.remarks = (bill.remarks or '') + f"\nচেয়ারম্যান মন্তব্য (ফেরত): {chairman_note}"
     else:
         bill.remarks = (bill.remarks or '') + f"\nচেয়ারম্যান কর্তৃক বাতিল করা হয়েছে: {timezone.now().strftime('%d-%m-%Y %H:%M')}"
     

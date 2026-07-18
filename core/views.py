@@ -671,6 +671,7 @@ def bill_status(request):
     }
     return render(request, 'core/status.html', context)
 
+
 @login_required
 @require_POST
 def send_bill(request, bill_id):
@@ -1731,11 +1732,12 @@ def debug_bill_signature(request, bill_id):
     if 'JSTUChairman1' in bill.remarks:
         try:
             chairman = User.objects.get(username='JSTUChairman1')
+            sig_field = chairman.profile.signature_chairman1
             chairman_info = {
                 'username': chairman.username,
-                'has_signature': bool(chairman.profile.signature_chairman1),
-                'signature_path': chairman.profile.signature_chairman1.path if chairman.profile.signature_chairman1 else None,
-                'file_exists': os.path.exists(chairman.profile.signature_chairman1.path) if chairman.profile.signature_chairman1 else False,
+                'has_signature': bool(sig_field),
+                'signature_name': sig_field.name if sig_field else None,
+                'file_exists': sig_field.storage.exists(sig_field.name) if sig_field else False,
             }
         except:
             chairman_info = {'error': 'Chairman not found'}

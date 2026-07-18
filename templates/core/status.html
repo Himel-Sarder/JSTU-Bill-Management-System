@@ -195,9 +195,9 @@
                                 {% if bill.returned_to_chairman_by %}
                                 <div class="timeline-detail">{{ bill.returned_to_chairman_by.get_full_name|default:bill.returned_to_chairman_by.username }}</div>
                                 {% endif %}
-                                {% if bill.get_controller_comment %}
+                                <!-- {% if bill.get_controller_comment %}
                                 <div class="timeline-comment">মন্তব্য: {{ bill.get_controller_comment }}</div>
-                                {% endif %}
+                                {% endif %} -->
                             </div>
                         </div>
                         {% endif %}
@@ -216,9 +216,9 @@
                                 {% if bill.returned_to_user_by %}
                                 <div class="timeline-detail">{{ bill.returned_to_user_by.get_full_name|default:bill.returned_to_user_by.username }}</div>
                                 {% endif %}
-                                {% if bill.get_chairman_return_note %}
+                                <!-- {% if bill.get_chairman_return_note %}
                                 <div class="timeline-comment">মন্তব্য: {{ bill.get_chairman_return_note }}</div>
-                                {% endif %}
+                                {% endif %} -->
                             </div>
                         </div>
                         {% endif %}
@@ -319,13 +319,13 @@
                     {% endif %}
 
                     <!-- Status Update Button for Admins -->
-                    {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
+                    <!-- {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
                         {% if bill.status == 'pending' %}
                         <a href="{% url 'update_bill_status' bill.id %}" class="btn btn-status">
                             <i class="fas fa-edit"></i> স্ট্যাটাস আপডেট
                         </a>
                         {% endif %}
-                    {% endif %}
+                    {% endif %} -->
                 </div>
             </div>
             {% empty %}

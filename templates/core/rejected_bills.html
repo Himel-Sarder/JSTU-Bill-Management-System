@@ -152,6 +152,9 @@
                                     <button onclick="downloadBill({{ bill.id }})" class="btn-action btn-download" title="ডাউনলোড">
                                         <i class="fas fa-download"></i> ডাউনলোড
                                     </button>
+                                    <button onclick="confirmReturn('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn-action btn-return" title="চেয়ারম্যানে ফেরত পাঠান">
+                                        <i class="fas fa-undo-alt"></i> ফেরত পাঠান
+                                    </button>
                                     <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn-action btn-delete" title="ডিলিট">
                                         <i class="fas fa-trash"></i> ডিলিট
                                     </button>
@@ -192,6 +195,40 @@
                 </a>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Return to Chairman Confirmation Modal -->
+<div id="returnModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fas fa-undo-alt" style="color: #FF9800;"></i>
+                <h3>বিল রোলব্যাক নিশ্চিতকরণ</h3>
+            </div>
+            <button class="close-btn" onclick="closeReturnModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="delete-warning">
+                <i class="fas fa-undo-alt" style="color: #FF9800;"></i>
+                <p id="returnBillInfo"></p>
+                <div class="warning-message" style="background:#e7f3ff; border-color:#b6dcff;">
+                    <i class="fas fa-info-circle" style="color:#0d6efd;"></i>
+                    <span>এই বিলটি চেয়ারম্যানের কাছে ফেরত (রোলব্যাক) পাঠানো হবে। চেয়ারম্যান আপনার মন্তব্য দেখতে, স্বাক্ষর করতে এবং বিলটি মূল প্রস্তুতকারীর কাছে ফেরত পাঠাতে পারবেন।</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeReturnModal()" class="btn-cancel">
+                <i class="fas fa-times"></i> বাতিল
+            </button>
+            <form id="returnForm" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-confirm-return">
+                    <i class="fas fa-undo-alt"></i> চেয়ারম্যানে ফেরত পাঠান
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -561,6 +598,24 @@
 .btn-delete { background: rgba(244, 67, 54, 0.15); color: #F44336; border: 1px solid rgba(244, 67, 54, 0.3); }
 .btn-delete:hover { background: #F44336; color: white; transform: translateY(-2px); }
 
+.btn-return { background: rgba(255, 152, 0, 0.15); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.3); }
+.btn-return:hover { background: #FF9800; color: white; transform: translateY(-2px); }
+
+.btn-confirm-return {
+    background: #FF9800;
+    color: white;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+.btn-confirm-return:hover { background: #e68900; transform: translateY(-2px); }
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -846,11 +901,31 @@ function closeDeleteModal() {
     currentBillId = null;
 }
 
+function confirmReturn(billId, billNumber) {
+    currentBillId = billId;
+    const modal = document.getElementById('returnModal');
+    const billInfo = document.getElementById('returnBillInfo');
+    const form = document.getElementById('returnForm');
+
+    billInfo.innerHTML = `আপনি কি নিশ্চিত যে <strong>বিল নম্বর: ${billNumber}</strong> চেয়ারম্যানের কাছে ফেরত পাঠাতে চান?`;
+    form.action = `/controller/return-to-chairman/${billId}/`;
+    modal.style.display = 'flex';
+}
+
+function closeReturnModal() {
+    document.getElementById('returnModal').style.display = 'none';
+    currentBillId = null;
+}
+
 // Close modal when clicking outside
 window.onclick = function(event) {
     const deleteModal = document.getElementById('deleteModal');
+    const returnModal = document.getElementById('returnModal');
     if (event.target === deleteModal) {
         deleteModal.style.display = 'none';
+    }
+    if (event.target === returnModal) {
+        returnModal.style.display = 'none';
     }
 }
 </script>

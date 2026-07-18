@@ -5,126 +5,263 @@
 {% block content %}
 <div class="container">
     <div class="glass-card">
-        <h2 style="text-align: center; color: #000000; margin-bottom: 30px;">আমার বিল</h2>
+        <h2 style="text-align: center; color: #000000; margin-bottom: 15px;">আমার বিল</h2>
         
-        {% if bills %}
-        <div class="bills-list">
-            {% for bill in bills %}
-            <div class="bill-item">
-                <div class="bill-info">
-                    <h3>বিল নম্বর: {{ bill.bill_number|bangla_number }}</h3>
-                    <p><i class="fas fa-graduation-cap"></i> সেমিস্টার: {{ bill.semester }}</p>
-                    <p><i class="fas fa-coins"></i> মোট টাকা: {{ bill.total_amount|bangla_number }} টাকা</p>
-                    <p><i class="fas fa-calendar"></i> তারিখ: {{ bill.bangla_date }}</p>
-                    <p><i class="fas fa-info-circle"></i> স্ট্যাটাস: 
-                        {% if bill.status == 'draft' %}
-                        <span class="status-badge draft">খসড়া</span>
-                        {% elif bill.status == 'pending' %}
-                        <span class="status-badge pending">অপেক্ষমান</span>
-                        {% elif bill.status == 'approved' %}
-                        <span class="status-badge approved">অনুমোদিত</span>
-                        {% elif bill.status == 'rejected' %}
-                        <span class="status-badge rejected">বাতিল</span>
-                        {% elif bill.status == 'paid' %}
-                        <span class="status-badge paid">পরিশোধিত</span>
-                        {% endif %}
-                    </p>
-
-                    {% if bill.remarks %}
-                    <div class="bill-remarks">
-                        <i class="fas fa-comment"></i> মন্তব্য: {{ bill.remarks }}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="bill-actions">
-                    <!-- Edit button - only for draft and rejected bills -->
-                    {% if bill.status == 'draft' or bill.status == 'rejected' %}
-                    <a href="{% url 'edit_bill' bill.id %}" class="btn btn-edit">
-                        <i class="fas fa-edit"></i> এডিট
-                    </a>
-                    {% endif %}
-
-                    <!-- Signature button for adding user signature to bill -->
-                    {% if bill.status == 'draft' %}
-                    <button type="button" class="btn btn-signature" onclick="openSignatureModal('{{ bill.id }}')">
-                        <i class="fas fa-signature"></i> সাক্ষর
-                    </button>
-                    {% endif %}
-
-                    <!-- Send button with year selection - only for draft bills -->
-                    {% if bill.status == 'draft' %}
-                    <button type="button" class="btn btn-send" onclick="openYearModal('{{ bill.id }}')">
-                        <i class="fas fa-paper-plane"></i> পাঠান
-                    </button>
-                    {% endif %}
-
-                    <a href="{% url 'view_bill_pdf' bill.id %}" class="btn btn-view" target="_blank">
-                        <i class="fas fa-eye"></i> দেখুন
-                    </a>
-
-                    <a href="{% url 'download_bill' bill.id %}" class="btn btn-download">
-                        <i class="fas fa-download"></i> ডাউনলোড
-                    </a>
-
-                    <!-- Delete option -->
-                    <form method="post" action="{% url 'delete_bill' bill.id %}" class="delete-form" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="button" class="btn btn-delete delete-btn">
-                            <i class="fas fa-trash-alt"></i> ডিলিট
-                        </button>
-                    </form>
-                </div>
-            </div>
-            {% endfor %}
+        <!-- Tab Buttons -->
+        <div class="tab-buttons">
+            <button class="tab-btn {% if active_tab == 'niomitobill' %}active{% endif %}" data-tab="niomitobill" onclick="showTab('niomitobill')">
+                <i class="fas fa-file-invoice"></i> নিয়মিত বিল
+                <span class="tab-count">{{ bills|length|bangla_number }}</span>
+            </button>
+            <button class="tab-btn {% if active_tab == 'ferotbill' %}active{% endif %}" data-tab="ferotbill" onclick="showTab('ferotbill')">
+                <i class="fas fa-undo-alt"></i> ফেরত বিল
+                <span class="tab-count">{{ returned_bills|length|bangla_number }}</span>
+            </button>
         </div>
 
-        <!-- Pagination -->
-        <div class="pagination-container">
-            <div class="pagination">
-                {% if bills.has_previous %}
-                    <a href="?page=1" class="pagination-btn">&laquo; প্রথম</a>
-                    <a href="?page={{ bills.previous_page_number }}" class="pagination-btn">‹ আগের</a>
-                {% else %}
-                    <span class="pagination-btn disabled">&laquo; প্রথম</span>
-                    <span class="pagination-btn disabled">‹ আগের</span>
-                {% endif %}
+        <!-- ফেরত বিল (Returned Bill) Section -->
+        <div id="ferotbill" class="tab-content" style="{% if active_tab != 'ferotbill' %}display: none;{% endif %}">
+            {% if returned_bills %}
+            <div class="returned-section">
+                <h3 class="returned-section-title">
+                    <i class="fas fa-undo-alt"></i> ফেরত বিল
+                    <span class="returned-count">{{ returned_bills|length|bangla_number }}</span>
+                </h3>
+                <p class="returned-section-subtitle">
+                    এই বিলগুলো চেয়ারম্যান কর্তৃক ফেরত পাঠানো হয়েছে। সংশোধন করে একই ভাউচার নম্বরে পুনরায় পাঠান।
+                </p>
+                <div class="bills-list">
+                    {% for bill in returned_bills %}
+                    <div class="bill-item returned-bill-item">
+                        <div class="bill-info">
+                            <h3>বিল নম্বর: {{ bill.bill_number|bangla_number }}</h3>
+                            <p><i class="fas fa-receipt"></i> ভাউচার নম্বর: {{ bill.voucher_number|bangla_number }}</p>
+                            <p><i class="fas fa-graduation-cap"></i> সেমিস্টার: {{ bill.semester }}</p>
+                            <p><i class="fas fa-coins"></i> মোট টাকা: {{ bill.total_amount|bangla_number }} টাকা</p>
+                            <p><i class="fas fa-calendar-check"></i> ফেরত পাঠানোর তারিখ: {{ bill.returned_to_user_at|date:"d-m-Y h:i A"|bangla_number }}</p>
+                            {% if bill.resend_count %}
+                            <p><i class="fas fa-redo"></i> পুনঃপ্রেরণ হয়েছে: {{ bill.resend_count|bangla_number }} বার</p>
+                            {% endif %}
+                            <p><i class="fas fa-info-circle"></i> স্ট্যাটাস: <span class="status-badge returned">ফেরত বিল</span></p>
 
-                <div class="page-numbers">
-                    {% for num in bills.paginator.page_range %}
-                        {% if num == bills.number %}
-                            <span class="pagination-btn current-page">{{ num|bangla_number }}</span>
-                        {% elif num > bills.number|add:'-3' and num < bills.number|add:'3' %}
-                            <a href="?page={{ num }}" class="pagination-btn">{{ num|bangla_number }}</a>
-                        {% endif %}
+                            <!-- Signature status -->
+                            <p><i class="fas fa-signature"></i> স্বাক্ষর: 
+                                {% if bill.user_signature_added %}
+                                <span style="color: #4CAF50; font-weight: 600;">✓ যুক্ত হয়েছে</span>
+                                {% else %}
+                                <span style="color: #FF9800; font-weight: 600;">যোগ করা হয়নি</span>
+                                {% endif %}
+                            </p>
+
+                            {% comment %} {% if bill.get_chairman_return_note %}
+                            <div class="bill-remarks chairman-remark">
+                                <i class="fas fa-comment"></i> চেয়ারম্যানের মন্তব্য: {{ bill.get_chairman_return_note }}
+                            </div>
+                            {% endif %} {% endcomment %}
+                        </div>
+
+                        <div class="bill-actions">
+                            <!-- Edit Button - Goes to edit page -->
+                            <a href="{% url 'edit_bill' bill.id %}" class="btn btn-edit">
+                                <i class="fas fa-edit"></i> সংশোধন করুন
+                            </a>
+
+                            <!-- Send Button - Directly send without editing -->
+                            <form method="post" action="{% url 'send_returned_bill' bill.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-send" 
+                                        {% if not bill.user_signature_added %}disabled title="প্রথমে স্বাক্ষর যোগ করুন"{% endif %}>
+                                    <i class="fas fa-paper-plane"></i> পাঠান
+                                </button>
+                            </form>
+                            
+                            <!-- Signature Button for Returned Bills -->
+                            {% if bill.user_signature_added %}
+                            <button class="btn btn-signature-added" disabled style="background: #4CAF50; color: white; opacity: 0.8;">
+                                <i class="fas fa-check-circle"></i> স্বাক্ষর যুক্ত
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-signature" onclick="openSignatureModal('{{ bill.id }}')">
+                                <i class="fas fa-signature"></i> স্বাক্ষর
+                            </button>
+                            {% endif %}
+                            
+                            <a href="{% url 'view_bill_pdf' bill.id %}" class="btn btn-view" target="_blank">
+                                <i class="fas fa-eye"></i> দেখুন
+                            </a>
+                            <a href="{% url 'download_bill' bill.id %}" class="btn btn-download">
+                                <i class="fas fa-download"></i> ডাউনলোড
+                            </a>
+
+                            <!-- Delete option for returned bills -->
+                            <form method="post" action="{% url 'delete_bill' bill.id %}" class="delete-form" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-delete delete-btn">
+                                    <i class="fas fa-trash-alt"></i> ডিলিট
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
-
-                {% if bills.has_next %}
-                    <a href="?page={{ bills.next_page_number }}" class="pagination-btn">পরবর্তী ›</a>
-                    <a href="?page={{ bills.paginator.num_pages }}" class="pagination-btn">শেষ &raquo;</a>
-                {% else %}
-                    <span class="pagination-btn disabled">পরবর্তী ›</span>
-                    <span class="pagination-btn disabled">শেষ &raquo;</span>
-                {% endif %}
             </div>
-            <div class="pagination-info">
-                <p>মোট {{ bills.paginator.count|bangla_number }}টি বিলের মধ্যে {{ bills.start_index|bangla_number }} থেকে {{ bills.end_index|bangla_number }} নং বিল দেখানো হচ্ছে</p>
+            {% else %}
+            <div class="no-bills">
+                <div class="no-bills-icon">
+                    <i class="fas fa-undo-alt"></i>
+                </div>
+                <h3>কোনো ফেরত বিল নেই</h3>
+                <p>চেয়ারম্যান কর্তৃক ফেরত পাঠানো কোনো বিল নেই।</p>
             </div>
+            {% endif %}
         </div>
 
-        {% else %}
-        <div class="no-bills">
-            <div class="no-bills-icon">
-                <i class="fas fa-file-invoice-dollar"></i>
+        <!-- নিয়মিত বিল (Regular Bills) Section -->
+        <div id="niomitobill" class="tab-content" style="{% if active_tab != 'niomitobill' %}display: none;{% endif %}">
+            {% if bills %}
+            <div class="bills-list">
+                {% for bill in bills %}
+                <div class="bill-item">
+                    <div class="bill-info">
+                        <h3>বিল নম্বর: {{ bill.bill_number|bangla_number }}</h3>
+                        <p><i class="fas fa-graduation-cap"></i> সেমিস্টার: {{ bill.semester }}</p>
+                        <p><i class="fas fa-coins"></i> মোট টাকা: {{ bill.total_amount|bangla_number }} টাকা</p>
+                        <p><i class="fas fa-calendar"></i> তারিখ: {{ bill.bangla_date }}</p>
+                        <p><i class="fas fa-info-circle"></i> স্ট্যাটাস: 
+                            {% if bill.status == 'draft' %}
+                            <span class="status-badge draft">খসড়া</span>
+                            {% elif bill.status == 'pending' %}
+                            <span class="status-badge pending">অপেক্ষমান</span>
+                            {% elif bill.status == 'approved' %}
+                            <span class="status-badge approved">অনুমোদিত</span>
+                            {% elif bill.status == 'rejected' %}
+                            <span class="status-badge rejected">বাতিল</span>
+                            {% elif bill.status == 'paid' %}
+                            <span class="status-badge paid">পরিশোধিত</span>
+                            {% elif bill.status == 'sent_to_controller' %}
+                            <span class="status-badge sent-to-controller">কন্ট্রোলারে প্রেরিত</span>
+                            {% elif bill.status == 'approved_by_controller' %}
+                            <span class="status-badge approved">কন্ট্রোলার কর্তৃক অনুমোদিত</span>
+                            {% elif bill.status == 'rejected_by_controller' %}
+                            <span class="status-badge rejected">কন্ট্রোলার কর্তৃক বাতিল</span>
+                            {% elif bill.status == 'controller_returned' %}
+                            <span class="status-badge returned">চেয়ারম্যানের কাছে ফেরত প্রক্রিয়াধীন</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Signature status for regular bills -->
+                        {% if bill.status == 'draft' %}
+                        <p><i class="fas fa-signature"></i> স্বাক্ষর: 
+                            {% if bill.user_signature_added %}
+                            <span style="color: #4CAF50; font-weight: 600;">✓ যুক্ত হয়েছে</span>
+                            {% else %}
+                            <span style="color: #FF9800; font-weight: 600;">যোগ করা হয়নি</span>
+                            {% endif %}
+                        </p>
+                        {% endif %}
+
+                        {% comment %} {% if bill.remarks %}
+                        <div class="bill-remarks">
+                            <i class="fas fa-comment"></i> মন্তব্য: {{ bill.remarks }}
+                        </div>
+                        {% endif %} {% endcomment %}
+                    </div>
+
+                    <div class="bill-actions">
+                        <!-- Edit button - only for draft and rejected bills -->
+                        {% if bill.status == 'draft' or bill.status == 'rejected' %}
+                        <a href="{% url 'edit_bill' bill.id %}" class="btn btn-edit">
+                            <i class="fas fa-edit"></i> এডিট
+                        </a>
+                        {% endif %}
+
+                        <!-- Signature button for adding user signature to bill -->
+                        {% if bill.status == 'draft' %}
+                            {% if bill.user_signature_added %}
+                            <button class="btn btn-signature-added" disabled style="background: #4CAF50; color: white; opacity: 0.8;">
+                                <i class="fas fa-check-circle"></i> স্বাক্ষর যুক্ত
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-signature" onclick="openSignatureModal('{{ bill.id }}')">
+                                <i class="fas fa-signature"></i> সাক্ষর
+                            </button>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- Send button with year selection - only for draft bills -->
+                        {% if bill.status == 'draft' %}
+                        <button type="button" class="btn btn-send" onclick="openYearModal('{{ bill.id }}')">
+                            <i class="fas fa-paper-plane"></i> পাঠান
+                        </button>
+                        {% endif %}
+
+                        <a href="{% url 'view_bill_pdf' bill.id %}" class="btn btn-view" target="_blank">
+                            <i class="fas fa-eye"></i> দেখুন
+                        </a>
+
+                        <a href="{% url 'download_bill' bill.id %}" class="btn btn-download">
+                            <i class="fas fa-download"></i> ডাউনলোড
+                        </a>
+
+                        <!-- Delete option -->
+                        <form method="post" action="{% url 'delete_bill' bill.id %}" class="delete-form" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="button" class="btn btn-delete delete-btn">
+                                <i class="fas fa-trash-alt"></i> ডিলিট
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <h3>আপনার কোনো বিল নেই</h3>
-            <p>প্রথম বিল তৈরি করতে নিচের বাটনে ক্লিক করুন</p>
-            <a href="{% url 'bill_create' %}" class="btn create-btn">
-                <i class="fas fa-plus"></i> বিল তৈরী করুন
-            </a>
+
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination">
+                    {% if bills.has_previous %}
+                        <a href="?page=1{% if active_tab %}&tab={{ active_tab }}{% endif %}" class="pagination-btn">&laquo; প্রথম</a>
+                        <a href="?page={{ bills.previous_page_number }}{% if active_tab %}&tab={{ active_tab }}{% endif %}" class="pagination-btn">‹ আগের</a>
+                    {% else %}
+                        <span class="pagination-btn disabled">&laquo; প্রথম</span>
+                        <span class="pagination-btn disabled">‹ আগের</span>
+                    {% endif %}
+
+                    <div class="page-numbers">
+                        {% for num in bills.paginator.page_range %}
+                            {% if num == bills.number %}
+                                <span class="pagination-btn current-page">{{ num|bangla_number }}</span>
+                            {% elif num > bills.number|add:'-3' and num < bills.number|add:'3' %}
+                                <a href="?page={{ num }}{% if active_tab %}&tab={{ active_tab }}{% endif %}" class="pagination-btn">{{ num|bangla_number }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if bills.has_next %}
+                        <a href="?page={{ bills.next_page_number }}{% if active_tab %}&tab={{ active_tab }}{% endif %}" class="pagination-btn">পরবর্তী ›</a>
+                        <a href="?page={{ bills.paginator.num_pages }}{% if active_tab %}&tab={{ active_tab }}{% endif %}" class="pagination-btn">শেষ &raquo;</a>
+                    {% else %}
+                        <span class="pagination-btn disabled">পরবর্তী ›</span>
+                        <span class="pagination-btn disabled">শেষ &raquo;</span>
+                    {% endif %}
+                </div>
+                <div class="pagination-info">
+                    <p>মোট {{ bills.paginator.count|bangla_number }}টি বিলের মধ্যে {{ bills.start_index|bangla_number }} থেকে {{ bills.end_index|bangla_number }} নং বিল দেখানো হচ্ছে</p>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="no-bills">
+                <div class="no-bills-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h3>আপনার কোনো বিল নেই</h3>
+                <p>প্রথম বিল তৈরি করতে নিচের বাটনে ক্লিক করুন</p>
+                <a href="{% url 'bill_create' %}" class="btn create-btn">
+                    <i class="fas fa-plus"></i> বিল তৈরী করুন
+                </a>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 
@@ -222,6 +359,75 @@
 </div>
 
 <style>
+/* Tab Buttons */
+.tab-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 25px;
+    padding: 10px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 15px;
+}
+
+.tab-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.7);
+    color: #555;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.tab-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #4ECDC4, #44A08D);
+    color: white;
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+}
+
+.tab-btn i {
+    font-size: 18px;
+}
+
+.tab-count {
+    background: rgba(255,255,255,0.2);
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tab-btn.active .tab-count {
+    background: rgba(255,255,255,0.3);
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Modal Styles */
 .modal {
     position: fixed;
@@ -532,6 +738,12 @@
     background: linear-gradient(45deg, #9C27B0, #7B1FA2);
 }
 
+.btn-signature-added {
+    background: #4CAF50;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
 .btn-edit {
     background: linear-gradient(45deg, #FFC107, #FF9800);
 }
@@ -541,8 +753,22 @@
     box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
 }
 
-.btn-create {
+.create-btn {
     background: linear-gradient(45deg, #6a11cb, #2575fc);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 25px;
+    border-radius: 25px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 .btn-secondary {
@@ -592,11 +818,74 @@
     color: white;
 }
 
+.status-badge.returned {
+    background: linear-gradient(45deg, #FF9800, #F57C00);
+    color: white;
+}
+
+.status-badge.sent-to-controller {
+    background: #667eea;
+    color: white;
+}
+
+/* ফেরত বিল (Returned Bill) Section */
+.returned-section {
+    background: rgba(255, 152, 0, 0.08);
+    border: 1px solid rgba(255, 152, 0, 0.35);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.returned-section-title {
+    color: #000000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    margin: 0 0 8px 0;
+}
+
+.returned-section-title i {
+    color: #FF9800;
+}
+
+.returned-count {
+    background: #FF9800;
+    color: white;
+    border-radius: 50%;
+    min-width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 0 6px;
+}
+
+.returned-section-subtitle {
+    color: #333;
+    font-size: 0.9rem;
+    margin: 0 0 15px 0;
+}
+
+.returned-bill-item {
+    border-left: 5px solid #FF9800;
+}
+
+.chairman-remark {
+    background: rgba(255, 152, 0, 0.12);
+    color: #333;
+}
+
+.chairman-remark i {
+    color: #FF9800;
+}
+
 /* Pagination styles */
 .pagination-container {
     margin-top: 30px;
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(0,0,0,0.1);
 }
 
 .pagination {
@@ -666,10 +955,10 @@
     width: fit-content;
     margin: 15px auto;
     text-align: center;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(0,0,0,0.7);
     font-size: 14px;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 8px;
 }
 
@@ -688,7 +977,7 @@
     font-size: 4rem;
     margin-bottom: 20px;
     opacity: 0.7;
-    color: #000000
+    color: #000000;
 }
 
 .no-bills h3 {
@@ -739,10 +1028,43 @@
         min-width: 35px;
         padding: 6px 8px;
     }
+    
+    .tab-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .tab-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
 </style>
 
 <script>
+function showTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(function(tab) {
+        tab.style.display = 'none';
+    });
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName).style.display = 'block';
+    
+    // Add active class to clicked button
+    event.target.closest('.tab-btn').classList.add('active');
+    
+    // Update URL parameter
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.pushState({}, '', url);
+}
+
 let currentBillId = null;
 
 function openYearModal(billId) {
@@ -785,25 +1107,51 @@ window.onclick = function(event) {
     }
 }
 
-// Delete button handler — only disable on confirm
+// Delete button handler
 document.querySelectorAll('.delete-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
         const confirmed = confirm('আপনি কি নিশ্চিতভাবে এই বিলটি ডিলিট করতে চান?');
-        if (!confirmed) return;  // user pressed Cancel — do nothing
+        if (!confirmed) return;
 
-        // User confirmed — disable button and submit
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> মুছছে...';
         btn.closest('form').submit();
     });
 });
 
-// Re-enable all delete buttons on page show (bfcache fix)
+// Re-enable all delete buttons on page show
 window.addEventListener('pageshow', function(e) {
     document.querySelectorAll('.delete-btn').forEach(function(btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-trash-alt"></i> ডিলিট';
     });
+});
+
+// Set active tab from URL parameter on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab && (tab === 'niomitobill' || tab === 'ferotbill')) {
+        // Find the tab button with matching data-tab attribute
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(function(btn) {
+            const tabName = btn.getAttribute('data-tab');
+            if (tabName === tab) {
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(function(t) {
+                    t.style.display = 'none';
+                });
+                // Remove active class from all buttons
+                tabButtons.forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                // Show selected tab
+                document.getElementById(tabName).style.display = 'block';
+                // Add active class to clicked button
+                btn.classList.add('active');
+            }
+        });
+    }
 });
 </script>
 

@@ -9,13 +9,15 @@
 
         <!-- Status Filter Buttons -->
         <div class="status-filter">
-            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|bangla_number }})</a>
-            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">চেয়ারম্যান অপেক্ষমান({{ pending_count|bangla_number }})</a>
-            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">চেয়ারম্যান অনুমোদিত({{ approved_count|bangla_number }})</a>
-            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">চেয়ারম্যান বাতিল({{ rejected_count|bangla_number }})</a>
-            <!-- <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">পরিশোধিত ({{ paid_count|bangla_number }})</a> -->
+            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|add:returned_to_user_count|add:controller_returned_count|bangla_number }})</a>
+            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">অপেক্ষমান ({{ pending_count|bangla_number }})</a>
+            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">অনুমোদিত ({{ approved_count|bangla_number }})</a>
+            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">বাতিল ({{ rejected_count|bangla_number }})</a>
+            <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">পরিশোধিত ({{ paid_count|bangla_number }})</a>
             <a href="?status=approved_by_controller" class="filter-btn {% if request.GET.status == 'approved_by_controller' %}active{% endif %}" style="background: #00ACC1;">কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0|bangla_number }})</a>
             <a href="?status=rejected_by_controller" class="filter-btn {% if request.GET.status == 'rejected_by_controller' %}active{% endif %}" style="background: #FF5722;">কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0|bangla_number }})</a>
+            <a href="?status=controller_returned" class="filter-btn {% if request.GET.status == 'controller_returned' %}active{% endif %}" style="background: #FF9800;">কন্ট্রোলার ফেরত ({{ controller_returned_count|default:0|bangla_number }})</a>
+            <a href="?status=returned_to_user" class="filter-btn {% if request.GET.status == 'returned_to_user' %}active{% endif %}" style="background: #4CAF50;">চেয়ারম্যান কর্তৃক ফেরত ({{ returned_to_user_count|default:0|bangla_number }})</a>
         </div>
 
         <!-- Bills Container -->
@@ -28,11 +30,6 @@
                         <p style="color: #666; margin: 5px 0 0 0;">
                             <i class="fas fa-calendar-alt"></i> তৈরির তারিখ: {{ bill.created_at|date:"d-m-Y"|bangla_number }}
                         </p>
-                        {% if bill.sent_at %}
-                        <p style="color: #666; margin: 5px 0 0 0;">
-                            <i class="fas fa-paper-plane"></i> পাঠানোর তারিখ: {{ bill.sent_at|date:"d-m-Y"|bangla_number }}
-                        </p>
-                        {% endif %}
                     </div>
                     <span class="status-badge status-{{ bill.status }}">
                         {% if bill.status == 'pending' %}অপেক্ষমান
@@ -41,8 +38,10 @@
                         {% elif bill.status == 'paid' %}পরিশোধিত
                         {% elif bill.status == 'draft' %}খসড়া
                         {% elif bill.status == 'sent_to_controller' %}কন্ট্রোলারে প্রেরিত
-                        {% elif bill.status == 'approved_by_controller' %}✓ কন্ট্রোলার কর্তৃক অনুমোদিত
-                        {% elif bill.status == 'rejected_by_controller' %}✗ কন্ট্রোলার কর্তৃক বাতিল
+                        {% elif bill.status == 'approved_by_controller' %}কন্ট্রোলার কর্তৃক অনুমোদিত
+                        {% elif bill.status == 'rejected_by_controller' %}কন্ট্রোলার কর্তৃক বাতিল
+                        {% elif bill.status == 'controller_returned' %}কন্ট্রোলার কর্তৃক ফেরত
+                        {% elif bill.status == 'returned_to_user' %}চেয়ারম্যান কর্তৃক ফেরত
                         {% endif %}
                     </span>
                 </div>
@@ -65,42 +64,193 @@
                     </div>
                 </div>
 
-                <!-- Chairman Approval Info -->
-                {% if bill.approved_by %}
-                <div class="approval-info chairman-approval">
-                    <i class="fas fa-user-check"></i>
-                    <div>
-                        <p><strong>চেয়ারম্যানের অনুমোদন:</strong></p>
-                        <p><i class="fas fa-user"></i> অনুমোদনকারী: {{ bill.approved_by.get_full_name|default:bill.approved_by.username }}</p>
-                        <p><i class="fas fa-clock"></i> অনুমোদের সময়: {{ bill.approved_at|date:"d-m-Y H:i"|bangla_number }}</p>
-                    </div>
-                </div>
-                {% endif %}
+                <!-- Status Timeline -->
+                <div class="status-timeline">
+                    <h4 style="color: #2c3e50; margin: 0 0 15px 0; font-size: 15px; font-weight: 600;">
+                        <i class="fas fa-history" style="color: #4ECDC4;"></i> বিলের অগ্রগতি
+                    </h4>
+                    <div class="timeline">
+                        <!-- Step 1: Created -->
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">বিল তৈরি</div>
+                                <div class="timeline-date">{{ bill.created_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                            </div>
+                        </div>
 
-                <!-- Controller Approval Info -->
-                {% if bill.controller_approved_by %}
-                <div class="approval-info controller-approval">
-                    <i class="fas fa-user-shield"></i>
-                    <div>
-                        <p><strong>কন্ট্রোলারের সিদ্ধান্ত:</strong></p>
-                        <p><i class="fas fa-user"></i> কর্মকর্তা: {{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</p>
-                        <p><i class="fas fa-clock"></i> সময়: {{ bill.controller_approved_at|date:"d-m-Y H:i"|bangla_number }}</p>
-                        {% if bill.status == 'approved_by_controller' %}
-                        <p><i class="fas fa-check-circle" style="color: #4CAF50;"></i> <strong style="color: #4CAF50;">বিলটি চূড়ান্তভাবে অনুমোদিত হয়েছে</strong></p>
-                        {% elif bill.status == 'rejected_by_controller' %}
-                        <p><i class="fas fa-times-circle" style="color: #F44336;"></i> <strong style="color: #F44336;">বিলটি চূড়ান্তভাবে বাতিল করা হয়েছে</strong></p>
+                        <!-- Step 2: Sent to Chairman -->
+                        {% if bill.sent_at %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">চেয়ারম্যানের কাছে প্রেরিত</div>
+                                <div class="timeline-date">{{ bill.sent_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                {% if bill.remarks %}
+                                    {% if 'JSTUChairman1' in bill.remarks %}
+                                    <div class="timeline-detail">চেয়ারম্যান: ১ম বর্ষ</div>
+                                    {% elif 'JSTUChairman2' in bill.remarks %}
+                                    <div class="timeline-detail">চেয়ারম্যান: ২য় বর্ষ</div>
+                                    {% elif 'JSTUChairman3' in bill.remarks %}
+                                    <div class="timeline-detail">চেয়ারম্যান: ৩য় বর্ষ</div>
+                                    {% elif 'JSTUChairman4' in bill.remarks %}
+                                    <div class="timeline-detail">চেয়ারম্যান: ৪র্থ বর্ষ</div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
                         {% endif %}
+
+                        <!-- Step 3: Chairman Approved -->
+                        {% if bill.approved_by %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon" style="background: #4CAF50; border-color: #4CAF50;">
+                                <i class="fas fa-check-circle" style="color: white;"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">চেয়ারম্যান কর্তৃক অনুমোদিত</div>
+                                <div class="timeline-date">{{ bill.approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-detail">{{ bill.approved_by.get_full_name|default:bill.approved_by.username }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 4: Sent to Controller -->
+                        {% if bill.sent_to_controller_at %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon">
+                                <i class="fas fa-share"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">কন্ট্রোলারে প্রেরিত</div>
+                                <div class="timeline-date">{{ bill.sent_to_controller_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 5: Controller Approved -->
+                        {% if bill.status == 'approved_by_controller' and bill.controller_approved_by %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon" style="background: #00ACC1; border-color: #00ACC1;">
+                                <i class="fas fa-check-double" style="color: white;"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">কন্ট্রোলার কর্তৃক অনুমোদিত</div>
+                                <div class="timeline-date">{{ bill.controller_approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-detail">{{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 5b: Controller Rejected -->
+                        {% if bill.status == 'rejected_by_controller' and bill.controller_approved_by %}
+                        <div class="timeline-item rejected">
+                            <div class="timeline-icon">
+                                <i class="fas fa-times-circle" style="color: #F44336;"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">কন্ট্রোলার কর্তৃক বাতিল</div>
+                                <div class="timeline-date">{{ bill.controller_approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-detail">{{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</div>
+                                {% if bill.get_controller_comment %}
+                                <div class="timeline-comment">মন্তব্য: {{ bill.get_controller_comment }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 6: Controller Returned to Chairman -->
+                        {% if bill.status == 'controller_returned' or bill.returned_to_chairman_at %}
+                        <div class="timeline-item returned">
+                            <div class="timeline-icon" style="background: #FF9800; border-color: #FF9800;">
+                                <i class="fas fa-undo-alt" style="color: white;"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">কন্ট্রোলার কর্তৃক চেয়ারম্যানে ফেরত</div>
+                                {% if bill.returned_to_chairman_at %}
+                                <div class="timeline-date">{{ bill.returned_to_chairman_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                {% endif %}
+                                {% if bill.returned_to_chairman_by %}
+                                <div class="timeline-detail">{{ bill.returned_to_chairman_by.get_full_name|default:bill.returned_to_chairman_by.username }}</div>
+                                {% endif %}
+                                {% comment %} {% if bill.get_controller_comment %}
+                                <div class="timeline-comment">মন্তব্য: {{ bill.get_controller_comment }}</div>
+                                {% endif %} {% endcomment %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 7: Chairman Returned to User -->
+                            {% if bill.status == 'returned_to_user' or bill.returned_to_user_at %}
+                            <div class="timeline-item returned">
+                                <div class="timeline-icon" style="background: #4CAF50; border-color: #4CAF50;">
+                                    <i class="fas fa-undo-alt" style="color: white;"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">চেয়ারম্যান কর্তৃক প্রস্তুতকারীর কাছে ফেরত</div>
+                                    {% if bill.returned_to_user_at %}
+                                    <div class="timeline-date">{{ bill.returned_to_user_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                    {% endif %}
+                                    {% if bill.returned_to_user_by %}
+                                    <div class="timeline-detail">{{ bill.returned_to_user_by.get_full_name|default:bill.returned_to_user_by.username }}</div>
+                                    {% endif %}
+                                    {% if bill.get_chairman_return_note %}
+                                    <div class="timeline-comment">মন্তব্য: {{ bill.get_chairman_return_note }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                        <!-- Step 8: Paid -->
+                        {% if bill.status == 'paid' %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon">
+                                <i class="fas fa-money-bill-wave" style="color: #2196F3;"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">পরিশোধিত</div>
+                                <div class="timeline-date">{{ bill.updated_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Current Status (Active) -->
+                        <div class="timeline-item active">
+                            <div class="timeline-icon">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">বর্তমান স্ট্যাটাস</div>
+                                <div class="timeline-status status-{{ bill.status }}">
+                                    {% if bill.status == 'pending' %}অপেক্ষমান (চেয়ারম্যানের অনুমোদনের জন্য)
+                                    {% elif bill.status == 'approved' %}চেয়ারম্যান কর্তৃক অনুমোদিত
+                                    {% elif bill.status == 'rejected' %}চেয়ারম্যান কর্তৃক বাতিল
+                                    {% elif bill.status == 'paid' %}পরিশোধিত
+                                    {% elif bill.status == 'draft' %}খসড়া
+                                    {% elif bill.status == 'sent_to_controller' %}কন্ট্রোলারে প্রেরিত
+                                    {% elif bill.status == 'approved_by_controller' %}কন্ট্রোলার কর্তৃক অনুমোদিত
+                                    {% elif bill.status == 'rejected_by_controller' %}কন্ট্রোলার কর্তৃক বাতিল
+                                    {% elif bill.status == 'controller_returned' %}কন্ট্রোলার কর্তৃক ফেরত
+                                    {% elif bill.status == 'returned_to_user' %}চেয়ারম্যান কর্তৃক ফেরত
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% endif %}
 
-                {% if bill.remarks %}
+                <!-- Remarks Section -->
+                {% comment %} {% if bill.remarks %}
                 <div class="remarks-section">
                     <i class="fas fa-comment"></i>
                     <span class="detail-label">মন্তব্য:</span>
                     <p>{{ bill.remarks|linebreaksbr }}</p>
                 </div>
-                {% endif %}
+                {% endif %} {% endcomment %}
 
                 <div class="status-actions">
                     <a href="{% url 'view_bill_pdf' bill.id %}" class="btn btn-view" target="_blank">
@@ -110,7 +260,14 @@
                         <i class="fas fa-download"></i> ডাউনলোড
                     </a>
 
-                    <!-- Delete for Regular Users - Rejected, Approved, and Controller Approved Bills -->
+                    <!-- Edit Button for Returned to User Bills -->
+                    {% if bill.status == 'returned_to_user' and request.user == bill.user %}
+                    <a href="{% url 'edit_bill' bill.id %}" class="btn btn-edit">
+                        <i class="fas fa-edit"></i> সম্পাদনা করুন
+                    </a>
+                    {% endif %}
+
+                    <!-- Delete for Regular Users -->
                     {% if request.user == bill.user %}
                         {% if bill.status == 'rejected' or bill.status == 'approved' or bill.status == 'rejected_by_controller' or bill.status == 'approved_by_controller' %}
                         <form method="post" action="{% url 'delete_bill' bill.id %}" style="display: inline;"
@@ -123,7 +280,7 @@
                         {% endif %}
                     {% endif %}
 
-                    <!-- Delete for Chairman - Draft, Approved, and Rejected Bills (Soft Delete) -->
+                    <!-- Delete for Chairman -->
                     {% if request.user.profile.user_type == 'চেয়ারম্যান' %}
                         {% if bill.status == 'draft' %}
                         <button onclick="showDeleteModal('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}', 'draft')" 
@@ -144,13 +301,13 @@
                     {% endif %}
 
                     <!-- Status Update Button for Admins -->
-                    {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
+                    {% comment %} {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
                         {% if bill.status == 'pending' %}
                         <a href="{% url 'update_bill_status' bill.id %}" class="btn btn-status">
                             <i class="fas fa-edit"></i> স্ট্যাটাস আপডেট
                         </a>
                         {% endif %}
-                    {% endif %}
+                    {% endif %} {% endcomment %}
                 </div>
             </div>
             {% empty %}
@@ -188,7 +345,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal (For Chairman) -->
+<!-- Delete Confirmation Modal -->
 <div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
     <div class="glass-card" style="max-width: 500px; margin: 20px; text-align: center; background: white;">
         <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #FFC107; margin-bottom: 20px;"></i>
@@ -209,7 +366,7 @@
 
 <style>
 .container {
-    max-width: 900px;
+    max-width: 950px;
     margin: 0 auto;
     padding: 20px;
     min-height: 80vh;
@@ -270,7 +427,7 @@
 .status-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 2px solid #4ECDC4;
@@ -302,40 +459,19 @@
     text-transform: uppercase;
     color: white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    white-space: nowrap;
 }
 
-.status-pending {
-    background: #FFC107;
-    color: #000;
-}
-
-.status-approved {
-    background: #4CAF50;
-}
-
-.status-rejected {
-    background: #F44336;
-}
-
-.status-paid {
-    background: #2196F3;
-}
-
-.status-draft {
-    background: #9E9E9E;
-}
-
-.status-sent_to_controller {
-    background: #9C27B0;
-}
-
-.status-approved_by_controller {
-    background: #00ACC1;
-}
-
-.status-rejected_by_controller {
-    background: #FF5722;
-}
+.status-pending { background: #FFC107; color: #000; }
+.status-approved { background: #4CAF50; }
+.status-rejected { background: #F44336; }
+.status-paid { background: #2196F3; }
+.status-draft { background: #9E9E9E; }
+.status-sent_to_controller { background: #9C27B0; }
+.status-approved_by_controller { background: #00ACC1; }
+.status-rejected_by_controller { background: #FF5722; }
+.status-controller_returned { background: #FF9800; }
+.status-returned_to_user { background: #4CAF50; }
 
 /* Bill Details Grid */
 .bill-details-grid {
@@ -370,41 +506,141 @@
     font-weight: 600;
 }
 
-/* Approval Info Sections */
-.approval-info {
-    padding: 15px;
-    border-radius: 10px;
+/* Status Timeline */
+.status-timeline {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
     margin: 15px 0;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-item {
+    position: relative;
+    padding: 0 0 20px 25px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: -24px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #e0e0e0;
     display: flex;
-    gap: 15px;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #666;
+    z-index: 1;
 }
 
-.approval-info i {
-    font-size: 24px;
+.timeline-item.completed .timeline-icon {
+    border-color: #4CAF50;
+    background: #4CAF50;
+    color: white;
 }
 
-.approval-info p {
-    margin: 5px 0;
-    color: #333;
+.timeline-item.rejected .timeline-icon {
+    border-color: #F44336;
+    background: #F44336;
+    color: white;
 }
 
-.chairman-approval {
-    background: #e8f5e9;
-    border-left: 4px solid #4CAF50;
+.timeline-item.returned .timeline-icon {
+    border-color: #FF9800;
+    background: #FF9800;
+    color: white;
 }
 
-.chairman-approval i {
-    color: #4CAF50;
+.timeline-item.active .timeline-icon {
+    border-color: #4ECDC4;
+    background: #4ECDC4;
+    color: white;
+    box-shadow: 0 0 0 5px rgba(78, 205, 196, 0.2);
+    animation: pulse 2s infinite;
 }
 
-.controller-approval {
-    background: #e3f2fd;
-    border-left: 4px solid #2196F3;
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(78, 205, 196, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0); }
 }
 
-.controller-approval i {
-    color: #2196F3;
+.timeline-content {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
 }
+
+.timeline-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 2px;
+}
+
+.timeline-detail {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.timeline-comment {
+    font-size: 13px;
+    color: #E65100;
+    margin-top: 5px;
+    padding: 8px 12px;
+    background: #fff3e0;
+    border-radius: 6px;
+    border-left: 3px solid #FF9800;
+}
+
+.timeline-status {
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 3px;
+}
+
+.timeline-status.status-pending { color: #F57F17; background: #FFF8E1; }
+.timeline-status.status-approved { color: #2E7D32; background: #E8F5E9; }
+.timeline-status.status-rejected { color: #C62828; background: #FFEBEE; }
+.timeline-status.status-paid { color: #0D47A1; background: #E3F2FD; }
+.timeline-status.status-draft { color: #616161; background: #F5F5F5; }
+.timeline-status.status-sent_to_controller { color: #6A1B9A; background: #F3E5F5; }
+.timeline-status.status-approved_by_controller { color: #00695C; background: #E0F2F1; }
+.timeline-status.status-rejected_by_controller { color: #BF360C; background: #FBE9E7; }
+.timeline-status.status-controller_returned { color: #E65100; background: #FFF3E0; }
+.timeline-status.status-returned_to_user { color: #1B5E20; background: #E8F5E9; }
 
 /* Remarks Section */
 .remarks-section {
@@ -456,37 +692,15 @@
     transition: all 0.3s ease;
 }
 
-.btn-view {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-}
-
-.btn-download {
-    background: linear-gradient(45deg, #4ECDC4, #44A08D);
-}
-
-.btn-delete {
-    background: linear-gradient(45deg, #FF6B6B, #C44D58);
-}
-
-.btn-delete-soft {
-    background: linear-gradient(45deg, #FF9800, #F57C00);
-}
-
-.btn-status {
-    background: linear-gradient(45deg, #FFA500, #FF8C00);
-}
-
-.btn-primary {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-}
-
-.btn-secondary {
-    background: #9E9E9E;
-}
-
-.btn-danger {
-    background: #F44336;
-}
+.btn-view { background: linear-gradient(45deg, #667eea, #764ba2); }
+.btn-download { background: linear-gradient(45deg, #4ECDC4, #44A08D); }
+.btn-edit { background: linear-gradient(45deg, #FF9800, #F57C00); }
+.btn-delete { background: linear-gradient(45deg, #FF6B6B, #C44D58); }
+.btn-delete-soft { background: linear-gradient(45deg, #FF9800, #F57C00); }
+.btn-status { background: linear-gradient(45deg, #FFA500, #FF8C00); }
+.btn-primary { background: linear-gradient(45deg, #667eea, #764ba2); }
+.btn-secondary { background: #9E9E9E; }
+.btn-danger { background: #F44336; }
 
 .btn:hover {
     transform: translateY(-2px);
@@ -606,6 +820,21 @@
     
     .approval-info i {
         align-self: flex-start;
+    }
+
+    .timeline {
+        padding-left: 20px;
+    }
+
+    .timeline-item {
+        padding-left: 20px;
+    }
+
+    .timeline-icon {
+        left: -18px;
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
     }
 }
 </style>

@@ -325,6 +325,8 @@
                         <a href="{% url 'signature_upload' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
                     {% endif %}
         
+                    <a href="{% url 'chairman_returned_bills' %}" {% if 'returned-bills' in request.path %}class="active"{% endif %}> কন্ট্রোলার ফেরত বিল
+                    </a>
                     <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
                     <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
         

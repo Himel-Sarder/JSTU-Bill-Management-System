@@ -53,11 +53,12 @@
                                 {% endif %}
                             </p>
 
-                            {% comment %} {% if bill.get_chairman_return_note %}
+                            {% if bill.get_chairman_return_note %}
                             <div class="bill-remarks chairman-remark">
-                                <i class="fas fa-comment"></i> চেয়ারম্যানের মন্তব্য: {{ bill.get_chairman_return_note }}
+                                <i class="fas fa-comment-dots"></i>
+                                <span><strong>চেয়ারম্যানের মন্তব্য:</strong> {{ bill.get_chairman_return_note }}</span>
                             </div>
-                            {% endif %} {% endcomment %}
+                            {% endif %}
                         </div>
 
                         <div class="bill-actions">
@@ -870,15 +871,32 @@
 
 .returned-bill-item {
     border-left: 5px solid #FF9800;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.returned-bill-item .bill-info {
+    padding-right: 0;
+}
+
+.returned-bill-item .bill-actions {
+    justify-content: flex-start;
+    min-width: unset;
+    width: 100%;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(0,0,0,0.15);
 }
 
 .chairman-remark {
     background: rgba(255, 152, 0, 0.12);
     color: #333;
+    align-items: flex-start;
 }
 
 .chairman-remark i {
     color: #FF9800;
+    margin-top: 2px;
 }
 
 /* Pagination styles */

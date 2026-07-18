@@ -1728,7 +1728,11 @@ import os
 def debug_bill_signature(request, bill_id):
     """Debug view to check signature for a specific bill"""
     bill = get_object_or_404(Bill, id=bill_id)
-    
+
+    # Only the bill's owner or admin-role users may inspect its signature/debug data.
+    if bill.user != request.user and not is_admin(request.user):
+        return JsonResponse({'error': 'আপনার এই বিল দেখার অনুমতি নেই।'}, status=403)
+
     from .utils import get_chairman_signature_for_bill
     signature_url = get_chairman_signature_for_bill(bill)
     
@@ -2252,6 +2256,12 @@ def export_accepted_bills_pdf(request):
 def bill_details_api(request, bill_id):
     """API endpoint for bill details"""
     bill = get_object_or_404(Bill, id=bill_id)
+
+    # Only the bill's owner or admin-role users (chairman/office assistant/controller)
+    # may view its details — prevents one user from seeing another user's bill.
+    if bill.user != request.user and not is_admin(request.user):
+        return JsonResponse({'error': 'আপনার এই বিল দেখার অনুমতি নেই।'}, status=403)
+
     tasks = bill.tasks.all()
     
     data = {

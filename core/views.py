@@ -630,48 +630,37 @@ def view_bill_pdf(request, bill_id):
 @login_required
 def bill_status(request):
     """View for displaying bill status with filtering"""
-    user_type = request.user.profile.user_type
-    
-    # Check if user is admin (Chairman, Office Assistant, or Controller)
-    is_admin_user = user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']
-    
-    if is_admin_user:
-        # Admins can see all non-draft bills (except hidden ones)
-        base_bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True)
-        bills_list = base_bills.order_by('-created_at')
-        
-        # Admin counts
-        pending_count = base_bills.filter(status='pending').count()
-        approved_count = base_bills.filter(status='approved').count()
-        rejected_count = base_bills.filter(status='rejected').count()
-        paid_count = base_bills.filter(status='paid').count()
-        approved_by_controller_count = base_bills.filter(status='approved_by_controller').count()
-        rejected_by_controller_count = base_bills.filter(status='rejected_by_controller').count()
-        controller_returned_count = base_bills.filter(status='controller_returned').count()
-        returned_to_user_count = base_bills.filter(status='returned_to_user').count()
-        sent_to_controller_count = base_bills.filter(status='sent_to_controller').count()
+    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
+        bills_list = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).order_by('-created_at')
     else:
-        # Regular users - ONLY their own bills
-        base_bills = Bill.objects.filter(user=request.user).exclude(status='draft')
-        bills_list = base_bills.order_by('-created_at')
-        
-        # Regular user counts - only their own bills
-        pending_count = base_bills.filter(status='pending').count()
-        approved_count = base_bills.filter(status='approved').count()
-        rejected_count = base_bills.filter(status='rejected').count()
-        paid_count = base_bills.filter(status='paid').count()
-        approved_by_controller_count = base_bills.filter(status='approved_by_controller').count()
-        rejected_by_controller_count = base_bills.filter(status='rejected_by_controller').count()
-        controller_returned_count = base_bills.filter(status='controller_returned').count()
-        returned_to_user_count = base_bills.filter(status='returned_to_user').count()
-        sent_to_controller_count = base_bills.filter(status='sent_to_controller').count()
+        bills_list = Bill.objects.filter(user=request.user).exclude(status='draft').order_by('-created_at')
 
-    # Apply status filter if present
+    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
+        pending_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='pending').count()
+        approved_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved').count()
+        rejected_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected').count()
+        paid_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='paid').count()
+        approved_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved_by_controller').count()
+        rejected_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected_by_controller').count()
+        controller_returned_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='controller_returned').count()
+        returned_to_user_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='returned_to_user').count()
+        # Also add sent_to_controller count if needed
+        sent_to_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='sent_to_controller').count()
+    else:
+        pending_count = Bill.objects.filter(user=request.user, status='pending').count()
+        approved_count = Bill.objects.filter(user=request.user, status='approved').count()
+        rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
+        paid_count = Bill.objects.filter(user=request.user, status='paid').count()
+        approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
+        rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
+        controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
+        returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
+        sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
+
     status_filter = request.GET.get('status', '')
     if status_filter:
         bills_list = bills_list.filter(status=status_filter)
 
-    # Pagination
     paginator = Paginator(bills_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)

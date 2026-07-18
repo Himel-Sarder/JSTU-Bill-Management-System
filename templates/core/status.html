@@ -9,33 +9,15 @@
 
         <!-- Status Filter Buttons -->
         <div class="status-filter">
-            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">
-                সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|add:returned_to_user_count|add:controller_returned_count|bangla_number }})
-            </a>
-            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">
-                অপেক্ষমান ({{ pending_count|bangla_number }})
-            </a>
-            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">
-                অনুমোদিত ({{ approved_count|bangla_number }})
-            </a>
-            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">
-                বাতিল ({{ rejected_count|bangla_number }})
-            </a>
-            <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">
-                পরিশোধিত ({{ paid_count|bangla_number }})
-            </a>
-            <a href="?status=approved_by_controller" class="filter-btn {% if request.GET.status == 'approved_by_controller' %}active{% endif %}" style="background: #00ACC1;">
-                কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0|bangla_number }})
-            </a>
-            <a href="?status=rejected_by_controller" class="filter-btn {% if request.GET.status == 'rejected_by_controller' %}active{% endif %}" style="background: #FF5722;">
-                কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0|bangla_number }})
-            </a>
-            <a href="?status=controller_returned" class="filter-btn {% if request.GET.status == 'controller_returned' %}active{% endif %}" style="background: #FF9800;">
-                কন্ট্রোলার ফেরত ({{ controller_returned_count|default:0|bangla_number }})
-            </a>
-            <a href="?status=returned_to_user" class="filter-btn {% if request.GET.status == 'returned_to_user' %}active{% endif %}" style="background: #4CAF50;">
-                চেয়ারম্যান কর্তৃক ফেরত ({{ returned_to_user_count|default:0|bangla_number }})
-            </a>
+            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|add:returned_to_user_count|add:controller_returned_count|bangla_number }})</a>
+            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">অপেক্ষমান ({{ pending_count|bangla_number }})</a>
+            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">অনুমোদিত ({{ approved_count|bangla_number }})</a>
+            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">বাতিল ({{ rejected_count|bangla_number }})</a>
+            <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">পরিশোধিত ({{ paid_count|bangla_number }})</a>
+            <a href="?status=approved_by_controller" class="filter-btn {% if request.GET.status == 'approved_by_controller' %}active{% endif %}" style="background: #00ACC1;">কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0|bangla_number }})</a>
+            <a href="?status=rejected_by_controller" class="filter-btn {% if request.GET.status == 'rejected_by_controller' %}active{% endif %}" style="background: #FF5722;">কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0|bangla_number }})</a>
+            <a href="?status=controller_returned" class="filter-btn {% if request.GET.status == 'controller_returned' %}active{% endif %}" style="background: #FF9800;">কন্ট্রোলার ফেরত ({{ controller_returned_count|default:0|bangla_number }})</a>
+            <a href="?status=returned_to_user" class="filter-btn {% if request.GET.status == 'returned_to_user' %}active{% endif %}" style="background: #4CAF50;">চেয়ারম্যান কর্তৃক ফেরত ({{ returned_to_user_count|default:0|bangla_number }})</a>
         </div>
 
         <!-- Bills Container -->
@@ -44,7 +26,7 @@
             <div class="status-card" data-status="{{ bill.status }}">
                 <div class="status-header">
                     <div>
-                        <h3 style="color: #000000; margin: 0;">বিল নম্বর: {{ bill.bill_number|bangla_number }}</h3>
+                        <h3 style="color: #000000; margin: 0;">বিল #{{ bill.bill_number|bangla_number }}</h3>
                         <p style="color: #666; margin: 5px 0 0 0;">
                             <i class="fas fa-calendar-alt"></i> তৈরির তারিখ: {{ bill.created_at|date:"d-m-Y"|bangla_number }}
                         </p>
@@ -195,33 +177,33 @@
                                 {% if bill.returned_to_chairman_by %}
                                 <div class="timeline-detail">{{ bill.returned_to_chairman_by.get_full_name|default:bill.returned_to_chairman_by.username }}</div>
                                 {% endif %}
-                                <!-- {% if bill.get_controller_comment %}
+                                {% comment %} {% if bill.get_controller_comment %}
                                 <div class="timeline-comment">মন্তব্য: {{ bill.get_controller_comment }}</div>
-                                {% endif %} -->
+                                {% endif %} {% endcomment %}
                             </div>
                         </div>
                         {% endif %}
 
                         <!-- Step 7: Chairman Returned to User -->
-                        {% if bill.status == 'returned_to_user' or bill.returned_to_user_at %}
-                        <div class="timeline-item returned">
-                            <div class="timeline-icon" style="background: #4CAF50; border-color: #4CAF50;">
-                                <i class="fas fa-undo-alt" style="color: white;"></i>
+                            {% if bill.status == 'returned_to_user' or bill.returned_to_user_at %}
+                            <div class="timeline-item returned">
+                                <div class="timeline-icon" style="background: #4CAF50; border-color: #4CAF50;">
+                                    <i class="fas fa-undo-alt" style="color: white;"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">চেয়ারম্যান কর্তৃক প্রস্তুতকারীর কাছে ফেরত</div>
+                                    {% if bill.returned_to_user_at %}
+                                    <div class="timeline-date">{{ bill.returned_to_user_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                    {% endif %}
+                                    {% if bill.returned_to_user_by %}
+                                    <div class="timeline-detail">{{ bill.returned_to_user_by.get_full_name|default:bill.returned_to_user_by.username }}</div>
+                                    {% endif %}
+                                    {% if bill.get_chairman_return_note %}
+                                    <div class="timeline-comment">মন্তব্য: {{ bill.get_chairman_return_note }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">চেয়ারম্যান কর্তৃক প্রস্তুতকারীর কাছে ফেরত</div>
-                                {% if bill.returned_to_user_at %}
-                                <div class="timeline-date">{{ bill.returned_to_user_at|date:"d-m-Y h:i A"|bangla_number }}</div>
-                                {% endif %}
-                                {% if bill.returned_to_user_by %}
-                                <div class="timeline-detail">{{ bill.returned_to_user_by.get_full_name|default:bill.returned_to_user_by.username }}</div>
-                                {% endif %}
-                                <!-- {% if bill.get_chairman_return_note %}
-                                <div class="timeline-comment">মন্তব্য: {{ bill.get_chairman_return_note }}</div>
-                                {% endif %} -->
-                            </div>
-                        </div>
-                        {% endif %}
+                            {% endif %}
 
                         <!-- Step 8: Paid -->
                         {% if bill.status == 'paid' %}
@@ -262,13 +244,13 @@
                 </div>
 
                 <!-- Remarks Section -->
-                {% if bill.remarks %}
+                {% comment %} {% if bill.remarks %}
                 <div class="remarks-section">
                     <i class="fas fa-comment"></i>
                     <span class="detail-label">মন্তব্য:</span>
                     <p>{{ bill.remarks|linebreaksbr }}</p>
                 </div>
-                {% endif %}
+                {% endif %} {% endcomment %}
 
                 <div class="status-actions">
                     <a href="{% url 'view_bill_pdf' bill.id %}" class="btn btn-view" target="_blank">
@@ -319,13 +301,13 @@
                     {% endif %}
 
                     <!-- Status Update Button for Admins -->
-                    <!-- {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
+                    {% comment %} {% if request.user.profile.user_type == 'অফিস সহকারী' or request.user.profile.user_type == 'চেয়ারম্যান' or request.user.profile.user_type == 'কন্ট্রোলার' %}
                         {% if bill.status == 'pending' %}
                         <a href="{% url 'update_bill_status' bill.id %}" class="btn btn-status">
                             <i class="fas fa-edit"></i> স্ট্যাটাস আপডেট
                         </a>
                         {% endif %}
-                    {% endif %} -->
+                    {% endif %} {% endcomment %}
                 </div>
             </div>
             {% empty %}

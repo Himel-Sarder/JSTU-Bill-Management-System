@@ -629,33 +629,24 @@ def view_bill_pdf(request, bill_id):
     
 @login_required
 def bill_status(request):
-    """View for displaying bill status with filtering"""
-    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
-        bills_list = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).order_by('-created_at')
-    else:
-        bills_list = Bill.objects.filter(user=request.user).exclude(status='draft').order_by('-created_at')
+    """View for displaying the logged-in user's own bill status with filtering.
 
-    if request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']:
-        pending_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='pending').count()
-        approved_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved').count()
-        rejected_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected').count()
-        paid_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='paid').count()
-        approved_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved_by_controller').count()
-        rejected_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected_by_controller').count()
-        controller_returned_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='controller_returned').count()
-        returned_to_user_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='returned_to_user').count()
-        # Also add sent_to_controller count if needed
-        sent_to_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='sent_to_controller').count()
-    else:
-        pending_count = Bill.objects.filter(user=request.user, status='pending').count()
-        approved_count = Bill.objects.filter(user=request.user, status='approved').count()
-        rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
-        paid_count = Bill.objects.filter(user=request.user, status='paid').count()
-        approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
-        rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
-        controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
-        returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
-        sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
+    This is a personal 'my bill status' page (mirrors my_bills) — it must never
+    show another user's bills. Chairman/Controller have their own dedicated
+    review pages (all_bills / cont_bills / accepted_bills / rejected_bills) for
+    seeing everyone's bills, so no role is given a combined view here.
+    """
+    bills_list = Bill.objects.filter(user=request.user).exclude(status='draft').order_by('-created_at')
+
+    pending_count = Bill.objects.filter(user=request.user, status='pending').count()
+    approved_count = Bill.objects.filter(user=request.user, status='approved').count()
+    rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
+    paid_count = Bill.objects.filter(user=request.user, status='paid').count()
+    approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
+    rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
+    controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
+    returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
+    sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
 
     status_filter = request.GET.get('status', '')
     if status_filter:
@@ -679,7 +670,6 @@ def bill_status(request):
         'current_filter': status_filter,
     }
     return render(request, 'core/status.html', context)
-
 
 @login_required
 @require_POST

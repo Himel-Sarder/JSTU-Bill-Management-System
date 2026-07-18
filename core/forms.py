@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from .models import Profile, Bill, WorkType, Benefit
 
 
-# In forms.py - Update CustomUserCreationForm
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(
         required=True,

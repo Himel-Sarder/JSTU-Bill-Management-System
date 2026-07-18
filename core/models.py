@@ -223,6 +223,8 @@ class Bill(models.Model):
         ('sent_to_controller', 'Sent to Controller'),
         ('approved_by_controller', 'Approved by Controller'),
         ('rejected_by_controller', 'Rejected by Controller'),
+        ('controller_returned', 'Returned to Chairman by Controller'),
+        ('returned_to_user', 'Returned to User'),
     ]
 
     bill_number = models.CharField(max_length=50, unique=True, verbose_name='বিল নম্বর')
@@ -271,6 +273,34 @@ class Bill(models.Model):
         verbose_name='কন্ট্রোলার অনুমোদনকারী'
     )
 
+    # --------------------------
+    # Bill Rollback (ফেরত) Fields
+    # --------------------------
+    # Controller -> Chairman rollback (a controller-rejected bill sent back to the chairman)
+    returned_to_chairman_at = models.DateTimeField(null=True, blank=True, verbose_name='চেয়ারম্যানে ফেরত পাঠানোর সময়')
+    returned_to_chairman_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='controller_returned_bills',
+        verbose_name='ফেরতকারী কন্ট্রোলার'
+    )
+
+    # Chairman -> Bill creator rollback (the chairman forwards the controller-returned bill back to its creator)
+    returned_to_user_at = models.DateTimeField(null=True, blank=True, verbose_name='ব্যবহারকারীর কাছে ফেরত পাঠানোর সময়')
+    returned_to_user_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='chairman_returned_bills',
+        verbose_name='ফেরতকারী চেয়ারম্যান'
+    )
+
+    # How many times the bill creator has edited & resent this rolled-back bill
+    resend_count = models.PositiveIntegerField(default=0, verbose_name='পুনঃপ্রেরণ সংখ্যা')
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'বিল'
@@ -303,6 +333,8 @@ class Bill(models.Model):
             'sent_to_controller': 'primary',
             'approved_by_controller': 'success',
             'rejected_by_controller': 'danger',
+            'controller_returned': 'warning',
+            'returned_to_user': 'warning',
         }
         color = status_colors.get(self.status, 'secondary')
         
@@ -315,10 +347,34 @@ class Bill(models.Model):
             'sent_to_controller': 'কন্ট্রোলারে প্রেরিত',
             'approved_by_controller': 'কন্ট্রোলার কর্তৃক অনুমোদিত',
             'rejected_by_controller': 'কন্ট্রোলার কর্তৃক বাতিল',
+            'controller_returned': 'কন্ট্রোলার ফেরত',
+            'returned_to_user': 'ফেরত বিল',
         }
         label = status_display.get(self.status, self.status)
         
         return f'<span class="badge bg-{color}">{label}</span>'
+
+    def get_controller_comment(self):
+        """Return the most recent controller comment saved in remarks, if any."""
+        if not self.remarks:
+            return ''
+        marker = 'কন্ট্রোলার মন্তব্য:'
+        lines = [line.strip() for line in self.remarks.split('\n') if marker in line]
+        if not lines:
+            return ''
+        last_line = lines[-1]
+        return last_line.split(marker, 1)[1].strip()
+
+    def get_chairman_return_note(self):
+        """Return the most recent chairman note added while returning the bill to the user."""
+        if not self.remarks:
+            return ''
+        marker = 'চেয়ারম্যান মন্তব্য (ফেরত):'
+        lines = [line.strip() for line in self.remarks.split('\n') if marker in line]
+        if not lines:
+            return ''
+        last_line = lines[-1]
+        return last_line.split(marker, 1)[1].strip()
 
     def __str__(self):
         return f"বিল {self.bill_number}"

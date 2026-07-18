@@ -56,7 +56,6 @@ def home(request):
     if request.user.is_authenticated and hasattr(request.user, 'profile'):
         user_type = request.user.profile.user_type
  
-        # ── Controller ──────────────────────────────────────────────
         if user_type == 'কন্ট্রোলার':
             bills_list = (
                 Bill.objects
@@ -64,39 +63,38 @@ def home(request):
                 .select_related('user', 'user__profile')
                 .order_by('-created_at')
             )
- 
+
             status_filter = request.GET.get('status', '')
             if status_filter:
                 bills_list = bills_list.filter(status=status_filter)
- 
-            pending_count  = Bill.objects.exclude(status='draft').filter(status='pending').count()
-            approved_count = Bill.objects.exclude(status='draft').filter(status='approved').count()
-            rejected_count = Bill.objects.exclude(status='draft').filter(status='rejected').count()
-            paid_count     = Bill.objects.exclude(status='draft').filter(status='paid').count()
-            con_total      = Bill.objects.exclude(status='draft').count()
-            con_amount     = Bill.objects.exclude(status='draft').aggregate(
+
+            # CORRECTED COUNTS - using controller-specific statuses
+            pending_count = Bill.objects.exclude(status='draft').filter(status='pending').count()
+            approved_count = Bill.objects.exclude(status='draft').filter(status='approved_by_controller').count()  # Controller approved
+            rejected_count = Bill.objects.exclude(status='draft').filter(status='rejected_by_controller').count()  # Controller rejected
+            paid_count = Bill.objects.exclude(status='draft').filter(status='paid').count()
+            sent_to_controller_count = Bill.objects.exclude(status='draft').filter(status='sent_to_controller').count()
+            
+            con_total = Bill.objects.exclude(status='draft').count()
+            con_amount = Bill.objects.exclude(status='draft').aggregate(
                 total=Sum('total_amount')
             )['total'] or 0
- 
-            paginator   = Paginator(bills_list, 10)
+
+            paginator = Paginator(bills_list, 10)
             page_number = request.GET.get('page')
-            page_obj    = paginator.get_page(page_number)
- 
-            sent_to_controller_count = Bill.objects.exclude(status='draft').filter(
-                status='sent_to_controller'
-            ).count()
+            page_obj = paginator.get_page(page_number)
 
             context = {
-                'bills':                    page_obj,
-                'pending_count':            pending_count,
-                'approved_count':           approved_count,
-                'rejected_count':           rejected_count,
-                'paid_count':               paid_count,
-                'total_bills':              con_total,
-                'total_amount':             con_amount,
-                'current_filter':           status_filter,
+                'bills': page_obj,
+                'pending_count': pending_count,
+                'approved_count': approved_count,  # Now shows controller approved count
+                'rejected_count': rejected_count,  # Now shows controller rejected count
+                'paid_count': paid_count,
+                'total_bills': con_total,
+                'total_amount': con_amount,
+                'current_filter': status_filter,
                 'sent_to_controller_count': sent_to_controller_count,
-                'MEDIA_URL':                settings.MEDIA_URL,
+                'MEDIA_URL': settings.MEDIA_URL,
             }
             return render(request, 'core/home_con.html', context)
  
@@ -112,6 +110,7 @@ def home(request):
                 'approved_count': Bill.objects.filter(status='approved').count(),
                 'rejected_count': Bill.objects.filter(status='rejected').count(),
                 'paid_count':     Bill.objects.filter(status='paid').count(),
+                'controller_returned_count': Bill.objects.filter(status='controller_returned').count(),
             }
  
             if request.user.username == 'JSTUChairman1':
@@ -508,14 +507,29 @@ def bill_create(request):
 
 @login_required
 def my_bills(request):
-    """View user's own bills (drafts and all)"""
-    bills_list = Bill.objects.filter(user=request.user).order_by('-created_at')
+    """View user's own bills (drafts and all). Bills the chairman has rolled back
+    (rejected by controller, then returned by chairman) are shown separately under
+    'ফেরত বিল' so the creator can fix and resend them."""
+    returned_bills = Bill.objects.filter(
+        user=request.user, status='returned_to_user'
+    ).order_by('-returned_to_user_at')
+
+    bills_list = Bill.objects.filter(user=request.user).exclude(
+        status='returned_to_user'
+    ).order_by('-created_at')
 
     paginator = Paginator(bills_list, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'core/my_bills.html', {'bills': page_obj})
+    # Get tab parameter - default to 'niomitobill'
+    tab = request.GET.get('tab', 'niomitobill')
+
+    return render(request, 'core/my_bills.html', {
+        'bills': page_obj,
+        'returned_bills': returned_bills,
+        'active_tab': tab,  # Pass to template
+    })
 
 
 @login_required
@@ -626,9 +640,12 @@ def bill_status(request):
         approved_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved').count()
         rejected_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected').count()
         paid_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='paid').count()
-        # Add controller status counts
         approved_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='approved_by_controller').count()
         rejected_by_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='rejected_by_controller').count()
+        controller_returned_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='controller_returned').count()
+        returned_to_user_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='returned_to_user').count()
+        # Also add sent_to_controller count if needed
+        sent_to_controller_count = Bill.objects.exclude(is_hidden_from_chairman=True).filter(status='sent_to_controller').count()
     else:
         pending_count = Bill.objects.filter(user=request.user, status='pending').count()
         approved_count = Bill.objects.filter(user=request.user, status='approved').count()
@@ -636,6 +653,9 @@ def bill_status(request):
         paid_count = Bill.objects.filter(user=request.user, status='paid').count()
         approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
         rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
+        controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
+        returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
+        sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
 
     status_filter = request.GET.get('status', '')
     if status_filter:
@@ -653,6 +673,9 @@ def bill_status(request):
         'paid_count': paid_count,
         'approved_by_controller_count': approved_by_controller_count,
         'rejected_by_controller_count': rejected_by_controller_count,
+        'controller_returned_count': controller_returned_count,
+        'returned_to_user_count': returned_to_user_count,
+        'sent_to_controller_count': sent_to_controller_count,
         'current_filter': status_filter,
     }
     return render(request, 'core/status.html', context)
@@ -731,12 +754,12 @@ def send_bill_with_year(request, bill_id):
 @login_required
 @require_POST
 def add_user_signature_to_bill(request, bill_id):
-    """Add user's signature to bill - Only for draft bills"""
+    """Add user's signature to bill - For draft and returned_to_user bills"""
     bill = get_object_or_404(Bill, id=bill_id, user=request.user)
     
-    # Only draft bills can have signature added
-    if bill.status != 'draft':
-        messages.error(request, 'শুধুমাত্র খসড়া বিলে স্বাক্ষর যোগ করা যাবে।')
+    # Allow signature for draft and returned_to_user bills
+    if bill.status not in ['draft', 'returned_to_user']:
+        messages.error(request, 'শুধুমাত্র খসড়া অথবা ফেরত বিলে স্বাক্ষর যোগ করা যাবে।')
         return redirect('my_bills')
     
     # Check if signature is already added
@@ -744,6 +767,7 @@ def add_user_signature_to_bill(request, bill_id):
         messages.warning(request, 'এই বিলে ইতিমধ্যে আপনার স্বাক্ষর যুক্ত হয়েছে।')
         return redirect('my_bills')
     
+    # Check if user has uploaded signature
     if request.user.profile.signature_general:
         # Mark signature as added
         bill.user_signature_added = True
@@ -754,11 +778,10 @@ def add_user_signature_to_bill(request, bill_id):
         log_activity(request.user, 'Signature added to bill', 
                     f'User signature added to bill {bill.bill_number}')
         messages.success(request, f'বিল {bill.bill_number} এ আপনার স্বাক্ষর সফলভাবে যুক্ত হয়েছে!')
+        return redirect('my_bills')
     else:
         messages.error(request, 'আপনার স্বাক্ষর আপলোড করা হয়নি। দয়া করে প্রথমে স্বাক্ষর আপলোড করুন।')
         return redirect('signature_upload_general')
-    
-    return redirect('my_bills')
 
 
 # --------------------------
@@ -779,11 +802,19 @@ def _base_admin_bills_queryset(request):
     year_text = year_map.get(chairman_username, '')
 
     if year_text:
-        bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).filter(
+        bills = Bill.objects.exclude(status='draft').exclude(
+            is_hidden_from_chairman=True
+        ).exclude(
+            status='returned_to_user'  # Exclude returned_to_user bills
+        ).filter(
             remarks__icontains=year_text
         ).select_related('user').order_by('-sent_at', '-created_at')
     else:
-        bills = Bill.objects.exclude(status='draft').exclude(is_hidden_from_chairman=True).select_related('user').order_by('-sent_at', '-created_at')
+        bills = Bill.objects.exclude(status='draft').exclude(
+            is_hidden_from_chairman=True
+        ).exclude(
+            status='returned_to_user'  # Exclude returned_to_user bills
+        ).select_related('user').order_by('-sent_at', '-created_at')
 
     return bills
 
@@ -866,24 +897,29 @@ def apply_bill_filters(request, bills):
 @login_required
 @user_passes_test(is_admin)
 def all_bills(request):
-    """View all bills for chairman - filters bills assigned to specific chairman"""
-    bills = _base_admin_bills_queryset(request)
-    bills, filters = apply_bill_filters(request, bills)
+    # Get the base queryset for the current chairman
+    base_bills = _base_admin_bills_queryset(request)
+    
+    # Apply filters for display
+    bills, filters = apply_bill_filters(request, base_bills)
 
     paginator = Paginator(bills, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    total_bills = bills.count()
+    # For the filtered bills display
     filtered_amount = bills.aggregate(total=Sum('total_amount'))['total'] or 0
 
-    pending_count = Bill.objects.filter(status='pending').count()
-    approved_count = Bill.objects.filter(status='approved').count()
-    rejected_count = Bill.objects.filter(status='rejected').count()
-    paid_count = Bill.objects.filter(status='paid').count()
-    sent_to_controller_count = Bill.objects.filter(status='sent_to_controller').count()
-    approved_by_controller_count = Bill.objects.filter(status='approved_by_controller').count()
-    rejected_by_controller_count = Bill.objects.filter(status='rejected_by_controller').count()
+    # IMPORTANT: Counts for filter buttons should come from the BASE queryset (unfiltered)
+    total_bills = base_bills.count()
+    pending_count = base_bills.filter(status='pending').count()
+    approved_count = base_bills.filter(status='approved').count()
+    rejected_count = base_bills.filter(status='rejected').count()
+    paid_count = base_bills.filter(status='paid').count()
+    sent_to_controller_count = base_bills.filter(status='sent_to_controller').count()
+    approved_by_controller_count = base_bills.filter(status='approved_by_controller').count()
+    rejected_by_controller_count = base_bills.filter(status='rejected_by_controller').count()
+    controller_returned_count = base_bills.filter(status='controller_returned').count()
 
     # Query string (without 'page') so pagination/PDF links keep the active filters
     querydict = request.GET.copy()
@@ -892,7 +928,7 @@ def all_bills(request):
 
     context = {
         'bills': page_obj,
-        'total_bills': total_bills,
+        'total_bills': total_bills,  # Now shows total from base queryset
         'filtered_amount': filtered_amount,
         'pending_count': pending_count,
         'approved_count': approved_count,
@@ -901,6 +937,7 @@ def all_bills(request):
         'sent_to_controller_count': sent_to_controller_count,
         'approved_by_controller_count': approved_by_controller_count,
         'rejected_by_controller_count': rejected_by_controller_count,
+        'controller_returned_count': controller_returned_count,
         'semester_choices': Bill.SEMESTER_CHOICES,
         'degree_choices': Bill.DEGREE_CHOICES,
         'bank_choices': Bill.BANK_CHOICES,
@@ -1023,14 +1060,18 @@ def user_management(request):
 def add_signature_to_bill_chairman(request, bill_id):
     """Add chairman's signature to approved bill based on chairman type - PERMANENT"""
     bill = get_object_or_404(Bill, id=bill_id)
-    
-    if bill.status != 'approved':
-        messages.error(request, 'শুধুমাত্র অনুমোদিত বিলে স্বাক্ষর যোগ করা যাবে।')
+
+    is_rollback_bill = bill.status == 'controller_returned'
+
+    if bill.status not in ['approved', 'controller_returned']:
+        messages.error(request, 'শুধুমাত্র অনুমোদিত অথবা কন্ট্রোলার ফেরত বিলে স্বাক্ষর যোগ করা যাবে।')
         return redirect('all_bills')
     
     # Check if signature is already added
     if bill.chairman_signature_added:
         messages.warning(request, 'এই বিলে ইতিমধ্যে চেয়ারম্যানের স্বাক্ষর যুক্ত হয়েছে।')
+        if is_rollback_bill:
+            return redirect('chairman_returned_bills')
         return redirect('view_bill_pdf', bill_id=bill.id)
     
     if request.method == 'POST':
@@ -1084,7 +1125,9 @@ def add_signature_to_bill_chairman(request, bill_id):
                 return redirect('signature_upload_chairman3')
             elif chairman_username == 'JSTUChairman4':
                 return redirect('signature_upload_chairman4')
-    
+
+    if is_rollback_bill:
+        return redirect('chairman_returned_bills')
     return redirect('update_bill_status', bill_id=bill.id)
 
 
@@ -1743,10 +1786,12 @@ def edit_bill(request, bill_id):
         messages.error(request, 'আপনার এই বিল এডিট করার অনুমতি নেই।')
         return redirect('my_bills')
     
-    # Only draft or rejected bills can be edited
-    if bill.status not in ['draft', 'rejected']:
-        messages.error(request, 'শুধুমাত্র খসড়া বা বাতিলকৃত বিল এডিট করা যাবে।')
+    # Only draft, rejected, or returned_to_user bills can be edited
+    if bill.status not in ['draft', 'rejected', 'returned_to_user']:
+        messages.error(request, 'শুধুমাত্র খসড়া, বাতিলকৃত অথবা ফেরত বিল এডিট করা যাবে।')
         return redirect('my_bills')
+
+    was_returned_bill = bill.status == 'returned_to_user'
     
     if request.method == 'POST':
         form = BillForm(request.POST, instance=bill)
@@ -1758,11 +1803,29 @@ def edit_bill(request, bill_id):
             if action == 'send':
                 bill.status = 'pending'
                 bill.sent_at = timezone.now()
-                success_message = 'বিল সফলভাবে আপডেট এবং পাঠানো হয়েছে!'
+                
+                # IMPORTANT: When user resends a returned bill, make it visible to chairman again
+                if was_returned_bill:
+                    bill.is_hidden_from_chairman = False  # Show it again in chairman's list
+                    bill.resend_count = (bill.resend_count or 0) + 1
+                    bill.remarks = (bill.remarks or '') + (
+                        f"\nপুনঃপ্রেরণ ({timezone.now().strftime('%d-%m-%Y %H:%M')}): "
+                        f"বিল প্রস্তুতকারী সংশোধন করে একই ভাউচার নম্বরে (ভাউচার নং: {bill.voucher_number}) "
+                        f"পুনরায় চেয়ারম্যানের কাছে পাঠিয়েছেন।"
+                    )
+                success_message = (
+                    'বিল সফলভাবে সংশোধন করে একই ভাউচার নম্বরে চেয়ারম্যানের কাছে পুনরায় পাঠানো হয়েছে!'
+                    if was_returned_bill else 'বিল সফলভাবে আপডেট এবং পাঠানো হয়েছে!'
+                )
                 redirect_url = 'bill_status'
             else:
-                bill.status = 'draft'
-                bill.sent_at = None
+                # FIX: Keep returned_to_user status if it was a returned bill
+                if was_returned_bill:
+                    bill.status = 'returned_to_user'  # Keep it as returned_to_user
+                    bill.is_hidden_from_chairman = True  # Keep hidden from chairman
+                else:
+                    bill.status = 'draft'
+                    bill.sent_at = None
                 success_message = 'বিল সফলভাবে আপডেট করা হয়েছে!'
                 redirect_url = 'my_bills'
             
@@ -1820,9 +1883,6 @@ def edit_bill(request, bill_id):
 
 
 
-
-
-
 def is_controller(user):
     """Check if user is a Controller"""
     return user.is_authenticated and hasattr(user, 'profile') and user.profile.user_type == 'কন্ট্রোলার'
@@ -1850,9 +1910,10 @@ def controller_home(request):
     total_bills = all_non_draft_bills.count()
     total_amount = all_non_draft_bills.aggregate(total=Sum('total_amount'))['total'] or 0
     
+    # CORRECTED COUNTS - using controller-specific statuses
     pending_count = all_non_draft_bills.filter(status='pending').count()
-    approved_count = all_non_draft_bills.filter(status='approved').count()
-    rejected_count = all_non_draft_bills.filter(status='rejected').count()
+    approved_count = all_non_draft_bills.filter(status='approved_by_controller').count()  # Controller approved
+    rejected_count = all_non_draft_bills.filter(status='rejected_by_controller').count()  # Controller rejected
     paid_count = all_non_draft_bills.filter(status='paid').count()
     sent_to_controller_count = all_non_draft_bills.filter(status='sent_to_controller').count()
     
@@ -1879,8 +1940,8 @@ def controller_home(request):
         'bills': page_obj,
         'current_filter': status_filter,
         'pending_count': pending_count,
-        'approved_count': approved_count,
-        'rejected_count': rejected_count,
+        'approved_count': approved_count,  # Now shows controller approved count
+        'rejected_count': rejected_count,  # Now shows controller rejected count
         'paid_count': paid_count,
         'sent_to_controller_count': sent_to_controller_count,
     }
@@ -1958,17 +2019,18 @@ def cont_bills(request):
         elif year == '4th':
             fourth_year_bills.append(bill)
     
+    # CORRECTED COUNTS - using controller-specific statuses
     context = {
         'total_bills': all_bills.count(),
         'pending_count': all_bills.count(),
-        'approved_count': Bill.objects.filter(status='approved_by_controller').count(),
-        'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),
+        'approved_count': Bill.objects.filter(status='approved_by_controller').count(),  # Controller approved
+        'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),  # Controller rejected
         'first_year_bills': first_year_bills,
         'second_year_bills': second_year_bills,
         'third_year_bills': third_year_bills,
         'fourth_year_bills': fourth_year_bills,
     }
-    return render(request, 'core/cont_bills.html', context)  # ← This is correct for templates/core/
+    return render(request, 'core/cont_bills.html', context)
 
 
 
@@ -2096,9 +2158,10 @@ def accepted_bills(request):
     # Get all bills approved by controller
     accepted_bills_list = Bill.objects.filter(status='approved_by_controller').select_related('user').order_by('-controller_approved_at')
 
+    # Apply filters FIRST
     accepted_bills_list, filters = apply_accepted_bill_filters(request, accepted_bills_list)
 
-    # Calculate year for each bill (must run before Paginator - see note below)
+    # Calculate year for each bill
     for bill in accepted_bills_list:
         if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
             bill.year = '1st'
@@ -2116,7 +2179,7 @@ def accepted_bills(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Calculate total amount
+    # Calculate total amount from FILTERED list
     total_amount = accepted_bills_list.aggregate(total=Sum('total_amount'))['total'] or 0
 
     # Query string (without 'page') so pagination/PDF links keep the active filters
@@ -2124,12 +2187,17 @@ def accepted_bills(request):
     querydict.pop('page', None)
     filter_querystring = querydict.urlencode()
 
+    # Get counts from the FILTERED list, not from all bills
+    total_accepted = accepted_bills_list.count()  # This will match the displayed count
+    
+    # For sidebar stats, use the FILTERED counts as well, or show ALL counts
+    # Option 1: Show counts from the filtered list (matches what's displayed)
     context = {
         'accepted_bills': page_obj,
-        'total_accepted': accepted_bills_list.count(),
+        'total_accepted': total_accepted,  # MATCHES the displayed bills
         'total_amount': total_amount,
-        'pending_count': Bill.objects.filter(status='sent_to_controller').count(),
-        'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),
+        'pending_count': accepted_bills_list.filter(status='sent_to_controller').count(),  # Filtered
+        'rejected_count': accepted_bills_list.filter(status='rejected_by_controller').count(),  # Filtered
         'semester_choices': Bill.SEMESTER_CHOICES,
         'degree_choices': Bill.DEGREE_CHOICES,
         'bank_choices': Bill.BANK_CHOICES,
@@ -2263,6 +2331,103 @@ def rejected_bills(request):
     return render(request, 'core/rejected_bills.html', context)
 
 @login_required
+@require_POST
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
+def controller_return_bill_to_chairman(request, bill_id):
+    """Bill Rollback (Step 1): Controller sends a controller-rejected bill back to the chairman
+    instead of leaving it permanently rejected. The chairman will then be able to review the
+    controller's comment, sign, and forward it on to the original bill creator."""
+    bill = get_object_or_404(Bill, id=bill_id)
+
+    if bill.status != 'rejected_by_controller':
+        messages.error(request, 'শুধুমাত্র কন্ট্রোলার কর্তৃক বাতিলকৃত বিল চেয়ারম্যানে ফেরত পাঠানো যাবে।')
+        return redirect('rejected_bills')
+
+    bill.status = 'controller_returned'
+    bill.returned_to_chairman_at = timezone.now()
+    bill.returned_to_chairman_by = request.user
+    bill.save()
+
+    log_activity(request.user, 'Bill returned to chairman by controller',
+                f'Bill {bill.bill_number} returned to chairman for review')
+    messages.success(request, f'বিল {bill.bill_number} চেয়ারম্যানের কাছে ফেরত পাঠানো হয়েছে!')
+
+    return redirect('rejected_bills')
+
+
+def _chairman_scoped_queryset(request, base_qs):
+    """Scope a bill queryset to the logged-in chairman's year, same convention used elsewhere
+    (a chairman only sees bills whose remarks mention their year)."""
+    chairman_username = request.user.username
+    year_map = {
+        'JSTUChairman1': '১ম বর্ষ',
+        'JSTUChairman2': '২য় বর্ষ',
+        'JSTUChairman3': '৩য় বর্ষ',
+        'JSTUChairman4': '৪র্থ বর্ষ',
+    }
+    year_text = year_map.get(chairman_username, '')
+    if year_text:
+        return base_qs.filter(remarks__icontains=year_text)
+    return base_qs
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'চেয়ারম্যান')
+def chairman_returned_bills(request):
+    """Bill Rollback (Step 2): Chairman's view of bills the controller has sent back.
+    From here the chairman can view/download the bill, read the controller's comment,
+    add their signature, and forward the bill on to the original creator (ফেরত বিল)."""
+    # Only show controller_returned bills that are NOT hidden and NOT already returned to user
+    bills_list = Bill.objects.filter(
+        status='controller_returned',
+        is_hidden_from_chairman=False
+    ).select_related('user', 'user__profile')
+    
+    bills_list = _chairman_scoped_queryset(request, bills_list).order_by('-returned_to_chairman_at')
+
+    paginator = Paginator(bills_list, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'bills': page_obj,
+        'total_returned': bills_list.count(),
+    }
+    return render(request, 'core/chairman_returned_bills.html', context)
+
+@login_required
+@require_POST
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'চেয়ারম্যান')
+def chairman_return_bill_to_user(request, bill_id):
+    bill = get_object_or_404(Bill, id=bill_id)
+
+    if bill.status != 'controller_returned':
+        messages.error(request, 'শুধুমাত্র কন্ট্রোলার ফেরত বিলই ব্যবহারকারীর কাছে ফেরত পাঠানো যাবে।')
+        return redirect('chairman_returned_bills')
+
+    chairman_note = request.POST.get('remarks', '').strip()
+
+    # Change status to 'returned_to_user' (প্রস্তুতকারীর কাছে ফেরত)
+    bill.status = 'returned_to_user'
+    bill.returned_to_user_at = timezone.now()
+    bill.returned_to_user_by = request.user
+    
+    # HIDE FROM CHAIRMAN - This removes it from all chairman views
+    bill.is_hidden_from_chairman = True
+    
+    # Add chairman's note to remarks
+    if chairman_note:
+        bill.remarks = (bill.remarks or '') + f"\nচেয়ারম্যান মন্তব্য (ফেরত): {chairman_note}"
+    bill.save()
+
+    log_activity(request.user, 'Bill returned to user by chairman',
+                f'Bill {bill.bill_number} returned to {bill.user.username} for correction')
+    messages.success(request, f'বিল {bill.bill_number} বিল প্রস্তুতকারীর কাছে ফেরত পাঠানো হয়েছে!')
+
+    return redirect('chairman_returned_bills')
+
+
+@login_required
 def bill_counts_api(request):
     if not (hasattr(request.user, 'profile') and
              request.user.profile.user_type == 'কন্ট্রোলার'):
@@ -2277,3 +2442,84 @@ def bill_counts_api(request):
         'rejected_count': all_non_draft.filter(status='rejected').count(),
         'sent_to_controller_count': Bill.objects.filter(status='sent_to_controller').count(),
     })
+
+
+@login_required
+@require_POST
+@user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'চেয়ারম্যান')
+def chairman_direct_return_to_user(request, bill_id):
+    """Chairman directly returns a bill to the user without controller involvement"""
+    bill = get_object_or_404(Bill, id=bill_id)
+    
+    # Only pending or approved bills can be returned directly
+    if bill.status not in ['pending', 'approved']:
+        messages.error(request, 'শুধুমাত্র অপেক্ষমান অথবা অনুমোদিত বিল প্রস্তুতকারীর কাছে ফেরত পাঠানো যাবে।')
+        return redirect('all_bills')
+    
+    chairman_note = request.POST.get('remarks', '').strip()
+    
+    # STEP 1: First reject the bill
+    bill.status = 'rejected'
+    bill.approved_by = None
+    bill.approved_at = None
+    bill.rejected_at = timezone.now()
+    bill.rejected_by = request.user
+    
+    # STEP 2: Then return to user (this will be the final status shown to user)
+    bill.status = 'returned_to_user'
+    bill.returned_to_user_at = timezone.now()
+    bill.returned_to_user_by = request.user
+    
+    # HIDE FROM CHAIRMAN - This removes it from all chairman views
+    bill.is_hidden_from_chairman = True
+    
+    # Add chairman's note to remarks
+    if chairman_note:
+        bill.remarks = (bill.remarks or '') + f"\nচেয়ারম্যান কর্তৃক বাতিল (ফেরত): {chairman_note}"
+    else:
+        bill.remarks = (bill.remarks or '') + f"\nচেয়ারম্যান কর্তৃক বাতিল করা হয়েছে: {timezone.now().strftime('%d-%m-%Y %H:%M')}"
+    
+    bill.save()
+    
+    log_activity(request.user, 'Bill rejected and returned to user by chairman',
+                f'Bill {bill.bill_number} rejected and returned to {bill.user.username} for correction')
+    messages.success(request, f'বিল {bill.bill_number} বাতিল করে প্রস্তুতকারীর কাছে ফেরত পাঠানো হয়েছে!')
+    
+    return redirect('all_bills')
+
+
+@login_required
+@require_POST
+def send_returned_bill(request, bill_id):
+    """Send a returned bill directly to chairman without editing"""
+    bill = get_object_or_404(Bill, id=bill_id, user=request.user)
+    
+    # Only returned_to_user bills can be sent
+    if bill.status != 'returned_to_user':
+        messages.error(request, 'শুধুমাত্র ফেরত বিল পাঠানো যাবে।')
+        return redirect('my_bills')
+    
+    # Check if signature is added
+    if not bill.user_signature_added:
+        messages.error(request, 'বিলে আপনার স্বাক্ষর যোগ করা হয়নি। দয়া করে প্রথমে স্বাক্ষর যোগ করুন।')
+        return redirect('my_bills')
+    
+    # Change status to pending (send to chairman)
+    bill.status = 'pending'
+    bill.sent_at = timezone.now()
+    bill.is_hidden_from_chairman = False  # Make it visible to chairman again
+    bill.resend_count = (bill.resend_count or 0) + 1
+    
+    # Add note about resend
+    bill.remarks = (bill.remarks or '') + (
+        f"\nপুনঃপ্রেরণ ({timezone.now().strftime('%d-%m-%Y %H:%M')}): "
+        f"বিল প্রস্তুতকারী সংশোধন করে একই ভাউচার নম্বরে (ভাউচার নং: {bill.voucher_number}) "
+        f"পুনরায় চেয়ারম্যানের কাছে পাঠিয়েছেন।"
+    )
+    bill.save()
+    
+    log_activity(request.user, 'Returned bill resent', 
+                f'Bill {bill.bill_number} resent to chairman for approval')
+    messages.success(request, f'বিল {bill.bill_number} সফলভাবে চেয়ারম্যানের কাছে পুনরায় পাঠানো হয়েছে!')
+    
+    return redirect('my_bills')

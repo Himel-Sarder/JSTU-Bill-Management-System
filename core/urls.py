@@ -85,6 +85,8 @@ urlpatterns = [
     # path('controller/', views.controller_home, name='controller_home'),
     path('bill/send-to-controller/<int:bill_id>/', views.send_bill_to_controller, name='send_bill_to_controller'),
 
+    path('chairman/direct-return-to-user/<int:bill_id>/', views.chairman_direct_return_to_user, name='chairman_direct_return_to_user'),
+
 
     path('', views.controller_home, name='controller_home'),
     path('bills/', views.cont_bills, name='cont_bills'),
@@ -95,6 +97,13 @@ urlpatterns = [
     path('accepted-bills/export-pdf/', views.export_accepted_bills_pdf, name='export_accepted_bills_pdf'),
     path('rejected-bills/', views.rejected_bills, name='rejected_bills'),
     path('bill/details/<int:bill_id>/', views.bill_details_api, name='bill_details_api'),
+
+    path('send-returned-bill/<int:bill_id>/', views.send_returned_bill, name='send_returned_bill'),
+
+    # Bill Rollback (ফেরত) System
+    path('controller/return-to-chairman/<int:bill_id>/', views.controller_return_bill_to_chairman, name='controller_return_bill_to_chairman'),
+    path('chairman/returned-bills/', views.chairman_returned_bills, name='chairman_returned_bills'),
+    path('chairman/return-to-user/<int:bill_id>/', views.chairman_return_bill_to_user, name='chairman_return_bill_to_user'),
     
     # API — notification polling (FIX: login_required added in views.py)
     path('api/bill-counts/', views.bill_counts_api, name='bill_counts_api'),

@@ -271,6 +271,19 @@ class Bill(models.Model):
         verbose_name='কন্ট্রোলার অনুমোদনকারী'
     )
 
+    # Return/Rollback related fields
+    is_returned = models.BooleanField(default=False, verbose_name='ফেরত পাঠানো হয়েছে')
+    return_reason = models.TextField(blank=True, null=True, verbose_name='ফেরত পাঠানোর কারণ')
+    returned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='returned_bills',
+        verbose_name='ফেরতকারী'
+    )
+    returned_at = models.DateTimeField(null=True, blank=True, verbose_name='ফেরত পাঠানোর সময়')
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'বিল'

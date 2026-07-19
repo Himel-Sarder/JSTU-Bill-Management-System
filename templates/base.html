@@ -436,10 +436,36 @@
                 form.addEventListener('submit', function() {
                     const submitBtn = this.querySelector('button[type="submit"]');
                     if (submitBtn) {
+                        // Remember the original button content so it can be restored later
+                        if (!submitBtn.hasAttribute('data-original-html')) {
+                            submitBtn.setAttribute('data-original-html', submitBtn.innerHTML);
+                        }
                         submitBtn.innerHTML = '<span class="loading"></span> প্রক্রিয়া হচ্ছে...';
                         submitBtn.disabled = true;
+
+                        // Forms that open their response in a new tab (target="_blank")
+                        // never navigate the current page away, so the button would
+                        // otherwise stay disabled/spinning forever. Restore it shortly after.
+                        if (this.target === '_blank') {
+                            setTimeout(() => {
+                                submitBtn.innerHTML = submitBtn.getAttribute('data-original-html');
+                                submitBtn.disabled = false;
+                            }, 1500);
+                        }
                     }
                 });
+            });
+
+            // Safety net: if the browser restores this page from the back/forward
+            // cache (bfcache) after a form submission navigated away, all submit
+            // buttons must be reset to their original, clickable state.
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    document.querySelectorAll('button[type="submit"][data-original-html]').forEach(btn => {
+                        btn.innerHTML = btn.getAttribute('data-original-html');
+                        btn.disabled = false;
+                    });
+                }
             });
         });
         

@@ -44,21 +44,40 @@
         </div>
         
         <!-- Year-wise Sections -->
-        <div class="year-sections">
-            <!-- 1st Year Section -->
+        <!-- Department tabs: built from the departments the admin has added -->
+            <div class="dept-tabs">
+                {% for tab in department_tabs %}
+                    <a href="{% if tab.id %}?department={{ tab.id }}{% else %}?{% endif %}"
+                       class="dept-tab {% if tab.is_active %}active{% endif %}"
+                       title="{{ tab.title }}">
+                        {{ tab.label }}
+                        <span class="dept-tab-count">{{ tab.count|bangla_number }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+
+            {% if selected_department %}
+                <div class="dept-context">
+                    দেখানো হচ্ছে: <strong>{{ selected_department.name }}</strong>
+                    <a href="?" class="dept-clear">সব বিভাগ দেখুন</a>
+                </div>
+            {% endif %}
+
+            <div class="year-sections">
+            {% for group in year_groups %}
             <div class="year-section">
-                <div class="year-header year-1">
+                <div class="year-header {{ group.css }}">
                     <div class="year-title">
-                        <h3>১ম বর্ষ</h3>
-                        <span>1st Year</span>
+                        <h3>{{ group.label_bn }}</h3>
+                        <span>{{ group.label_en }}</span>
                     </div>
                     <div class="bill-count">
                         <i class="fas fa-file-alt"></i>
-                        <span>{{ first_year_bills|length|bangla_number }} টি বিল</span>
+                        <span>{{ group.bills|length|bangla_number }} টি বিল</span>
                     </div>
                 </div>
                 <div class="year-content">
-                    {% if first_year_bills %}
+                    {% if group.bills %}
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
@@ -74,7 +93,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for bill in first_year_bills %}
+                                {% for bill in group.bills %}
                                 <tr>
                                     <td>{{ forloop.counter|bangla_number }}</td>
                                     <td class="bill-number">{{ bill.bill_number|bangla_number }}</td>
@@ -84,7 +103,7 @@
                                             <small>{{ bill.user.profile.user_type }}</small>
                                         </div>
                                     </td>
-                                    <td>{{ bill.semester }}</td>
+                                    <td>{{ bill.year_semester }}</td>
                                     <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
                                     <td>
                                         {% if bill.status == 'sent_to_controller' %}
@@ -111,7 +130,7 @@
                                                 <i class="fas fa-download"></i> ডাউনলোড
                                             </button>
                                             {% if bill.status == 'sent_to_controller' %}
-                                            <button onclick="openStatusModal('{{ bill.id }}', '{{ bill.bill_number }}', '1st')" class="btn-action btn-approve" title="স্ট্যাটাস আপডেট">
+                                            <button onclick="openStatusModal('{{ bill.id }}', '{{ bill.bill_number }}', '{{ group.key }}')" class="btn-action btn-approve" title="স্ট্যাটাস আপডেট">
                                                 <i class="fas fa-gavel"></i> রিভিউ
                                             </button>
                                             {% endif %}
@@ -134,279 +153,8 @@
                     {% endif %}
                 </div>
             </div>
-            
-            <!-- 2nd Year Section -->
-            <div class="year-section">
-                <div class="year-header year-2">
-                    <div class="year-title">
-                        <h3>২য় বর্ষ</h3>
-                        <span>2nd Year</span>
-                    </div>
-                    <div class="bill-count">
-                        <i class="fas fa-file-alt"></i>
-                        <span>{{ second_year_bills|length|bangla_number }} টি বিল</span>
-                    </div>
-                </div>
-                <div class="year-content">
-                    {% if second_year_bills %}
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>বিল নম্বর</th>
-                                    <th>প্রার্থী</th>
-                                    <th>সেমিস্টার</th>
-                                    <th>পরিমাণ</th>
-                                    <th>স্ট্যাটাস</th>
-                                    <th>প্রাপ্তির তারিখ</th>
-                                    <th>কার্যক্রম</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for bill in second_year_bills %}
-                                <tr>
-                                    <td>{{ forloop.counter|bangla_number }}</td>
-                                    <td class="bill-number">{{ bill.bill_number|bangla_number }}</td>
-                                    <td>
-                                        <div class="user-info">
-                                            <strong>{{ bill.user.get_full_name|default:bill.user.username }}</strong>
-                                            <small>{{ bill.user.profile.user_type }}</small>
-                                        </div>
-                                    </td>
-                                    <td>{{ bill.semester }}</td>
-                                    <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
-                                    <td>
-                                        {% if bill.status == 'sent_to_controller' %}
-                                        <span class="status-badge status-pending">
-                                            <i class="fas fa-clock"></i> বিচারাধীন
-                                        </span>
-                                        {% elif bill.status == 'approved_by_controller' %}
-                                        <span class="status-badge status-approved">
-                                            <i class="fas fa-check-circle"></i> অনুমোদিত
-                                        </span>
-                                        {% elif bill.status == 'rejected_by_controller' %}
-                                        <span class="status-badge status-rejected">
-                                            <i class="fas fa-times-circle"></i> বাতিল
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ bill.sent_to_controller_at|date:"d/m/Y"|bangla_number }}</td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button onclick="viewBill({{ bill.id }})" class="btn-action btn-view">
-                                                <i class="fas fa-eye"></i> দেখুন
-                                            </button>
-                                            <button onclick="downloadBill({{ bill.id }})" class="btn-action btn-download">
-                                                <i class="fas fa-download"></i> ডাউনলোড
-                                            </button>
-                                            {% if bill.status == 'sent_to_controller' %}
-                                            <button onclick="openStatusModal('{{ bill.id }}', '{{ bill.bill_number }}', '2nd')" class="btn-action btn-approve">
-                                                <i class="fas fa-gavel"></i> রিভিউ
-                                            </button>
-                                            {% endif %}
-                                            <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn-action btn-delete">
-                                                <i class="fas fa-trash-alt"></i> ডিলিট
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="empty-section">
-                        <i class="fas fa-inbox"></i>
-                        <h4>কোন বিল পাওয়া যায়নি</h4>
-                        <p>এই বর্ষের জন্য কোনো বিল জমা হয়নি।</p>
-                    </div>
-                    {% endif %}
-                </div>
+            {% endfor %}
             </div>
-            
-            <!-- 3rd Year Section -->
-            <div class="year-section">
-                <div class="year-header year-3">
-                    <div class="year-title">
-                        <h3>৩য় বর্ষ</h3>
-                        <span>3rd Year</span>
-                    </div>
-                    <div class="bill-count">
-                        <i class="fas fa-file-alt"></i>
-                        <span>{{ third_year_bills|length|bangla_number }} টি বিল</span>
-                    </div>
-                </div>
-                <div class="year-content">
-                    {% if third_year_bills %}
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>বিল নম্বর</th>
-                                    <th>প্রার্থী</th>
-                                    <th>সেমিস্টার</th>
-                                    <th>পরিমাণ</th>
-                                    <th>স্ট্যাটাস</th>
-                                    <th>প্রাপ্তির তারিখ</th>
-                                    <th>কার্যক্রম</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for bill in third_year_bills %}
-                                <tr>
-                                    <td>{{ forloop.counter|bangla_number }}</td>
-                                    <td class="bill-number">{{ bill.bill_number|bangla_number }}</td>
-                                    <td>
-                                        <div class="user-info">
-                                            <strong>{{ bill.user.get_full_name|default:bill.user.username }}</strong>
-                                            <small>{{ bill.user.profile.user_type }}</small>
-                                        </div>
-                                    </td>
-                                    <td>{{ bill.semester }}</td>
-                                    <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
-                                    <td>
-                                        {% if bill.status == 'sent_to_controller' %}
-                                        <span class="status-badge status-pending">
-                                            <i class="fas fa-clock"></i> বিচারাধীন
-                                        </span>
-                                        {% elif bill.status == 'approved_by_controller' %}
-                                        <span class="status-badge status-approved">
-                                            <i class="fas fa-check-circle"></i> অনুমোদিত
-                                        </span>
-                                        {% elif bill.status == 'rejected_by_controller' %}
-                                        <span class="status-badge status-rejected">
-                                            <i class="fas fa-times-circle"></i> বাতিল
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ bill.sent_to_controller_at|date:"d/m/Y"|bangla_number }}</td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button onclick="viewBill({{ bill.id }})" class="btn-action btn-view">
-                                                <i class="fas fa-eye"></i> দেখুন
-                                            </button>
-                                            <button onclick="downloadBill({{ bill.id }})" class="btn-action btn-download">
-                                                <i class="fas fa-download"></i> ডাউনলোড
-                                            </button>
-                                            {% if bill.status == 'sent_to_controller' %}
-                                            <button onclick="openStatusModal('{{ bill.id }}', '{{ bill.bill_number }}', '3rd')" class="btn-action btn-approve">
-                                                <i class="fas fa-gavel"></i> রিভিউ
-                                            </button>
-                                            {% endif %}
-                                            <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn-action btn-delete">
-                                                <i class="fas fa-trash-alt"></i> ডিলিট
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="empty-section">
-                        <i class="fas fa-inbox"></i>
-                        <h4>কোন বিল পাওয়া যায়নি</h4>
-                        <p>এই বর্ষের জন্য কোনো বিল জমা হয়নি।</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- 4th Year Section -->
-            <div class="year-section">
-                <div class="year-header year-4">
-                    <div class="year-title">
-                        <h3>৪র্থ বর্ষ</h3>
-                        <span>4th Year</span>
-                    </div>
-                    <div class="bill-count">
-                        <i class="fas fa-file-alt"></i>
-                        <span>{{ fourth_year_bills|length|bangla_number }} টি বিল</span>
-                    </div>
-                </div>
-                <div class="year-content">
-                    {% if fourth_year_bills %}
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>বিল নম্বর</th>
-                                    <th>প্রার্থী</th>
-                                    <th>সেমিস্টার</th>
-                                    <th>পরিমাণ</th>
-                                    <th>স্ট্যাটাস</th>
-                                    <th>প্রাপ্তির তারিখ</th>
-                                    <th>কার্যক্রম</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for bill in fourth_year_bills %}
-                                <tr>
-                                    <td>{{ forloop.counter|bangla_number }}</td>
-                                    <td class="bill-number">{{ bill.bill_number|bangla_number }}</td>
-                                    <td>
-                                        <div class="user-info">
-                                            <strong>{{ bill.user.get_full_name|default:bill.user.username }}</strong>
-                                            <small>{{ bill.user.profile.user_type }}</small>
-                                        </div>
-                                    </td>
-                                    <td>{{ bill.semester }}</td>
-                                    <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
-                                    <td>
-                                        {% if bill.status == 'sent_to_controller' %}
-                                        <span class="status-badge status-pending">
-                                            <i class="fas fa-clock"></i> বিচারাধীন
-                                        </span>
-                                        {% elif bill.status == 'approved_by_controller' %}
-                                        <span class="status-badge status-approved">
-                                            <i class="fas fa-check-circle"></i> অনুমোদিত
-                                        </span>
-                                        {% elif bill.status == 'rejected_by_controller' %}
-                                        <span class="status-badge status-rejected">
-                                            <i class="fas fa-times-circle"></i> বাতিল
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ bill.sent_to_controller_at|date:"d/m/Y"|bangla_number }}</td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button onclick="viewBill({{ bill.id }})" class="btn-action btn-view">
-                                                <i class="fas fa-eye"></i> দেখুন
-                                            </button>
-                                            <button onclick="downloadBill({{ bill.id }})" class="btn-action btn-download">
-                                                <i class="fas fa-download"></i> ডাউনলোড
-                                            </button>
-                                            {% if bill.status == 'sent_to_controller' %}
-                                            <button onclick="openStatusModal('{{ bill.id }}', '{{ bill.bill_number }}', '4th')" class="btn-action btn-approve">
-                                                <i class="fas fa-gavel"></i> রিভিউ
-                                            </button>
-                                            {% endif %}
-                                            <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn-action btn-delete">
-                                                <i class="fas fa-trash-alt"></i> ডিলিট
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="empty-section">
-                        <i class="fas fa-inbox"></i>
-                        <h4>কোন বিল পাওয়া যায়নি</h4>
-                        <p>এই বর্ষের জন্য কোনো বিল জমা হয়নি।</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Status Update Modal -->
 <div id="statusModal" class="modal" style="display: none;">
@@ -483,6 +231,8 @@
         </div>
     </div>
 </div>
+    </div><!-- /.glass-card -->
+</div><!-- /.container -->
 
 <style>
 /* Page Header */
@@ -1020,6 +770,77 @@
     .bill-count {
         margin-left: 0;
     }
+}
+
+/* ── Department tabs ─────────────────────────────────────── */
+.dept-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.dept-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: rgba(255,255,255,0.9);
+    padding: 9px 18px;
+    border-radius: 22px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.dept-tab:hover {
+    background: rgba(255,255,255,0.20);
+    transform: translateY(-1px);
+}
+
+.dept-tab.active {
+    background: linear-gradient(45deg, #4144e3, #1f1663);
+    border-color: rgba(120,125,255,0.7);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+}
+
+.dept-tab-count {
+    background: rgba(0,0,0,0.28);
+    border-radius: 11px;
+    padding: 1px 9px;
+    font-size: 0.78rem;
+    min-width: 22px;
+    text-align: center;
+}
+
+.dept-tab.active .dept-tab-count { background: rgba(255,255,255,0.25); }
+
+.dept-context {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+}
+
+.dept-clear {
+    color: #7ec8f5;
+    margin-left: 10px;
+    text-decoration: none;
+}
+
+.dept-clear:hover { text-decoration: underline; }
+
+/* Masters section header, matching the four year colours */
+.year-header.year-5 {
+    background: linear-gradient(135deg, #9B59B6, #6C3483);
+}
+
+@media (max-width: 768px) {
+    .dept-tabs { gap: 7px; }
+    .dept-tab { padding: 7px 13px; font-size: 0.84rem; }
 }
 </style>
 

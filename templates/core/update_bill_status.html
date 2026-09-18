@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <p style="color: rgba(255,255,255,0.7); margin: 0;">সেমিস্টার:</p>
-                    <p style="color: white; font-size: 18px;">{{ bill.semester }}</p>
+                    <p style="color: white; font-size: 18px;">{{ bill.year_semester }}</p>
                 </div>
                 <div>
                     <p style="color: rgba(255,255,255,0.7); margin: 0;">মোট পরিমাণ:</p>
@@ -144,52 +144,10 @@
                 </p>
                 
                 <!-- Check for Chairman 1 signature -->
-                {% if request.user.username == 'JSTUChairman1' and request.user.profile.signature_chairman1 %}
+                {% if request.user.profile.active_chairman_signature %}
                     <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                        <p style="color: #FFD700; margin-bottom: 10px;">আপনার বর্তমান স্বাক্ষর (১ম বর্ষ চেয়ারম্যান):</p>
-                        <img src="{{ request.user.profile.signature_chairman1.url }}" alt="Your Signature" 
-                             style="max-width: 200px; max-height: 80px; border: 2px solid #FFD700; border-radius: 5px; padding: 5px; background: white;">
-                    </div>
-                    <form method="post" action="{% url 'add_signature_to_bill_chairman' bill.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(45deg, #FFD700, #FFA500);">
-                            <i class="fas fa-signature"></i> সাক্ষর যোগ করুন
-                        </button>
-                    </form>
-                    
-                <!-- Check for Chairman 2 signature -->
-                {% elif request.user.username == 'JSTUChairman2' and request.user.profile.signature_chairman2 %}
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                        <p style="color: #4ECDC4; margin-bottom: 10px;">আপনার বর্তমান স্বাক্ষর (২য় বর্ষ চেয়ারম্যান):</p>
-                        <img src="{{ request.user.profile.signature_chairman2.url }}" alt="Your Signature" 
-                             style="max-width: 200px; max-height: 80px; border: 2px solid #4ECDC4; border-radius: 5px; padding: 5px; background: white;">
-                    </div>
-                    <form method="post" action="{% url 'add_signature_to_bill_chairman' bill.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(45deg, #4ECDC4, #44A08D);">
-                            <i class="fas fa-signature"></i> সাক্ষর যোগ করুন
-                        </button>
-                    </form>
-                    
-                <!-- Check for Chairman 3 signature -->
-                {% elif request.user.username == 'JSTUChairman3' and request.user.profile.signature_chairman3 %}
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                        <p style="color: #9C27B0; margin-bottom: 10px;">আপনার বর্তমান স্বাক্ষর (৩য় বর্ষ চেয়ারম্যান):</p>
-                        <img src="{{ request.user.profile.signature_chairman3.url }}" alt="Your Signature" 
-                             style="max-width: 200px; max-height: 80px; border: 2px solid #9C27B0; border-radius: 5px; padding: 5px; background: white;">
-                    </div>
-                    <form method="post" action="{% url 'add_signature_to_bill_chairman' bill.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(45deg, #9C27B0, #7B1FA2);">
-                            <i class="fas fa-signature"></i> সাক্ষর যোগ করুন
-                        </button>
-                    </form>
-                    
-                <!-- Check for Chairman 4 signature -->
-                {% elif request.user.username == 'JSTUChairman4' and request.user.profile.signature_chairman4 %}
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                        <p style="color: #FF5722; margin-bottom: 10px;">আপনার বর্তমান স্বাক্ষর (৪র্থ বর্ষ চেয়ারম্যান):</p>
-                        <img src="{{ request.user.profile.signature_chairman4.url }}" alt="Your Signature" 
+                        <p style="color: #FF5722; margin-bottom: 10px;">আপনার বর্তমান স্বাক্ষর ({{ request.user.profile.chairman_year }} চেয়ারম্যান):</p>
+                        <img src="{{ request.user.profile.active_chairman_signature.url }}" alt="Your Signature" 
                              style="max-width: 200px; max-height: 80px; border: 2px solid #FF5722; border-radius: 5px; padding: 5px; background: white;">
                     </div>
                     <form method="post" action="{% url 'add_signature_to_bill_chairman' bill.id %}" style="display: inline;">
@@ -220,27 +178,9 @@
                         <p style="color: rgba(255,255,255,0.9); margin-bottom: 10px;">বিলে স্বাক্ষর যোগ করতে প্রথমে আপনার স্বাক্ষর আপলোড করুন।</p>
                         
                         <!-- Redirect to correct signature upload based on username -->
-                        {% if request.user.username == 'JSTUChairman1' %}
-                            <a href="{% url 'signature_upload_chairman1' %}" class="btn btn-warning">
-                                <i class="fas fa-upload"></i> স্বাক্ষর আপলোড করুন (১ম বর্ষ)
+                        <a href="{% url 'signature_upload_chairman' %}" class="btn btn-warning">
+                                <i class="fas fa-upload"></i> স্বাক্ষর আপলোড করুন ({{ request.user.profile.chairman_year|default:"চেয়ারম্যান" }})
                             </a>
-                        {% elif request.user.username == 'JSTUChairman2' %}
-                            <a href="{% url 'signature_upload_chairman2' %}" class="btn btn-warning">
-                                <i class="fas fa-upload"></i> স্বাক্ষর আপলোড করুন (২য় বর্ষ)
-                            </a>
-                        {% elif request.user.username == 'JSTUChairman3' %}
-                            <a href="{% url 'signature_upload_chairman3' %}" class="btn btn-warning">
-                                <i class="fas fa-upload"></i> স্বাক্ষর আপলোড করুন (৩য় বর্ষ)
-                            </a>
-                        {% elif request.user.username == 'JSTUChairman4' %}
-                            <a href="{% url 'signature_upload_chairman4' %}" class="btn btn-warning">
-                                <i class="fas fa-upload"></i> স্বাক্ষর আপলোড করুন (৪র্থ বর্ষ)
-                            </a>
-                        {% else %}
-                            <a href="{% url 'signature_upload' %}" class="btn btn-warning">
-                                <i class="fas fa-upload"></i> স্বাক্ষর আপলোড করুন
-                            </a>
-                        {% endif %}
                     </div>
                 {% endif %}
             </div>

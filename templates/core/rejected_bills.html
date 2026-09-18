@@ -136,7 +136,7 @@
                                     {% else %}{{ bill.year }}{% endif %}
                                 </span>
                             </td>
-                            <td>{{ bill.semester }}</td>
+                            <td>{{ bill.year_semester }}</td>
                             <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
                             <td>{{ bill.controller_approved_at|date:"d/m/Y h:i A"|bangla_number }}</td>
                             <td>

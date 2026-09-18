@@ -5,128 +5,89 @@
 {% block title %}কন্ট্রোলার ফেরত বিল{% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 20px 0;">
-    <!-- Main Card with Glass Effect -->
-    <div style="background: rgba(255, 255, 255, 0.49); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.2);">
-        
+<div class="container">
+    <div class="sheet-wrap">
+
         <!-- Header Section -->
-        <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid rgba(0,0,0,0.06);">
-            <div style="flex: 1;">
-                <h2 style="color: #2c3e50; margin: 0 0 5px 0; font-size: 24px; font-weight: 700;">
-                    <i class="fas fa-undo-alt" style="color: #FF9800;"></i> কন্ট্রোলার ফেরত বিলসমূহ
-                </h2>
-                <p style="color: #7f8c8d; margin: 0; font-size: 14px;">কন্ট্রোলার কর্তৃক বাতিলকৃত বিলসমূহ, যা সংশোধনের জন্য আপনার নিকট প্রেরণ করা হয়েছে।</p>
+        <div class="sheet-head">
+            <div class="sheet-head-main">
+                <h2>কন্ট্রোলার ফেরত বিলসমূহ</h2>
+                <p>কন্ট্রোলার কর্তৃক বাতিলকৃত বিলসমূহ, যা সংশোধনের জন্য আপনার নিকট প্রেরণ করা হয়েছে।</p>
             </div>
-            <div>
-                <a href="{% url 'all_bills' %}" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); padding: 10px 22px; border-radius: 10px; color: #2c3e50; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.08);">
-                    <i class="fas fa-arrow-left"></i> সকল বিলে ফিরুন
-                </a>
+            <div class="sheet-head-meta">
+                <a href="{% url 'all_bills' %}" class="btn btn-ghost">সকল বিলে ফিরুন</a>
             </div>
         </div>
 
         <!-- Statistics -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
-            <div style="background: linear-gradient(135deg, rgba(255, 152, 0, 0.12), rgba(255, 152, 0, 0.05)); backdrop-filter: blur(10px); border-radius: 14px; padding: 20px; border: 1px solid rgba(255, 152, 0, 0.15);">
-                <div>
-                    <h3 style="color: #E65100; font-size: 13px; margin: 0 0 5px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">মোট ফেরত বিল</h3>
-                    <p style="color: #BF360C; font-size: 28px; font-weight: 700; margin: 0;">{{ total_returned|default:0|bangla_number }}</p>
-                </div>
+        <div class="stat-row">
+            <div class="stat-card">
+                <span class="stat-label">মোট ফেরত বিল</span>
+                <strong class="stat-value">{{ total_returned|default:0|bangla_number }}</strong>
             </div>
         </div>
 
         <!-- Returned Bills List -->
-        <div style="background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border-radius: 14px; padding: 20px; border: 1px solid rgba(255,255,255,0.2);">
-            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                    <h3 style="color: #2c3e50; margin: 0; font-size: 18px; font-weight: 600;">
-                        <i class="fas fa-undo-alt" style="color: #FF9800;"></i> কন্ট্রোলার ফেরত বিলের তালিকা
-                    </h3>
-                    <div style="color: #7f8c8d; font-size: 14px; margin-top: 4px;">
-                        <span>মোট {{ bills|length|bangla_number }} টি বিল</span>
-                    </div>
-                </div>
+        <div class="list-card">
+            <div class="list-head">
+                <h3>কন্ট্রোলার ফেরত বিলের তালিকা</h3>
+                <span>এই পৃষ্ঠায় {{ bills|length|bangla_number }} টি বিল</span>
             </div>
 
             {% if bills %}
-            <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="bills-list">
                 {% for bill in bills %}
-                <div style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 14px; padding: 20px; border-left: 5px solid #FF9800; box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.3);">
+                <div class="bill-item">
                     <!-- Bill Header -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <span style="color: #2c3e50; font-weight: 600; font-size: 16px;">
-                                <i class="fas fa-file-invoice" style="color: #FF9800;"></i> বিল নম্বর: {{ bill.bill_number|bangla_number }}
-                            </span>
-                        </div>
-                        <span style="background: rgba(255, 152, 0, 0.15); color: #E65100; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255, 152, 0, 0.2); backdrop-filter: blur(5px);">
-                            <i class="fas fa-undo-alt"></i> কন্ট্রোলার ফেরত
-                        </span>
+                    <div class="bill-item-head">
+                        <h4>বিল নম্বর: {{ bill.bill_number|bangla_number }} {% if bill.controller_bill_number %}<span class="ctrl-billno" title="কন্ট্রোলার অনুমোদিত বিল নম্বর">কন্ট্রোলার নং: {{ bill.controller_bill_number_bn }}</span>{% endif %}</h4>
+                        <span class="status-badge returned">কন্ট্রোলার ফেরত</span>
                     </div>
 
                     <!-- Bill Details -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 12px;">
-                        <div style="color: #2c3e50; font-size: 14px;">
-                            <i class="fas fa-user" style="color: #FF9800; width: 18px;"></i> 
-                            <strong>প্রস্তুতকারী: {{ bill.user.get_full_name|default:bill.user.username }}</strong>
-                            {% comment %} <span style="color: #7f8c8d; font-size: 12px;">({{ bill.user.profile.user_type }})</span> {% endcomment %}
+                    <div class="bill-grid">
+                        <div class="bill-field">
+                            <span class="bill-field-label">প্রস্তুতকারী</span>
+                            <span class="bill-field-value">{{ bill.user.get_full_name|default:bill.user.username }}</span>
                         </div>
-                        <div style="color: #2c3e50; font-size: 14px;">
-                            <i class="fas fa-graduation-cap" style="color: #FF9800; width: 18px;"></i> 
-                            <strong>সেমিস্টার: {{ bill.semester }}</strong>
+                        <div class="bill-field">
+                            <span class="bill-field-label">সেমিস্টার</span>
+                            <span class="bill-field-value">{{ bill.year_semester }}</span>
                         </div>
-                        <div style="color: #2c3e50; font-size: 14px;">
-                            <i class="fas fa-coins" style="color: #FF9800; width: 18px;"></i> 
-                            <strong>মোট টাকা: ৳ {{ bill.total_amount|bangla_number }}</strong>
+                        <div class="bill-field">
+                            <span class="bill-field-label">মোট টাকা</span>
+                            <span class="bill-field-value">৳ {{ bill.total_amount|bangla_number }}</span>
                         </div>
-                        <div style="color: #2c3e50; font-size: 14px;">
-                            <i class="fas fa-calendar-alt" style="color: #FF9800; width: 18px;"></i> 
-                            <strong>ফেরত পাঠানোর সময়: {{ bill.returned_to_chairman_at|date:"d-m-Y h:i A"|bangla_number }}</strong>
+                        <div class="bill-field">
+                            <span class="bill-field-label">ফেরত পাঠানোর সময়</span>
+                            <span class="bill-field-value">{{ bill.returned_to_chairman_at|date:"d-m-Y h:i A"|bangla_number }}</span>
                         </div>
                         {% if bill.voucher_number %}
-                        <div style="color: #2c3e50; font-size: 14px;">
-                            <i class="fas fa-receipt" style="color: #FF9800; width: 18px;"></i> 
-                            <strong>ভাউচার নম্বর: {{ bill.voucher_number|bangla_number }}</strong>
+                        <div class="bill-field">
+                            <span class="bill-field-label">ভাউচার নম্বর</span>
+                            <span class="bill-field-value">{{ bill.voucher_number|bangla_number }}</span>
                         </div>
                         {% endif %}
                     </div>
 
                     <!-- Controller's Comment -->
-                    <div style="background: rgba(255, 152, 0, 0.08); backdrop-filter: blur(5px); border-left: 4px solid #FF9800; border-radius: 10px; padding: 12px 15px; margin-bottom: 12px;">
-                        <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <i class="fas fa-comment-dots" style="color: #FF9800; font-size: 18px; margin-top: 2px;"></i>
-                            <div style="flex: 1;">
-                                <strong style="color: #E65100; font-size: 13px; display: block; margin-bottom: 3px;">কন্ট্রোলারের মন্তব্য:</strong>
-                                <p style="color: #2c3e50; margin: 0; font-size: 14px;">{{ bill.get_controller_comment|default:"কোনো মন্তব্য যুক্ত করা হয়নি।" }}</p>
-                            </div>
-                        </div>
+                    <div class="comment-box">
+                        <strong>কন্ট্রোলারের মন্তব্য:</strong>
+                        <p>{{ bill.get_controller_comment|default:"কোনো মন্তব্য যুক্ত করা হয়নি।" }}</p>
                     </div>
 
                     {% if bill.chairman_signature_added %}
-                    <div style="color: #4CAF50; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-                        <i class="fas fa-check-circle"></i> আপনার স্বাক্ষর ইতিমধ্যে যুক্ত হয়েছে
-                    </div>
+                    <div class="sign-note">✓ আপনার স্বাক্ষর ইতিমধ্যে যুক্ত হয়েছে</div>
                     {% endif %}
 
                     <!-- Action Buttons -->
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
-                        <a href="{% url 'view_bill_pdf' bill.id %}" target="_blank" 
-                           style="background: rgba(33, 150, 243, 0.1); backdrop-filter: blur(5px); color: #1976D2; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(33, 150, 243, 0.15); text-decoration: none; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
-                            <i class="fas fa-eye"></i> দেখুন
-                        </a>
-                        <a href="{% url 'download_bill' bill.id %}" 
-                           style="background: rgba(46, 204, 113, 0.1); backdrop-filter: blur(5px); color: #388E3C; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(46, 204, 113, 0.15); text-decoration: none; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
-                            <i class="fas fa-download"></i> ডাউনলোড
-                        </a>
+                    <div class="bill-actions">
+                        <a href="{% url 'view_bill_pdf' bill.id %}" target="_blank" class="btn btn-row">দেখুন</a>
+                        <a href="{% url 'download_bill' bill.id %}" class="btn btn-row">ডাউনলোড</a>
                         {% if not bill.chairman_signature_added %}
-                        <button onclick="openSignModal('{{ bill.id }}', '{{ bill.bill_number }}')" 
-                                style="background: rgba(78, 205, 196, 0.1); backdrop-filter: blur(5px); color: #00838F; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(78, 205, 196, 0.15); cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
-                            <i class="fas fa-signature"></i> স্বাক্ষর করুন
-                        </button>
+                        <button onclick="openSignModal('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn btn-row btn-row-outline">স্বাক্ষর করুন</button>
                         {% endif %}
-                        <button onclick="openReturnModal('{{ bill.id }}', '{{ bill.bill_number }}')" 
-                                style="background: rgba(255, 152, 0, 0.1); backdrop-filter: blur(5px); color: #E65100; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(255, 152, 0, 0.15); cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
-                            <i class="fas fa-share"></i> বিল প্রস্তুতকারীর কাছে ফেরত পাঠান
-                        </button>
+                        <button onclick="openReturnModal('{{ bill.id }}', '{{ bill.bill_number }}')" class="btn btn-row btn-row-solid">বিল প্রস্তুতকারীর কাছে ফেরত পাঠান</button>
                     </div>
                 </div>
                 {% endfor %}
@@ -134,27 +95,24 @@
 
             <!-- Pagination -->
             {% if bills.has_other_pages %}
-            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 25px;">
+            <div class="pagination">
                 {% if bills.has_previous %}
-                    <a href="?page=1" style="color: #2c3e50; background: rgba(255,255,255,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 10px; text-decoration: none; border: 1px solid rgba(0,0,0,0.06);">&laquo; প্রথম</a>
-                    <a href="?page={{ bills.previous_page_number }}" style="color: #2c3e50; background: rgba(255,255,255,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 10px; text-decoration: none; border: 1px solid rgba(0,0,0,0.06);">‹ পূর্ববর্তী</a>
+                    <a href="?page=1" class="pagination-btn">&laquo; প্রথম</a>
+                    <a href="?page={{ bills.previous_page_number }}" class="pagination-btn">‹ পূর্ববর্তী</a>
                 {% endif %}
-                <span style="color: #2c3e50; padding: 8px 16px;">পৃষ্ঠা {{ bills.number }} / {{ bills.paginator.num_pages }}</span>
+                <span class="pagination-info">পৃষ্ঠা {{ bills.number|bangla_number }} / {{ bills.paginator.num_pages|bangla_number }}</span>
                 {% if bills.has_next %}
-                    <a href="?page={{ bills.next_page_number }}" style="color: #2c3e50; background: rgba(255,255,255,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 10px; text-decoration: none; border: 1px solid rgba(0,0,0,0.06);">পরবর্তী ›</a>
-                    <a href="?page={{ bills.paginator.num_pages }}" style="color: #2c3e50; background: rgba(255,255,255,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 10px; text-decoration: none; border: 1px solid rgba(0,0,0,0.06);">শেষ &raquo;</a>
+                    <a href="?page={{ bills.next_page_number }}" class="pagination-btn">পরবর্তী ›</a>
+                    <a href="?page={{ bills.paginator.num_pages }}" class="pagination-btn">শেষ &raquo;</a>
                 {% endif %}
             </div>
             {% endif %}
 
             {% else %}
-            <div style="text-align: center; padding: 60px 20px; color: #7f8c8d;">
-                <i class="fas fa-undo-alt" style="font-size: 48px; color: #FF9800; margin-bottom: 15px; opacity: 0.4;"></i>
-                <h3 style="color: #2c3e50; margin-bottom: 10px;">কোনো ফেরত বিল নেই</h3>
-                <p style="margin-bottom: 20px;">কন্ট্রোলার এখনো কোনো বিল আপনার কাছে ফেরত পাঠাননি।</p>
-                <a href="{% url 'all_bills' %}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #4ECDC4, #44A08D); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);">
-                    <i class="fas fa-arrow-left"></i> সকল বিল দেখুন
-                </a>
+            <div class="empty-state">
+                <h3>কোনো ফেরত বিল নেই</h3>
+                <p>কন্ট্রোলার এখনো কোনো বিল আপনার কাছে ফেরত পাঠাননি।</p>
+                <a href="{% url 'all_bills' %}" class="btn btn-solid">সকল বিল দেখুন</a>
             </div>
             {% endif %}
         </div>
@@ -162,65 +120,267 @@
 </div>
 
 <!-- Sign Confirmation Modal -->
-<div id="signModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; width: 90%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.06);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-signature" style="color: #4ECDC4; font-size: 20px;"></i>
-                <h3 style="margin: 0; color: #2c3e50; font-size: 18px;">স্বাক্ষর নিশ্চিতকরণ</h3>
-            </div>
-            <button onclick="closeSignModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999; transition: all 0.3s ease;">&times;</button>
+<div id="signModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(23,20,45,0.6); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="modal-sheet">
+        <div class="modal-head">
+            <h3>স্বাক্ষর নিশ্চিতকরণ</h3>
+            <button onclick="closeSignModal()" class="modal-close">&times;</button>
         </div>
-        <div style="padding: 20px;">
-            <p id="signBillInfo" style="font-weight: 600; color: #2c3e50; margin-bottom: 10px;"></p>
-            <p style="color: #7f8c8d; font-size: 14px;">আপনার আপলোডকৃত স্বাক্ষর এই বিলে স্থায়ীভাবে যুক্ত হবে।</p>
+        <div class="modal-body">
+            <p id="signBillInfo" class="modal-billinfo"></p>
+            <p class="modal-text">আপনার আপলোডকৃত স্বাক্ষর এই বিলে স্থায়ীভাবে যুক্ত হবে।</p>
         </div>
-        <div style="padding: 20px; border-top: 1px solid rgba(0,0,0,0.06); display: flex; justify-content: flex-end; gap: 10px;">
-            <button onclick="closeSignModal()" style="background: rgba(0,0,0,0.04); backdrop-filter: blur(5px); color: #495057; padding: 8px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
-                <i class="fas fa-times"></i> বাতিল
-            </button>
-            <form id="signForm" method="post" style="display: inline;">
+        <div class="modal-foot">
+            <button onclick="closeSignModal()" class="btn btn-ghost">বাতিল</button>
+            <form id="signForm" method="post">
                 {% csrf_token %}
-                <button type="submit" style="background: linear-gradient(135deg, #4ECDC4, #44A08D); color: white; padding: 8px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3); transition: all 0.3s ease;">
-                    <i class="fas fa-signature"></i> স্বাক্ষর যুক্ত করুন
-                </button>
+                <button type="submit" class="btn btn-solid">স্বাক্ষর যুক্ত করুন</button>
             </form>
         </div>
     </div>
 </div>
 
 <!-- Return to User Modal -->
-<div id="returnUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.06);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-share" style="color: #FF9800; font-size: 20px;"></i>
-                <h3 style="margin: 0; color: #2c3e50; font-size: 18px;">বিল প্রস্তুতকারীর কাছে ফেরত পাঠান</h3>
-            </div>
-            <button onclick="closeReturnUserModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999; transition: all 0.3s ease;">&times;</button>
+<div id="returnUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(23,20,45,0.6); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="modal-sheet">
+        <div class="modal-head">
+            <h3>বিল প্রস্তুতকারীর কাছে ফেরত পাঠান</h3>
+            <button onclick="closeReturnUserModal()" class="modal-close">&times;</button>
         </div>
-        <div style="padding: 20px;">
-            <p id="returnUserBillInfo" style="font-weight: 600; color: #2c3e50; margin-bottom: 15px;"></p>
+        <div class="modal-body">
+            <p id="returnUserBillInfo" class="modal-billinfo"></p>
             <form id="returnUserForm" method="post">
                 {% csrf_token %}
-                <label style="display:block; margin-bottom:6px; color:#2c3e50; font-weight:500; font-size:14px;">অতিরিক্ত মন্তব্য (ঐচ্ছিক)</label>
-                <textarea name="remarks" rows="3" style="width: 100%; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 14px; resize: vertical; background: rgba(255,255,255,0.5); backdrop-filter: blur(5px);"></textarea>
-                <div style="background: rgba(255, 152, 0, 0.08); backdrop-filter: blur(5px); border: 1px solid rgba(255, 152, 0, 0.12); border-radius: 10px; padding: 12px; margin-top: 15px; display: flex; gap: 10px; align-items: flex-start;">
-                    <i class="fas fa-info-circle" style="color: #FF9800; font-size: 18px; margin-top: 2px;"></i>
-                    <span style="color: #2c3e50; font-size: 13px;">বিলটি "ফেরত বিল" নামে বিল প্রস্তুতকারীর "আমার বিল" পাতায় দেখা যাবে। তিনি এটি সংশোধন করে একই ভাউচার নম্বরে পুনরায় আপনার কাছে পাঠাতে পারবেন।</span>
+                <label class="modal-label">অতিরিক্ত মন্তব্য (ঐচ্ছিক)</label>
+                <textarea name="remarks" rows="3" class="modal-textarea"></textarea>
+                <div class="modal-note">
+                    বিলটি "ফেরত বিল" নামে বিল প্রস্তুতকারীর "আমার বিল" পাতায় দেখা যাবে। তিনি এটি সংশোধন করে একই ভাউচার নম্বরে পুনরায় আপনার কাছে পাঠাতে পারবেন।
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                    <button type="button" onclick="closeReturnUserModal()" style="background: rgba(0,0,0,0.04); backdrop-filter: blur(5px); color: #495057; padding: 8px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
-                        <i class="fas fa-times"></i> বাতিল
-                    </button>
-                    <button type="submit" style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 8px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3); transition: all 0.3s ease;">
-                        <i class="fas fa-share"></i> ফেরত পাঠান
-                    </button>
+                <div class="modal-foot is-inline">
+                    <button type="button" onclick="closeReturnUserModal()" class="btn btn-ghost">বাতিল</button>
+                    <button type="submit" class="btn btn-solid">ফেরত পাঠান</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+/* Controller-returned bills: white sheets on the app background, one
+   indigo/purple accent for controls, orange kept only as the "returned" signal. */
+.container { max-width: 1180px; }
+.sheet-wrap { margin: 10px 0 46px 0; }
+
+/* ===== Header ===== */
+.sheet-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    padding: 22px 26px; margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.06);
+}
+.sheet-head-main { flex: 1; min-width: 260px; }
+.sheet-head h2 { margin: 0; color: #1f2d3d; font-size: 25px; font-weight: 700; letter-spacing: 0.2px; }
+.sheet-head p { margin: 6px 0 0 0; color: #7b8794; font-size: 14.5px; line-height: 1.7; }
+.sheet-head-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ===== Stats ===== */
+.stat-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; margin-bottom: 16px;
+}
+.stat-card {
+    background: #ffffff; border: 1px solid #e6eaef;
+    border-left: 4px solid #FF9800; border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.stat-label { display: block; color: #7b8794; font-size: 14px; font-weight: 600; }
+.stat-value { display: block; margin-top: 3px; color: #1f2d3d; font-size: 27px; font-weight: 800; }
+
+/* ===== List card ===== */
+.list-card {
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.list-head { padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid #eef1f5; }
+.list-head h3 { margin: 0; color: #1f2d3d; font-size: 19px; font-weight: 700; }
+.list-head span { display: block; margin-top: 3px; color: #8794a2; font-size: 14px; }
+
+.bills-list { display: flex; flex-direction: column; gap: 16px; }
+.bill-item {
+    background: #ffffff; border: 1px solid #e6eaef;
+    border-left: 4px solid #FF9800; border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(16, 24, 40, 0.04);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.bill-item:hover { box-shadow: 0 8px 24px rgba(16, 24, 40, 0.10); border-left-color: #e07b20; }
+
+.bill-item-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    padding-bottom: 14px; margin-bottom: 16px;
+    border-bottom: 1px solid #f1f3f7;
+}
+.bill-item-head h4 {
+    margin: 0; color: #1f2d3d; font-size: 17.5px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.ctrl-billno {
+    display: inline-block;
+    background: #f0ecfa; border: 1px solid #ddd3f2; color: #5b4397;
+    padding: 2px 11px; border-radius: 13px;
+    font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+.status-badge {
+    display: inline-block; padding: 5px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+    border: 1px solid transparent;
+}
+.status-badge.returned { color: #e65100; background: #fff3e0; border-color: #f8ddb9; }
+
+.bill-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px 20px; margin-bottom: 16px;
+}
+.bill-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bill-field-label { color: #8794a2; font-size: 12.5px; font-weight: 600; letter-spacing: 0.2px; }
+.bill-field-value { color: #1f2d3d; font-size: 15px; font-weight: 600; word-break: break-word; }
+
+.comment-box {
+    padding: 13px 16px; border-radius: 11px; margin-bottom: 14px;
+    background: #fff8ef; border: 1px solid #f6dfc2; border-left: 3px solid #FF9800;
+}
+.comment-box strong { display: block; margin-bottom: 4px; color: #8a5a12; font-size: 13px; font-weight: 700; }
+.comment-box p { margin: 0; color: #5b4a33; font-size: 14.5px; line-height: 1.7; }
+
+.sign-note {
+    display: inline-block; margin-bottom: 14px;
+    padding: 6px 13px; border-radius: 20px;
+    background: #e8f5e9; border: 1px solid #c9e7cb;
+    color: #2e7d32; font-size: 13px; font-weight: 600;
+}
+
+/* ===== Buttons (single accent) ===== */
+.bill-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 22px; border-radius: 10px;
+    border: 1.5px solid #dbe1e8; background: #ffffff; color: #5b6b7c;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    text-decoration: none; cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16, 24, 40, 0.12); }
+.btn-solid {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff; border-color: transparent;
+    box-shadow: 0 5px 14px rgba(118, 75, 162, 0.3);
+}
+.btn-solid:hover { box-shadow: 0 9px 20px rgba(118, 75, 162, 0.42); }
+.btn-ghost { background: #ffffff; color: #5b6b7c; border-color: #dbe1e8; }
+.btn-ghost:hover { background: #f2f5f8; color: #1f2d3d; }
+
+.btn-row {
+    padding: 9px 16px; border-radius: 9px;
+    font-size: 13.5px; font-weight: 600;
+    border: 1px solid #e2e7ee; background: #f6f7fa; color: #5b6b7c;
+    white-space: nowrap;
+}
+.btn-row:hover { background: #f0ecfa; color: #5b4397; border-color: #ddd3f2; transform: none; box-shadow: none; }
+.btn-row-outline { background: #ffffff; color: #5b4397; border-color: #ddd3f2; }
+.btn-row-outline:hover { background: #764ba2; color: #ffffff; border-color: #764ba2; }
+.btn-row-solid {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff; border-color: transparent;
+}
+.btn-row-solid:hover { color: #ffffff; box-shadow: 0 6px 14px rgba(118, 75, 162, 0.35); }
+
+/* ===== Pagination ===== */
+.pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; flex-wrap: wrap; margin-top: 22px;
+}
+.pagination-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 44px; padding: 10px 16px;
+    border: 1px solid #e6eaef; border-radius: 10px;
+    background: #ffffff; color: #5b6b7c;
+    font-size: 14.5px; font-weight: 600; text-decoration: none;
+    transition: all 0.2s ease;
+}
+.pagination-btn:hover { background: #f0ecfa; color: #5b4397; border-color: #ddd3f2; }
+.pagination-info { padding: 10px 16px; color: #7b8794; font-size: 14.5px; font-weight: 600; }
+
+/* ===== Empty state ===== */
+.empty-state { text-align: center; padding: 50px 20px; }
+.empty-state h3 { margin: 0 0 8px 0; color: #1f2d3d; font-size: 20px; font-weight: 700; }
+.empty-state p { margin: 0 0 20px 0; color: #7b8794; font-size: 15px; }
+
+/* ===== Modals ===== */
+.modal-sheet {
+    width: 100%; max-width: 540px; margin: 20px;
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(16, 24, 40, 0.35);
+    max-height: 90vh; overflow-y: auto;
+}
+.modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; padding: 20px 24px; border-bottom: 1px solid #eef1f5;
+}
+.modal-head h3 { margin: 0; color: #1f2d3d; font-size: 19px; font-weight: 700; }
+.modal-close {
+    width: 34px; height: 34px;
+    border: 1px solid #e6eaef; border-radius: 9px;
+    background: #f4f6f9; color: #7b8794;
+    font-size: 20px; line-height: 1; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease;
+}
+.modal-close:hover { background: #e74c3c; color: #ffffff; border-color: #e74c3c; }
+.modal-body { padding: 20px 24px; }
+.modal-billinfo {
+    margin: 0 0 14px 0;
+    padding: 9px 14px; border-radius: 10px;
+    background: #f0ecfa; border: 1px solid #ddd3f2;
+    color: #5b4397; font-size: 15px; font-weight: 700; line-height: 1.6;
+}
+.modal-text { margin: 0; color: #7b8794; font-size: 14.5px; line-height: 1.7; }
+.modal-label { display: block; margin-bottom: 8px; color: #445565; font-size: 14.5px; font-weight: 600; }
+.modal-textarea {
+    width: 100%; padding: 11px 15px;
+    font-size: 15px; font-family: inherit; color: #1f2d3d;
+    background: #ffffff; border: 1.5px solid #dbe1e8; border-radius: 10px;
+    resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.modal-textarea:focus { outline: none; border-color: #764ba2; box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.16); }
+.modal-note {
+    margin-top: 15px; padding: 13px 16px; border-radius: 11px;
+    background: #fff8ef; border: 1px solid #f6dfc2;
+    color: #8a5a12; font-size: 13.5px; line-height: 1.75;
+}
+.modal-foot {
+    display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;
+    padding: 18px 24px; border-top: 1px solid #eef1f5;
+}
+.modal-foot.is-inline { padding: 20px 0 0 0; border-top: none; }
+.modal-foot form { display: inline; }
+
+@media (max-width: 768px) {
+    .sheet-head { padding: 18px; }
+    .sheet-head h2 { font-size: 21px; }
+    .sheet-head-meta .btn { width: 100%; }
+    .list-card { padding: 18px 16px; }
+    .bill-item { padding: 18px 16px; }
+    .bill-actions .btn { flex: 1 1 45%; }
+    .modal-foot { justify-content: stretch; }
+    .modal-foot .btn, .modal-foot form { flex: 1; }
+    .modal-foot form .btn { width: 100%; }
+}
+</style>
 
 <script>
 function openSignModal(billId, billNumber) {

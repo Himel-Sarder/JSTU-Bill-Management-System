@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}চেয়ারম্যানের ফাইল{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card">
+
+        <div class="doc-header">
+            <h2>চেয়ারম্যানের পাঠানো ফাইল</h2>
+            <span class="stat-chip stat-total">মোট: {{ total_count }}</span>
+        </div>
+
+        <!-- ── Filters ────────────────────────────────────────── -->
+        <div class="doc-section filter-section">
+            <form method="get" class="filter-form">
+                <div class="form-group">
+                    <label>চেয়ারম্যান</label>
+                    <select name="chairman" class="form-control">
+                        <option value="">সব চেয়ারম্যান</option>
+                        {% for sender in senders %}
+                            <option value="{{ sender.username }}"
+                                    {% if chairman_filter == sender.username %}selected{% endif %}>
+                                {{ sender.get_full_name|default:sender.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>শিরোনাম খুঁজুন</label>
+                    <input type="text" name="q" class="form-control"
+                           placeholder="শিরোনাম" value="{{ search }}">
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary btn-sm">ফিল্টার</button>
+                    <a href="{% url 'controller_documents' %}" class="btn-ghost btn-sm">রিসেট</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- ── Documents ──────────────────────────────────────── -->
+        <div class="doc-section">
+            {% if documents %}
+                <div class="doc-list">
+                    {% for doc in documents %}
+                        <div class="doc-card">
+                            <div class="doc-main">
+                                <div class="doc-icon doc-icon-{{ doc.extension }}">
+                                    {{ doc.extension|upper|default:"FILE" }}
+                                </div>
+                                <div class="doc-info">
+                                    <div class="doc-title">{{ doc.title }}</div>
+                                    <div class="doc-meta">
+                                        <span class="from-chip">
+                                            {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}
+                                        </span>
+                                        <span>{{ doc.filename }}</span>
+                                        {% if doc.size_display %}<span>· {{ doc.size_display }}</span>{% endif %}
+                                        <span>· পাঠানো: {{ doc.sent_at|date:"d M Y, g:i A" }}</span>
+                                    </div>
+                                    {% if doc.note %}
+                                        <div class="doc-note">{{ doc.note }}</div>
+                                    {% endif %}
+                                    {% if not doc.exists_on_disk %}
+                                        <div class="doc-missing">⚠ ফাইলটি সার্ভারে পাওয়া যায়নি</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="doc-actions">
+                                {% if doc.exists_on_disk %}
+                                    {% if doc.is_pdf %}
+                                        <a href="{% url 'chairman_document_download' doc.id %}?inline=1"
+                                           target="_blank" class="btn-view btn-sm">দেখুন</a>
+                                    {% endif %}
+                                    <a href="{% url 'chairman_document_download' doc.id %}"
+                                       class="btn-primary btn-sm">ডাউনলোড</a>
+                                {% else %}
+                                    <span class="badge badge-missing">অনুপলব্ধ</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    {% if chairman_filter or search %}
+                        এই ফিল্টারে কোনো ফাইল পাওয়া যায়নি।
+                    {% else %}
+                        চেয়ারম্যানদের কাছ থেকে এখনো কোনো ফাইল আসেনি।
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<style>
+.doc-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.doc-header h2 { color: white; margin: 0; }
+
+.stat-chip {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.9);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.83rem;
+}
+
+.stat-total { background: rgba(65,68,227,0.3); border-color: rgba(120,125,255,0.5); }
+
+.doc-section {
+    background: rgba(255,255,255,0.1);
+    padding: 25px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    margin-bottom: 25px;
+}
+
+.filter-form {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.filter-form .form-group { flex: 1; min-width: 190px; margin: 0; }
+
+.filter-actions { display: flex; gap: 8px; }
+
+.form-group { display: flex; flex-direction: column; }
+
+.form-group label { color: white; margin-bottom: 8px; font-weight: 500; }
+
+.form-control {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: white;
+    font-size: 14px;
+    width: 100%;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4144e3;
+    background: rgba(255,255,255,0.2);
+}
+
+.form-control::placeholder { color: rgba(255,255,255,0.6); }
+
+.form-control option { background: #22262f; color: white; }
+
+.doc-list { display: flex; flex-direction: column; gap: 14px; }
+
+.doc-card {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-left: 3px solid #4144e3;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.doc-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 260px; }
+
+.doc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+.doc-icon-pdf  { background: rgba(231,76,60,0.35); }
+.doc-icon-doc, .doc-icon-docx { background: rgba(52,152,219,0.35); }
+.doc-icon-xls, .doc-icon-xlsx { background: rgba(46,204,113,0.35); }
+.doc-icon-jpg, .doc-icon-jpeg, .doc-icon-png { background: rgba(155,89,182,0.35); }
+
+.doc-info { min-width: 0; }
+
+.doc-title { color: white; font-weight: 600; margin-bottom: 4px; word-break: break-word; }
+
+.doc-meta {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.8rem;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.from-chip {
+    background: rgba(65,68,227,0.3);
+    border: 1px solid rgba(120,125,255,0.4);
+    color: #c7c9ff;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.doc-note {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.82rem;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+.doc-missing { color: #ff9f43; font-size: 0.8rem; margin-top: 6px; }
+
+.doc-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.btn-primary {
+    background: linear-gradient(45deg, #4144e3be, #1f1663ff);
+    border: none;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-view {
+    background: rgba(46,204,113,0.3);
+    border: 1px solid rgba(46,204,113,0.5);
+    color: #7ee2a8;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s ease;
+}
+
+.btn-view:hover { background: rgba(46,204,113,0.45); }
+
+.btn-ghost {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-ghost:hover { background: rgba(255,255,255,0.22); }
+
+.btn-sm { padding: 8px 18px; font-size: 0.85rem; border-radius: 18px; }
+
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+.badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.badge-missing { background: rgba(255,159,67,0.2); color: #ff9f43; border: 1px solid rgba(255,159,67,0.4); }
+
+.empty-state {
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    padding: 40px 20px;
+}
+
+@media (max-width: 768px) {
+    .doc-card { flex-direction: column; align-items: stretch; }
+    .doc-actions { justify-content: flex-start; }
+    .filter-form .form-group { min-width: 100%; }
+}
+</style>
+{% endblock %}

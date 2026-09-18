@@ -5,19 +5,68 @@
 {% block content %}
 <div class="container">
     <div class="glass-card">
-        <h2 style="text-align: center; color: white; margin-bottom: 30px;">বিলের স্ট্যাটাস</h2>
+        <h2 style="text-align: center; color: white; margin-bottom: 22px;">বিলের স্ট্যাটাস</h2>
+
+        <!-- Search -->
+        <form method="get" class="search-bar" role="search">
+            {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+            <div class="search-field">
+                <i class="fas fa-search search-field-icon"></i>
+                <input type="search" name="q" value="{{ search_query }}" autocomplete="off"
+                       placeholder="বিল নম্বর, ভাউচার নম্বর, প্রস্তুতকারী, বিভাগ বা সেমিস্টার দিয়ে খুঁজুন...">
+                {% if search_query %}
+                <a href="{% url 'bill_status' %}{% if request.GET.status %}?status={{ request.GET.status }}{% endif %}"
+                   class="search-clear" title="অনুসন্ধান মুছুন"><i class="fas fa-times"></i></a>
+                {% endif %}
+            </div>
+            <button type="submit" class="search-btn"><i class="fas fa-search"></i> অনুসন্ধান</button>
+        </form>
+
+        {% if search_query %}
+        <div class="search-summary">
+            <span><i class="fas fa-info-circle"></i> “<strong>{{ search_query }}</strong>” এর জন্য <strong>{{ result_count|bangla_number }}</strong> টি বিল পাওয়া গেছে</span>
+            <a href="{% url 'bill_status' %}"><i class="fas fa-rotate-left"></i> সব বিল দেখুন</a>
+        </div>
+        {% endif %}
 
         <!-- Status Filter Buttons -->
         <div class="status-filter">
-            <a href="{% url 'bill_status' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}" style="background: #9E9E9E;">সবগুলি ({{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|add:returned_to_user_count|add:controller_returned_count|bangla_number }})</a>
-            <a href="?status=pending" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}" style="background: #FFC107;">অপেক্ষমান ({{ pending_count|bangla_number }})</a>
-            <a href="?status=approved" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}" style="background: #4CAF50;">অনুমোদিত ({{ approved_count|bangla_number }})</a>
-            <a href="?status=rejected" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}" style="background: #F44336;">বাতিল ({{ rejected_count|bangla_number }})</a>
-            <a href="?status=paid" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}" style="background: #2196F3;">পরিশোধিত ({{ paid_count|bangla_number }})</a>
-            <a href="?status=approved_by_controller" class="filter-btn {% if request.GET.status == 'approved_by_controller' %}active{% endif %}" style="background: #00ACC1;">কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0|bangla_number }})</a>
-            <a href="?status=rejected_by_controller" class="filter-btn {% if request.GET.status == 'rejected_by_controller' %}active{% endif %}" style="background: #FF5722;">কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0|bangla_number }})</a>
-            <a href="?status=controller_returned" class="filter-btn {% if request.GET.status == 'controller_returned' %}active{% endif %}" style="background: #FF9800;">কন্ট্রোলার ফেরত ({{ controller_returned_count|default:0|bangla_number }})</a>
-            <a href="?status=returned_to_user" class="filter-btn {% if request.GET.status == 'returned_to_user' %}active{% endif %}" style="background: #4CAF50;">চেয়ারম্যান কর্তৃক ফেরত ({{ returned_to_user_count|default:0|bangla_number }})</a>
+            <a href="{% url 'bill_status' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if not request.GET.status %}active{% endif %}">
+                <i class="fas fa-layer-group"></i><span>সবগুলি</span>
+                <span class="filter-count">{{ pending_count|add:approved_count|add:rejected_count|add:paid_count|add:approved_by_controller_count|add:rejected_by_controller_count|add:returned_to_user_count|add:controller_returned_count|bangla_number }}</span>
+            </a>
+            <a href="?status=pending{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'pending' %}active{% endif %}">
+                <i class="fas fa-hourglass-half"></i><span>অপেক্ষমান</span>
+                <span class="filter-count">{{ pending_count|bangla_number }}</span>
+            </a>
+            <a href="?status=approved{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'approved' %}active{% endif %}">
+                <i class="fas fa-check"></i><span>অনুমোদিত</span>
+                <span class="filter-count">{{ approved_count|bangla_number }}</span>
+            </a>
+            <a href="?status=rejected{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'rejected' %}active{% endif %}">
+                <i class="fas fa-times"></i><span>বাতিল</span>
+                <span class="filter-count">{{ rejected_count|bangla_number }}</span>
+            </a>
+            <a href="?status=paid{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'paid' %}active{% endif %}">
+                <i class="fas fa-money-bill-wave"></i><span>পরিশোধিত</span>
+                <span class="filter-count">{{ paid_count|bangla_number }}</span>
+            </a>
+            <a href="?status=approved_by_controller{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'approved_by_controller' %}active{% endif %}">
+                <i class="fas fa-check-double"></i><span>কন্ট্রোলার অনুমোদিত</span>
+                <span class="filter-count">{{ approved_by_controller_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=rejected_by_controller{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'rejected_by_controller' %}active{% endif %}">
+                <i class="fas fa-ban"></i><span>কন্ট্রোলার বাতিল</span>
+                <span class="filter-count">{{ rejected_by_controller_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=controller_returned{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'controller_returned' %}active{% endif %}">
+                <i class="fas fa-undo-alt"></i><span>কন্ট্রোলার ফেরত</span>
+                <span class="filter-count">{{ controller_returned_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=returned_to_user{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-btn {% if request.GET.status == 'returned_to_user' %}active{% endif %}">
+                <i class="fas fa-reply"></i><span>চেয়ারম্যান কর্তৃক ফেরত</span>
+                <span class="filter-count">{{ returned_to_user_count|default:0|bangla_number }}</span>
+            </a>
         </div>
 
         <!-- Bills Container -->
@@ -26,7 +75,7 @@
             <div class="status-card" data-status="{{ bill.status }}">
                 <div class="status-header">
                     <div>
-                        <h3 style="color: #000000; margin: 0;">বিল #{{ bill.bill_number|bangla_number }}</h3>
+                        <h3 style="color: #000000; margin: 0;">বিল #{{ bill.bill_number|bangla_number }} {% if bill.controller_bill_number %}<span class="ctrl-billno" title="কন্ট্রোলার অনুমোদিত বিল নম্বর">কন্ট্রোলার নং: {{ bill.controller_bill_number_bn }}</span>{% endif %}</h3>
                         <p style="color: #666; margin: 5px 0 0 0;">
                             <i class="fas fa-calendar-alt"></i> তৈরির তারিখ: {{ bill.created_at|date:"d-m-Y"|bangla_number }}
                         </p>
@@ -50,7 +99,7 @@
                     <div class="detail-item">
                         <i class="fas fa-graduation-cap"></i>
                         <span class="detail-label">সেমিস্টার:</span>
-                        <span class="detail-value">{{ bill.semester }}</span>
+                        <span class="detail-value">{{ bill.year_semester }}</span>
                     </div>
                     <div class="detail-item">
                         <i class="fas fa-coins"></i>
@@ -66,39 +115,80 @@
 
                 <!-- Status Timeline -->
                 <div class="status-timeline">
-                    <h4 style="color: #2c3e50; margin: 0 0 15px 0; font-size: 15px; font-weight: 600;">
-                        <i class="fas fa-history" style="color: #4ECDC4;"></i> বিলের অগ্রগতি
-                    </h4>
+                    <div class="timeline-head">
+                        <div class="timeline-head-left">
+                            <span class="timeline-head-icon"><i class="fas fa-route"></i></span>
+                            <div class="timeline-head-text">
+                                <h4>বিলের অগ্রগতি</h4>
+                                <span>অনুমোদন প্রক্রিয়ার ধাপসমূহ</span>
+                            </div>
+                        </div>
+                        <div class="timeline-head-right">
+                            {% if bill.resend_count %}
+                            <span class="timeline-resend" title="পুনঃপ্রেরণের সংখ্যা">
+                                <i class="fas fa-redo-alt"></i> পুনঃপ্রেরণ {{ bill.resend_count|bangla_number }} বার
+                            </span>
+                            {% endif %}
+                            <span class="stage-chip chip-{{ bill.status }}">
+                                <span class="stage-dot"></span>
+                                {% if bill.status == 'pending' %}অপেক্ষমান
+                                {% elif bill.status == 'approved' %}চেয়ারম্যান অনুমোদিত
+                                {% elif bill.status == 'rejected' %}চেয়ারম্যান বাতিল
+                                {% elif bill.status == 'paid' %}পরিশোধিত
+                                {% elif bill.status == 'draft' %}খসড়া
+                                {% elif bill.status == 'sent_to_controller' %}কন্ট্রোলারে প্রেরিত
+                                {% elif bill.status == 'approved_by_controller' %}কন্ট্রোলার অনুমোদিত
+                                {% elif bill.status == 'rejected_by_controller' %}কন্ট্রোলার বাতিল
+                                {% elif bill.status == 'controller_returned' %}কন্ট্রোলার ফেরত
+                                {% elif bill.status == 'returned_to_user' %}চেয়ারম্যান ফেরত
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-progress">
+                        <div class="timeline-progress-track">
+                            <div class="timeline-progress-fill{% if bill.status == 'rejected' or bill.status == 'rejected_by_controller' %} is-stopped{% elif bill.status == 'controller_returned' or bill.status == 'returned_to_user' %} is-returned{% elif bill.status == 'paid' %} is-done{% endif %}"
+                                 style="width: {% if bill.status == 'draft' %}10{% elif bill.status == 'returned_to_user' %}20{% elif bill.status == 'pending' %}30{% elif bill.status == 'approved' or bill.status == 'controller_returned' %}55{% elif bill.status == 'sent_to_controller' %}70{% elif bill.status == 'approved_by_controller' %}90{% elif bill.status == 'paid' or bill.status == 'rejected' or bill.status == 'rejected_by_controller' %}100{% else %}30{% endif %}%;"></div>
+                        </div>
+                        <span class="timeline-progress-label">{% if bill.status == 'draft' %}১০{% elif bill.status == 'returned_to_user' %}২০{% elif bill.status == 'pending' %}৩০{% elif bill.status == 'approved' or bill.status == 'controller_returned' %}৫৫{% elif bill.status == 'sent_to_controller' %}৭০{% elif bill.status == 'approved_by_controller' %}৯০{% elif bill.status == 'paid' or bill.status == 'rejected' or bill.status == 'rejected_by_controller' %}১০০{% else %}৩০{% endif %}% সম্পন্ন</span>
+                    </div>
+
                     <div class="timeline">
                         <!-- Step 1: Created -->
-                        <div class="timeline-item completed">
+                        <div class="timeline-item completed state-created">
                             <div class="timeline-icon">
-                                <i class="fas fa-plus-circle"></i>
+                                <i class="fas fa-plus"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">বিল তৈরি</div>
-                                <div class="timeline-date">{{ bill.created_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">বিল তৈরি</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.created_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
+                                <div class="timeline-detail"><i class="far fa-user"></i> {{ bill.user.get_full_name|default:bill.user.username }}</div>
                             </div>
                         </div>
 
                         <!-- Step 2: Sent to Chairman -->
                         {% if bill.sent_at %}
-                        <div class="timeline-item completed">
+                        <div class="timeline-item completed state-sent">
                             <div class="timeline-icon">
                                 <i class="fas fa-paper-plane"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">চেয়ারম্যানের কাছে প্রেরিত</div>
-                                <div class="timeline-date">{{ bill.sent_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">চেয়ারম্যানের কাছে প্রেরিত</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.sent_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
                                 {% if bill.remarks %}
                                     {% if 'JSTUChairman1' in bill.remarks %}
-                                    <div class="timeline-detail">চেয়ারম্যান: ১ম বর্ষ</div>
+                                    <div class="timeline-detail"><i class="fas fa-user-tie"></i> চেয়ারম্যান: ১ম বর্ষ</div>
                                     {% elif 'JSTUChairman2' in bill.remarks %}
-                                    <div class="timeline-detail">চেয়ারম্যান: ২য় বর্ষ</div>
+                                    <div class="timeline-detail"><i class="fas fa-user-tie"></i> চেয়ারম্যান: ২য় বর্ষ</div>
                                     {% elif 'JSTUChairman3' in bill.remarks %}
-                                    <div class="timeline-detail">চেয়ারম্যান: ৩য় বর্ষ</div>
+                                    <div class="timeline-detail"><i class="fas fa-user-tie"></i> চেয়ারম্যান: ৩য় বর্ষ</div>
                                     {% elif 'JSTUChairman4' in bill.remarks %}
-                                    <div class="timeline-detail">চেয়ারম্যান: ৪র্থ বর্ষ</div>
+                                    <div class="timeline-detail"><i class="fas fa-user-tie"></i> চেয়ারম্যান: ৪র্থ বর্ষ</div>
                                     {% endif %}
                                 {% endif %}
                             </div>
@@ -107,57 +197,65 @@
 
                         <!-- Step 3: Chairman Approved -->
                         {% if bill.approved_by %}
-                        <div class="timeline-item completed">
-                            <div class="timeline-icon" style="background: #4CAF50; border-color: #4CAF50;">
-                                <i class="fas fa-check-circle" style="color: white;"></i>
+                        <div class="timeline-item completed state-approved">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">চেয়ারম্যান কর্তৃক অনুমোদিত</div>
-                                <div class="timeline-date">{{ bill.approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
-                                <div class="timeline-detail">{{ bill.approved_by.get_full_name|default:bill.approved_by.username }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">চেয়ারম্যান কর্তৃক অনুমোদিত</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
+                                <div class="timeline-detail"><i class="fas fa-user-tie"></i> {{ bill.approved_by.get_full_name|default:bill.approved_by.username }}</div>
                             </div>
                         </div>
                         {% endif %}
 
                         <!-- Step 4: Sent to Controller -->
                         {% if bill.sent_to_controller_at %}
-                        <div class="timeline-item completed">
+                        <div class="timeline-item completed state-forwarded">
                             <div class="timeline-icon">
                                 <i class="fas fa-share"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">কন্ট্রোলারে প্রেরিত</div>
-                                <div class="timeline-date">{{ bill.sent_to_controller_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">কন্ট্রোলারে প্রেরিত</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.sent_to_controller_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
                             </div>
                         </div>
                         {% endif %}
 
                         <!-- Step 5: Controller Approved -->
                         {% if bill.status == 'approved_by_controller' and bill.controller_approved_by %}
-                        <div class="timeline-item completed">
-                            <div class="timeline-icon" style="background: #00ACC1; border-color: #00ACC1;">
-                                <i class="fas fa-check-double" style="color: white;"></i>
+                        <div class="timeline-item completed state-controller">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check-double"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">কন্ট্রোলার কর্তৃক অনুমোদিত</div>
-                                <div class="timeline-date">{{ bill.controller_approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
-                                <div class="timeline-detail">{{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">কন্ট্রোলার কর্তৃক অনুমোদিত</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.controller_approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
+                                <div class="timeline-detail"><i class="fas fa-user-shield"></i> {{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</div>
                             </div>
                         </div>
                         {% endif %}
 
                         <!-- Step 5b: Controller Rejected -->
                         {% if bill.status == 'rejected_by_controller' and bill.controller_approved_by %}
-                        <div class="timeline-item rejected">
+                        <div class="timeline-item rejected state-rejected">
                             <div class="timeline-icon">
-                                <i class="fas fa-times-circle" style="color: #F44336;"></i>
+                                <i class="fas fa-times"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">কন্ট্রোলার কর্তৃক বাতিল</div>
-                                <div class="timeline-date">{{ bill.controller_approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
-                                <div class="timeline-detail">{{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">কন্ট্রোলার কর্তৃক বাতিল</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.controller_approved_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
+                                <div class="timeline-detail"><i class="fas fa-user-shield"></i> {{ bill.controller_approved_by.get_full_name|default:bill.controller_approved_by.username }}</div>
                                 {% if bill.get_controller_comment %}
-                                <div class="timeline-comment">মন্তব্য: {{ bill.get_controller_comment }}</div>
+                                <div class="timeline-comment"><i class="fas fa-comment-dots"></i><span>{{ bill.get_controller_comment }}</span></div>
                                 {% endif %}
                             </div>
                         </div>
@@ -165,66 +263,75 @@
 
                         <!-- Step 6: Controller Returned to Chairman -->
                         {% if bill.status == 'controller_returned' or bill.returned_to_chairman_at %}
-                        <div class="timeline-item returned">
-                            <div class="timeline-icon" style="background: #FF9800; border-color: #FF9800;">
-                                <i class="fas fa-undo-alt" style="color: white;"></i>
+                        <div class="timeline-item returned state-returned">
+                            <div class="timeline-icon">
+                                <i class="fas fa-undo-alt"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">কন্ট্রোলার কর্তৃক চেয়ারম্যানে ফেরত</div>
-                                {% if bill.returned_to_chairman_at %}
-                                <div class="timeline-date">{{ bill.returned_to_chairman_at|date:"d-m-Y h:i A"|bangla_number }}</div>
-                                {% endif %}
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">কন্ট্রোলার কর্তৃক চেয়ারম্যানে ফেরত</div>
+                                    {% if bill.returned_to_chairman_at %}
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.returned_to_chairman_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                    {% endif %}
+                                </div>
                                 {% if bill.returned_to_chairman_by %}
-                                <div class="timeline-detail">{{ bill.returned_to_chairman_by.get_full_name|default:bill.returned_to_chairman_by.username }}</div>
+                                <div class="timeline-detail"><i class="fas fa-user-shield"></i> {{ bill.returned_to_chairman_by.get_full_name|default:bill.returned_to_chairman_by.username }}</div>
                                 {% endif %}
                                 {% comment %} {% if bill.get_controller_comment %}
-                                <div class="timeline-comment">মন্তব্য: {{ bill.get_controller_comment }}</div>
+                                <div class="timeline-comment"><i class="fas fa-comment-dots"></i><span>{{ bill.get_controller_comment }}</span></div>
                                 {% endif %} {% endcomment %}
                             </div>
                         </div>
                         {% endif %}
 
                         <!-- Step 7: Chairman Returned to User -->
-                            {% if bill.status == 'returned_to_user' or bill.returned_to_user_at %}
-                            <div class="timeline-item returned">
-                                <div class="timeline-icon" style="background: #4CAF50; border-color: #4CAF50;">
-                                    <i class="fas fa-undo-alt" style="color: white;"></i>
-                                </div>
-                                <div class="timeline-content">
+                        {% if bill.status == 'returned_to_user' or bill.returned_to_user_at %}
+                        <div class="timeline-item returned state-returned">
+                            <div class="timeline-icon">
+                                <i class="fas fa-undo-alt"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-content-head">
                                     <div class="timeline-title">চেয়ারম্যান কর্তৃক প্রস্তুতকারীর কাছে ফেরত</div>
                                     {% if bill.returned_to_user_at %}
-                                    <div class="timeline-date">{{ bill.returned_to_user_at|date:"d-m-Y h:i A"|bangla_number }}</div>
-                                    {% endif %}
-                                    {% if bill.returned_to_user_by %}
-                                    <div class="timeline-detail">{{ bill.returned_to_user_by.get_full_name|default:bill.returned_to_user_by.username }}</div>
-                                    {% endif %}
-                                    {% if bill.get_chairman_return_note %}
-                                    <div class="timeline-comment">মন্তব্য: {{ bill.get_chairman_return_note }}</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.returned_to_user_at|date:"d-m-Y h:i A"|bangla_number }}</div>
                                     {% endif %}
                                 </div>
+                                {% if bill.returned_to_user_by %}
+                                <div class="timeline-detail"><i class="fas fa-user-tie"></i> {{ bill.returned_to_user_by.get_full_name|default:bill.returned_to_user_by.username }}</div>
+                                {% endif %}
+                                {% if bill.get_chairman_return_note %}
+                                <div class="timeline-comment"><i class="fas fa-comment-dots"></i><span>{{ bill.get_chairman_return_note }}</span></div>
+                                {% endif %}
                             </div>
-                            {% endif %}
+                        </div>
+                        {% endif %}
 
                         <!-- Step 8: Paid -->
                         {% if bill.status == 'paid' %}
-                        <div class="timeline-item completed">
+                        <div class="timeline-item completed state-paid">
                             <div class="timeline-icon">
-                                <i class="fas fa-money-bill-wave" style="color: #2196F3;"></i>
+                                <i class="fas fa-money-bill-wave"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-title">পরিশোধিত</div>
-                                <div class="timeline-date">{{ bill.updated_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">পরিশোধিত</div>
+                                    <div class="timeline-date"><i class="far fa-clock"></i> {{ bill.updated_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
                             </div>
                         </div>
                         {% endif %}
 
                         <!-- Current Status (Active) -->
-                        <div class="timeline-item active">
+                        <div class="timeline-item active state-current">
                             <div class="timeline-icon">
-                                <i class="fas fa-circle"></i>
+                                <i class="fas fa-map-marker-alt"></i>
                             </div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">বর্তমান স্ট্যাটাস</div>
+                            <div class="timeline-content is-current">
+                                <div class="timeline-content-head">
+                                    <div class="timeline-title">বর্তমান স্ট্যাটাস</div>
+                                    <div class="timeline-date"><i class="fas fa-sync-alt"></i> হালনাগাদ: {{ bill.updated_at|date:"d-m-Y h:i A"|bangla_number }}</div>
+                                </div>
                                 <div class="timeline-status status-{{ bill.status }}">
                                     {% if bill.status == 'pending' %}অপেক্ষমান (চেয়ারম্যানের অনুমোদনের জন্য)
                                     {% elif bill.status == 'approved' %}চেয়ারম্যান কর্তৃক অনুমোদিত
@@ -312,12 +419,21 @@
             </div>
             {% empty %}
             <div class="empty-state">
+                {% if search_query %}
+                <i class="fas fa-search"></i>
+                <h3>অনুসন্ধানে কোন বিল পাওয়া যায়নি</h3>
+                <p>“{{ search_query }}” এর সাথে মিলে এমন কোন বিল নেই। বানান পরীক্ষা করুন বা অন্য শব্দ দিয়ে চেষ্টা করুন।</p>
+                <a href="{% url 'bill_status' %}" class="btn btn-primary">
+                    <i class="fas fa-rotate-left"></i> সব বিল দেখুন
+                </a>
+                {% else %}
                 <i class="fas fa-inbox"></i>
                 <h3>কোন বিল পাওয়া যায়নি</h3>
                 <p>পাঠানো বিল এখানে প্রদর্শিত হবে</p>
                 <a href="{% url 'my_bills' %}" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> আমার বিলে ফিরে যান
                 </a>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -326,7 +442,7 @@
         {% if bills.has_other_pages %}
         <div class="pagination">
             {% if bills.has_previous %}
-            <a href="?page={{ bills.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-btn">
+            <a href="?page={{ bills.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="pagination-btn">
                 <i class="fas fa-chevron-left"></i> পূর্ববর্তী
             </a>
             {% endif %}
@@ -336,7 +452,7 @@
             </span>
 
             {% if bills.has_next %}
-            <a href="?page={{ bills.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="pagination-btn">
+            <a href="?page={{ bills.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="pagination-btn">
                 পরবর্তী <i class="fas fa-chevron-right"></i>
             </a>
             {% endif %}
@@ -382,36 +498,208 @@
     margin-bottom: 30px;
 }
 
-/* Status Filter */
+/* Search */
+.search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+
+.search-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    max-width: 560px;
+}
+
+.search-field-icon {
+    position: absolute;
+    left: 16px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+}
+
+.search-field input {
+    width: 100%;
+    padding: 12px 42px 12px 40px;
+    border-radius: 26px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(6px);
+    outline: none;
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.search-field input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-field input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.search-field input:focus {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(78, 205, 196, 0.85);
+    box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.18);
+}
+
+.search-clear {
+    position: absolute;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 10px;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.22);
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.search-clear:hover {
+    background: rgba(255, 255, 255, 0.38);
+}
+
+.search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 26px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #ffffff;
+    cursor: pointer;
+    background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+    box-shadow: 0 6px 16px rgba(68, 160, 141, 0.4);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(68, 160, 141, 0.5);
+}
+
+.search-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    max-width: 700px;
+    margin: 0 auto 20px auto;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    color: #f2fbfa;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.search-summary i {
+    color: #4ECDC4;
+    margin-right: 4px;
+}
+
+.search-summary a {
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    opacity: 0.85;
+}
+
+.search-summary a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* Status Filter — single accent (teal) on glass */
 .status-filter {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 28px;
 }
 
 .filter-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 25px;
-    color: white;
-    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 24px;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    line-height: 1.6;
+    color: #eefbf9;
     text-decoration: none;
-    transition: all 0.3s ease;
     cursor: pointer;
-    font-size: 14px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+}
+
+.filter-btn i {
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+.filter-count {
+    min-width: 24px;
+    padding: 1px 8px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: center;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .filter-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(78, 205, 196, 0.75);
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.filter-btn:hover i {
+    opacity: 1;
 }
 
 .filter-btn.active {
-    transform: scale(1.05);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    border: 2px solid white;
+    color: #ffffff;
+    background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 20px rgba(68, 160, 141, 0.45);
+}
+
+.filter-btn.active i {
+    opacity: 1;
+}
+
+.filter-btn.active .filter-count {
+    color: #2b7f74;
+    background: #ffffff;
+    border-color: transparent;
 }
 
 /* Status Cards */
@@ -506,136 +794,364 @@
     font-weight: 600;
 }
 
-/* Status Timeline */
+/* ============================
+   Status Timeline (বিলের অগ্রগতি)
+   ============================ */
 .status-timeline {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 20px;
-    margin: 15px 0;
-}
-
-.timeline {
     position: relative;
-    padding-left: 30px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+    border: 1px solid #e8edf3;
+    border-radius: 14px;
+    padding: 12px 15px;
+    margin: 14px 0;
+    box-shadow: 0 4px 18px rgba(23, 43, 77, 0.05);
+    overflow: hidden;
 }
 
-.timeline::before {
+.status-timeline::before {
     content: '';
     position: absolute;
-    left: 10px;
     top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #e0e0e0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4ECDC4 0%, #44A08D 50%, #2196F3 100%);
+}
+
+/* --- Header --- */
+.timeline-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.timeline-head-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.timeline-head-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+    background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+    box-shadow: 0 6px 14px rgba(78, 205, 196, 0.35);
+}
+
+.timeline-head-text h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2d3d;
+    letter-spacing: 0.2px;
+}
+
+.timeline-head-text span {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #8fa1b3;
+}
+
+.timeline-head-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.timeline-resend {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #8a6d3b;
+    background: #fff8e6;
+    border: 1px solid #f6e2b3;
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+/* Current stage chip */
+.stage-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: #eef2f7;
+    color: #4a5b6d;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    white-space: nowrap;
+}
+
+.stage-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.chip-pending { background: #FFF8E1; color: #B8860B; }
+.chip-approved { background: #E8F5E9; color: #2E7D32; }
+.chip-rejected { background: #FFEBEE; color: #C62828; }
+.chip-paid { background: #E3F2FD; color: #0D47A1; }
+.chip-draft { background: #F1F3F5; color: #5F6B76; }
+.chip-sent_to_controller { background: #F3E5F5; color: #6A1B9A; }
+.chip-approved_by_controller { background: #E0F2F1; color: #00695C; }
+.chip-rejected_by_controller { background: #FBE9E7; color: #BF360C; }
+.chip-controller_returned { background: #FFF3E0; color: #E65100; }
+.chip-returned_to_user { background: #E8F5E9; color: #1B5E20; }
+
+/* --- Progress bar --- */
+.timeline-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 11px;
+}
+
+.timeline-progress-track {
+    position: relative;
+    flex: 1;
+    height: 8px;
+    border-radius: 20px;
+    background: #e9eef4;
+    overflow: hidden;
+}
+
+.timeline-progress-fill {
+    position: relative;
+    height: 100%;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #4ECDC4 0%, #44A08D 100%);
+    transition: width 0.6s ease;
+}
+
+.timeline-progress-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 100%);
+    animation: progressShine 2.4s ease-in-out infinite;
+}
+
+.timeline-progress-fill.is-done {
+    background: linear-gradient(90deg, #43A047 0%, #2196F3 100%);
+}
+
+.timeline-progress-fill.is-returned {
+    background: linear-gradient(90deg, #FFB74D 0%, #FF9800 100%);
+}
+
+.timeline-progress-fill.is-stopped {
+    background: linear-gradient(90deg, #EF5350 0%, #C62828 100%);
+}
+
+.timeline-progress-fill.is-stopped::after {
+    animation: none;
+}
+
+@keyframes progressShine {
+    0% { transform: translateX(-100%); }
+    60%, 100% { transform: translateX(100%); }
+}
+
+.timeline-progress-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5b6b7c;
+    white-space: nowrap;
+}
+
+/* --- Timeline rail --- */
+.timeline {
+    position: relative;
+    padding-left: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .timeline-item {
+    --tl-color: #90a4ae;
+    --tl-soft: rgba(144, 164, 174, 0.16);
     position: relative;
-    padding: 0 0 20px 25px;
+    padding: 0 0 0 34px;
 }
 
-.timeline-item:last-child {
-    padding-bottom: 0;
+/* connector between two steps */
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 26px;
+    bottom: -8px;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--tl-color) 0%, #dde4ec 100%);
+    opacity: 0.55;
+}
+
+.timeline-item:last-child::before {
+    display: none;
 }
 
 .timeline-icon {
     position: absolute;
-    left: -24px;
-    top: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid #e0e0e0;
+    left: 2px;
+    top: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background: var(--tl-color);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    color: #666;
+    font-size: 9.5px;
+    color: #fff;
+    box-shadow: 0 0 0 2px var(--tl-soft), 0 2px 6px rgba(23, 43, 77, 0.12);
     z-index: 1;
 }
 
-.timeline-item.completed .timeline-icon {
-    border-color: #4CAF50;
-    background: #4CAF50;
-    color: white;
-}
+/* step colours */
+.timeline-item.state-created { --tl-color: #607D8B; --tl-soft: rgba(96, 125, 139, 0.16); }
+.timeline-item.state-sent { --tl-color: #7E57C2; --tl-soft: rgba(126, 87, 194, 0.16); }
+.timeline-item.state-approved { --tl-color: #4CAF50; --tl-soft: rgba(76, 175, 80, 0.16); }
+.timeline-item.state-forwarded { --tl-color: #9C27B0; --tl-soft: rgba(156, 39, 176, 0.16); }
+.timeline-item.state-controller { --tl-color: #00ACC1; --tl-soft: rgba(0, 172, 193, 0.16); }
+.timeline-item.state-rejected { --tl-color: #F44336; --tl-soft: rgba(244, 67, 54, 0.16); }
+.timeline-item.state-returned { --tl-color: #FF9800; --tl-soft: rgba(255, 152, 0, 0.18); }
+.timeline-item.state-paid { --tl-color: #2196F3; --tl-soft: rgba(33, 150, 243, 0.16); }
+.timeline-item.state-current { --tl-color: #4ECDC4; --tl-soft: rgba(78, 205, 196, 0.2); }
 
-.timeline-item.rejected .timeline-icon {
-    border-color: #F44336;
-    background: #F44336;
-    color: white;
-}
-
-.timeline-item.returned .timeline-icon {
-    border-color: #FF9800;
-    background: #FF9800;
-    color: white;
-}
-
-.timeline-item.active .timeline-icon {
-    border-color: #4ECDC4;
-    background: #4ECDC4;
-    color: white;
-    box-shadow: 0 0 0 5px rgba(78, 205, 196, 0.2);
-    animation: pulse 2s infinite;
+.timeline-item.state-current .timeline-icon {
+    background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+    animation: pulse 2.2s infinite;
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(78, 205, 196, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.45), 0 2px 6px rgba(23, 43, 77, 0.12); }
+    70% { box-shadow: 0 0 0 8px rgba(78, 205, 196, 0), 0 2px 6px rgba(23, 43, 77, 0.12); }
+    100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0), 0 2px 6px rgba(23, 43, 77, 0.12); }
 }
 
+/* --- Step card --- */
 .timeline-content {
-    background: white;
-    padding: 10px 15px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+    position: relative;
+    background: #ffffff;
+    padding: 5px 11px;
+    border: 1px solid #e8edf3;
+    border-left: 3px solid var(--tl-color);
+    border-radius: 9px;
+    box-shadow: 0 2px 6px rgba(23, 43, 77, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.timeline-content:hover {
+    transform: translateX(3px);
+    box-shadow: 0 6px 16px rgba(23, 43, 77, 0.09);
+}
+
+.timeline-content.is-current {
+    background: linear-gradient(135deg, #f4fdfc 0%, #ffffff 70%);
+    border-color: rgba(78, 205, 196, 0.45);
+}
+
+.timeline-content-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px 14px;
+    flex-wrap: wrap;
 }
 
 .timeline-title {
-    font-weight: 600;
-    color: #2c3e50;
-    font-size: 14px;
+    font-weight: 700;
+    color: #1f2d3d;
+    font-size: 13px;
+    line-height: 1.35;
 }
 
 .timeline-date {
-    font-size: 12px;
-    color: #7f8c8d;
-    margin-top: 2px;
+    font-size: 10.5px;
+    color: #8fa1b3;
+    font-weight: 500;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.timeline-date i {
+    font-size: 10.5px;
+    color: #b0bec5;
 }
 
 .timeline-detail {
-    font-size: 12px;
-    color: #666;
+    font-size: 11.5px;
+    color: #5b6b7c;
     margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.timeline-detail i {
+    font-size: 11px;
+    color: var(--tl-color);
 }
 
 .timeline-comment {
-    font-size: 13px;
-    color: #E65100;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #8a4b08;
     margin-top: 5px;
-    padding: 8px 12px;
-    background: #fff3e0;
-    border-radius: 6px;
-    border-left: 3px solid #FF9800;
+    padding: 5px 9px;
+    background: #fff8ef;
+    border: 1px solid #ffe2c2;
+    border-radius: 8px;
 }
 
-.timeline-status {
-    font-weight: 600;
-    font-size: 14px;
-    padding: 5px 10px;
-    border-radius: 6px;
-    display: inline-block;
+.timeline-comment i {
+    color: #FF9800;
     margin-top: 3px;
 }
 
-.timeline-status.status-pending { color: #F57F17; background: #FFF8E1; }
+.timeline-status {
+    font-weight: 700;
+    font-size: 12px;
+    padding: 3px 11px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.timeline-status.status-pending { color: #B8860B; background: #FFF8E1; }
 .timeline-status.status-approved { color: #2E7D32; background: #E8F5E9; }
 .timeline-status.status-rejected { color: #C62828; background: #FFEBEE; }
 .timeline-status.status-paid { color: #0D47A1; background: #E3F2FD; }
-.timeline-status.status-draft { color: #616161; background: #F5F5F5; }
+.timeline-status.status-draft { color: #5F6B76; background: #F1F3F5; }
 .timeline-status.status-sent_to_controller { color: #6A1B9A; background: #F3E5F5; }
 .timeline-status.status-approved_by_controller { color: #00695C; background: #E0F2F1; }
 .timeline-status.status-rejected_by_controller { color: #BF360C; background: #FBE9E7; }
@@ -782,6 +1298,34 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+
+    .search-bar {
+        flex-direction: column;
+    }
+
+    .search-field {
+        max-width: none;
+    }
+
+    .search-btn {
+        justify-content: center;
+    }
+
+    .search-summary {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .status-filter {
+        gap: 8px;
+    }
+
+    .filter-btn {
+        padding: 8px 13px;
+        font-size: 12.5px;
+        gap: 6px;
+    }
+
     .container {
         padding: 15px;
     }
@@ -822,19 +1366,57 @@
         align-self: flex-start;
     }
 
+    .status-timeline {
+        padding: 16px 14px;
+        border-radius: 14px;
+    }
+
+    .timeline-head {
+        align-items: flex-start;
+    }
+
+    .timeline-head-right {
+        width: 100%;
+    }
+
+    .timeline-progress-label {
+        font-size: 11px;
+    }
+
     .timeline {
-        padding-left: 20px;
+        padding-left: 0;
+        gap: 5px;
     }
 
     .timeline-item {
-        padding-left: 20px;
+        padding-left: 30px;
+    }
+
+    .timeline-item::before {
+        left: 9px;
+        top: 24px;
+        bottom: -7px;
     }
 
     .timeline-icon {
-        left: -18px;
-        width: 16px;
-        height: 16px;
-        font-size: 8px;
+        left: 0;
+        top: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 7px;
+        font-size: 9px;
+    }
+
+    .timeline-content {
+        padding: 5px 9px;
+    }
+
+    .timeline-content:hover {
+        transform: none;
+    }
+
+    .timeline-date {
+        white-space: normal;
     }
 }
 </style>
@@ -937,4 +1519,18 @@ if (deleteForm) {
 
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+.ctrl-billno {
+    display: inline-block;
+    background: rgba(46,204,113,0.22);
+    border: 1px solid rgba(46,204,113,0.45);
+    color: #7ee2a8;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+</style>
 {% endblock %}

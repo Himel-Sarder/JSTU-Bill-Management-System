@@ -16,63 +16,61 @@
                     <p id="notificationCount">0 টি নতুন বিল আপনার অনুমোদনের জন্য অপেক্ষমান রয়েছে।</p>
                 </div>
                 <div class="notification-actions">
-                    <a href="{% url 'cont_bills' %}" class="notification-btn">
-                        <i class="fas fa-eye"></i> এখনই দেখুন
-                    </a>
-                    <button onclick="closeNotification()" class="notification-close">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <a href="{% url 'cont_bills' %}" class="notification-btn">এখনই দেখুন</a>
+                    <button onclick="closeNotification()" class="notification-close">&times;</button>
                 </div>
             </div>
         </div>
 
         <!-- Controller Welcome Section -->
         <div class="controller-welcome">
-            <div class="welcome-badge">
-                <i class="fas fa-chart-line"></i>
-                <i class="fas fa-calculator"></i>
-                <i class="fas fa-file-invoice-dollar"></i>
+            <div class="welcome-text">
+                <span class="welcome-eyebrow">জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</span>
+                <h1 class="controller-title">স্বাগতম কন্ট্রোলার প্যানেলে</h1>
+                <p>চেয়ারম্যান কর্তৃক অনুমোদিত বিল পর্যালোচনা, চূড়ান্ত অনুমোদন ও সংরক্ষণ</p>
             </div>
-            <h1 class="controller-title">
-                <i class="fas fa-user-cog"></i>
-                স্বাগতম কন্ট্রোলার প্যানেলে
-                <i class="fas fa-chalkboard-teacher"></i>
-            </h1>
-            <div class="welcome-badge">
-                <i class="fas fa-chart-line"></i>
-                <i class="fas fa-calculator"></i>
-                <i class="fas fa-file-invoice-dollar"></i>
+            <!-- Action Buttons -->
+            <div class="welcome-actions">
+                <a href="{% url 'cont_bills' %}" class="action-btn is-primary" id="pendingBillsBtn">
+                    অপেক্ষমান বিল দেখুন
+                    <span id="badgeNotification" class="badge-notification" style="display: none;">0</span>
+                </a>
+                <a href="{% url 'accepted_bills' %}" class="action-btn">অনুমোদিত বিল</a>
+                <a href="{% url 'rejected_bills' %}" class="action-btn">বাতিল বিল</a>
+                <a href="{% url 'profile' %}" class="action-btn">প্রোফাইল</a>
             </div>
         </div>
 
-        <!-- Hidden spans keep the JS working without visible stat cards -->
-        <span id="totalBills"    style="display:none;">{{ total_bills|default:0 }}</span>
-        <span id="pendingCount"  style="display:none;">{{ pending_count|default:0 }}</span>
-        <span id="approvedCount" style="display:none;">{{ approved_count|default:0 }}</span>
-        <span id="rejectedCount" style="display:none;">{{ rejected_count|default:0 }}</span>
-
-        <!-- Action Buttons -->
-        <div style="text-align: center; margin: 30px 0;">
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="{% url 'cont_bills' %}" class="btn btn-primary" id="pendingBillsBtn">
-                    <i class="fas fa-file-invoice"></i> অপেক্ষমান বিল দেখুন
-                    <span id="badgeNotification" class="badge-notification" style="display: none;">0</span>
-                </a>
-                <a href="{% url 'accepted_bills' %}" class="btn btn-success">
-                    <i class="fas fa-check-circle"></i> অনুমোদিত বিল
-                </a>
-                <a href="{% url 'rejected_bills' %}" class="btn btn-danger">
-                    <i class="fas fa-times-circle"></i> বাতিল বিল
-                </a>
-                <a href="{% url 'profile' %}" class="btn btn-secondary">
-                    <i class="fas fa-user"></i> প্রোফাইল
-                </a>
+        <!-- Live counters (the ids below are kept in step by checkForNewBills) -->
+        <div class="stat-row">
+            <div class="stat-card stat-total">
+                <span class="stat-label">মোট বিল</span>
+                <strong class="stat-value"><span id="totalBills">{{ total_bills|default:0|bangla_number }}</span></strong>
+            </div>
+            <div class="stat-card stat-pending">
+                <span class="stat-label">অপেক্ষমান</span>
+                <strong class="stat-value"><span id="pendingCount">{{ pending_count|default:0|bangla_number }}</span></strong>
+            </div>
+            <div class="stat-card stat-approved">
+                <span class="stat-label">অনুমোদিত</span>
+                <strong class="stat-value"><span id="approvedCount">{{ approved_count|default:0|bangla_number }}</span></strong>
+            </div>
+            <div class="stat-card stat-rejected">
+                <span class="stat-label">বাতিল</span>
+                <strong class="stat-value"><span id="rejectedCount">{{ rejected_count|default:0|bangla_number }}</span></strong>
+            </div>
+            <div class="stat-card stat-amount">
+                <span class="stat-label">মোট টাকার পরিমাণ</span>
+                <strong class="stat-value">{{ total_amount|default:0|floatformat:0|bangla_number }} <small>টাকা</small></strong>
             </div>
         </div>
 
         <!-- Controller Manual -->
         <div class="user-manual">
-            <h3 style="color: black; text-align: center; margin-bottom: 20px;">কন্ট্রোলার ম্যানুয়াল</h3>
+            <div class="manual-head">
+                <h3>কন্ট্রোলার ম্যানুয়াল</h3>
+                <span>বিল ব্যবস্থাপনার ধাপসমূহ ও কন্ট্রোলারের দায়িত্ব</span>
+            </div>
             <div class="manual-content">
                 <div class="manual-item">
                     <h4>বিল ব্যবস্থাপনার ধাপসমূহ:</h4>
@@ -127,154 +125,238 @@
                 <textarea name="remarks" id="modalRemarks" class="form-control" rows="3"></textarea>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">বাতিল</button>
-                <button type="submit" class="btn btn-primary">জমা দিন</button>
+                <button type="button" class="btn btn-modal-ghost" onclick="closeModal()">বাতিল</button>
+                <button type="submit" class="btn btn-modal-solid">জমা দিন</button>
             </div>
         </form>
     </div>
 </div>
 
 <style>
-/* Controller Welcome */
+/* Controller panel: white cards on the app background, one indigo/purple accent. */
+.container { max-width: 1280px; }
+.glass-card {
+    background: transparent; border: none; box-shadow: none;
+    backdrop-filter: none; padding: 0; margin: 10px 0 46px 0;
+}
+.glass-card:hover { transform: none; box-shadow: none; }
+
+/* ===== Welcome band ===== */
 .controller-welcome {
-    text-align: center;
-    margin-bottom: 30px;
-    animation: fadeInDown 0.8s ease;
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 26px; flex-wrap: wrap;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 18px;
+    padding: 32px 34px; margin-bottom: 18px;
+    overflow: hidden;
+    box-shadow: 0 12px 34px rgba(52, 32, 92, 0.28);
 }
-.welcome-badge {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
+.controller-welcome::after {
+    content: ''; position: absolute; top: -70px; right: -50px;
+    width: 250px; height: 250px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.10);
 }
-.welcome-badge i {
-    font-size: 28px;
-    color: #00acc1;
-    text-shadow: 0 0 10px rgba(0,172,193,0.3);
-    animation: starGlow 1.5s ease-in-out infinite;
+.welcome-text { position: relative; z-index: 1; min-width: 260px; }
+.welcome-eyebrow {
+    display: inline-block;
+    padding: 6px 14px; margin-bottom: 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+    color: #ffffff; background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.25);
 }
 .controller-title {
-    font-size: 1.8em;
-    background: linear-gradient(135deg, #00acc1, #00838f);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    padding: 15px;
-    border-radius: 15px;
-    margin: 15px 0;
-    animation: pulse 2s ease-in-out infinite;
+    margin: 0; color: #ffffff;
+    font-size: 32px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.35;
 }
-.controller-title i { margin: 0 10px; color: #00acc1; }
-
-/* Floating Notification */
-.notification-float {
-    position: fixed; top: 20px; right: 20px;
-    z-index: 10000; max-width: 380px; width: 100%;
-    animation: slideInRight 0.5s ease;
-}
-.notification-content {
-    background: linear-gradient(135deg, #ffffff, #f8f9fa);
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    display: flex; align-items: center; padding: 15px;
-    border-left: 5px solid #00acc1;
-    position: relative; overflow: hidden;
-}
-.notification-content::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #00acc1, #4ECDC4, #00acc1);
-    animation: loadingBar 10s linear forwards;
-}
-.notification-icon {
-    width: 50px; height: 50px;
-    background: linear-gradient(135deg, #00acc1, #00838f);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin-right: 15px;
-    animation: bellRing 1s ease infinite;
-}
-.notification-icon i { font-size: 24px; color: white; }
-.notification-message { flex: 1; }
-.notification-message strong { display: block; color: #2c3e50; font-size: 16px; margin-bottom: 5px; }
-.notification-message p { color: #666; font-size: 13px; margin: 0; }
-.notification-actions { display: flex; align-items: center; gap: 10px; margin-left: 10px; }
-.notification-btn {
-    background: linear-gradient(135deg, #00acc1, #00838f);
-    color: white; padding: 8px 15px; border-radius: 6px;
-    text-decoration: none; font-size: 12px; font-weight: 500;
-    white-space: nowrap; transition: all 0.3s ease;
-}
-.notification-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,172,193,0.3); }
-.notification-close {
-    background: none; border: none; font-size: 18px;
-    cursor: pointer; color: #999; padding: 5px; transition: all 0.3s ease;
-}
-.notification-close:hover { color: #F44336; transform: scale(1.1); }
-
-.badge-notification {
-    background: #F44336; color: white;
-    border-radius: 50%; padding: 2px 6px; font-size: 11px;
-    margin-left: 5px; animation: pulse 1s ease infinite;
+.welcome-text p {
+    margin: 8px 0 0 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 15.5px; line-height: 1.7; max-width: 520px;
 }
 
-/* Buttons */
-.btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 20px; border-radius: 8px;
-    text-decoration: none; font-weight: bold;
-    transition: all 0.3s ease; border: none; cursor: pointer;
+.welcome-actions { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; }
+.action-btn {
     position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 13px 22px; border-radius: 11px;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    text-decoration: none; cursor: pointer;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    transition: all 0.25s ease;
 }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.btn-primary  { background: linear-gradient(45deg, #4ECDC4, #44A08D); color: white; }
-.btn-success  { background: linear-gradient(45deg, #4caf50, #45a049); color: white; }
-.btn-danger   { background: linear-gradient(45deg, #F44336, #d32f2f); color: white; }
-.btn-secondary{ background: linear-gradient(45deg, #667eea, #764ba2); color: white; }
+.action-btn:hover { background: rgba(255, 255, 255, 0.26); transform: translateY(-2px); }
+.action-btn.is-primary {
+    background: #ffffff; color: #5b4397; border-color: transparent;
+    box-shadow: 0 8px 20px rgba(23, 15, 48, 0.22);
+}
+.action-btn.is-primary:hover { background: #ffffff; box-shadow: 0 12px 26px rgba(23, 15, 48, 0.3); }
+.badge-notification {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 24px; height: 24px; padding: 0 7px;
+    border-radius: 20px;
+    background: #e74c3c; color: #ffffff;
+    font-size: 12.5px; font-weight: 800;
+}
 
-/* User Manual */
-.user-manual { background: rgba(255,255,255,0.9); border-radius: 15px; padding: 25px; margin-top: 20px; }
-.manual-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-.manual-item { color: #333; }
-.manual-item h4 { color: #2c3e50; margin-bottom: 15px; border-bottom: 2px solid #00acc1; padding-bottom: 5px; font-size: 1.2em; }
-.manual-item ol, .manual-item ul { padding-left: 20px; }
-.manual-item li { margin-bottom: 10px; line-height: 1.6; font-size: 1em; }
+/* ===== Counters ===== */
+.stat-row {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px; margin-bottom: 18px;
+}
+.stat-card {
+    background: #ffffff; border: 1px solid #e6eaef;
+    border-left: 4px solid #764ba2; border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16, 24, 40, 0.1); }
+.stat-label { display: block; color: #7b8794; font-size: 14px; font-weight: 600; }
+.stat-value { display: block; margin-top: 3px; color: #1f2d3d; font-size: 26px; font-weight: 800; letter-spacing: 0.3px; }
+.stat-value small { font-size: 14px; font-weight: 600; color: #7b8794; }
+.stat-pending { border-left-color: #d9a520; }
+.stat-approved { border-left-color: #43a047; }
+.stat-rejected { border-left-color: #e74c3c; }
+.stat-amount { border-left-color: #1f6fb2; }
 
-/* Modal */
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-.modal-content { background-color: white; margin: 10% auto; padding: 0; width: 90%; max-width: 500px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); animation: slideInDown 0.3s ease; }
-.modal-header { padding: 15px 20px; background: linear-gradient(135deg, #00acc1, #00838f); color: white; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
-.modal-header h3 { margin: 0; }
-.close { font-size: 28px; font-weight: bold; cursor: pointer; color: white; transition: transform 0.3s ease; }
-.close:hover { transform: scale(1.2); }
-.form-group { margin-bottom: 15px; padding: 0 20px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-.form-control { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
-textarea.form-control { resize: vertical; }
-.modal-footer { padding: 15px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #ddd; }
+/* ===== New-bill notification ===== */
+.notification-float {
+    position: fixed; top: 90px; right: 24px; z-index: 1500;
+    max-width: 380px;
+    animation: slideInRight 0.35s ease;
+}
+@keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+.notification-content {
+    display: flex; align-items: center; gap: 14px;
+    background: #ffffff; border: 1px solid #e6eaef;
+    border-left: 4px solid #764ba2; border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 16px 40px rgba(16, 24, 40, 0.22);
+}
+.notification-message { flex: 1; min-width: 0; }
+.notification-message strong { display: block; color: #1f2d3d; font-size: 15.5px; font-weight: 700; margin-bottom: 4px; }
+.notification-message p { margin: 0; color: #7b8794; font-size: 13.5px; line-height: 1.6; }
+.notification-actions { display: flex; align-items: center; gap: 8px; }
+.notification-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 15px; border-radius: 9px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff; font-size: 13.5px; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.notification-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(118, 75, 162, 0.4); }
+.notification-close {
+    width: 30px; height: 30px;
+    border: 1px solid #e6eaef; border-radius: 8px;
+    background: #f4f6f9; color: #7b8794;
+    font-size: 18px; line-height: 1; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease;
+}
+.notification-close:hover { background: #e74c3c; color: #ffffff; border-color: #e74c3c; }
 
-/* Animations */
-@keyframes fadeInDown  { from { opacity:0; transform:translateY(-30px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideInRight{ from { opacity:0; transform:translateX(100px); } to { opacity:1; transform:translateX(0); } }
-@keyframes slideInDown { from { opacity:0; transform:translateY(-50px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideOutRight{ from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(100px); } }
-@keyframes starGlow { 0%,100%{text-shadow:0 0 5px rgba(0,172,193,0.5);} 50%{text-shadow:0 0 20px rgba(0,172,193,0.8);} }
-@keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
-@keyframes bellRing { 0%,100%{transform:rotate(0deg);} 25%{transform:rotate(10deg);} 75%{transform:rotate(-10deg);} }
-@keyframes loadingBar { 0%{width:0;} 100%{width:100%;} }
+/* ===== Manual ===== */
+.user-manual {
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    padding: 24px 26px; margin-top: 0;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.manual-head { padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid #eef1f5; }
+.manual-head h3 { margin: 0; color: #1f2d3d; font-size: 20px; font-weight: 700; }
+.manual-head span { display: block; margin-top: 2px; color: #8794a2; font-size: 14px; }
+.manual-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.manual-item {
+    background: #f8fafc; border: 1px solid #eef1f5; border-radius: 12px;
+    padding: 20px 22px; color: #5b6b7c;
+}
+.manual-item h4 { margin: 0 0 14px 0; color: #1f2d3d; font-size: 16.5px; font-weight: 700; }
+.manual-item ol, .manual-item ul { margin: 0; padding-left: 20px; }
+.manual-item li { color: #5b6b7c; font-size: 15px; line-height: 1.9; padding-left: 4px; }
+.manual-item li::marker { color: #764ba2; font-weight: 700; }
 
-/* Responsive */
+/* ===== Status modal (JS toggles display:block) ===== */
+.modal {
+    display: none; position: fixed; z-index: 2000;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background: rgba(23, 20, 45, 0.55);
+    overflow-y: auto;
+}
+.modal-content {
+    background: #ffffff; border: 1px solid #e6eaef;
+    width: 90%; max-width: 540px; margin: 8vh auto;
+    padding: 0; border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(16, 24, 40, 0.35);
+    animation: slideInDown 0.3s ease;
+}
+@keyframes slideInDown { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: translateY(0); } }
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eef1f5;
+    border-radius: 16px 16px 0 0;
+    background: #ffffff;
+}
+.modal-header h3 { margin: 0; color: #1f2d3d; font-size: 19px; font-weight: 700; }
+.close {
+    width: 34px; height: 34px;
+    border: 1px solid #e6eaef; border-radius: 9px;
+    background: #f4f6f9; color: #7b8794;
+    font-size: 20px; font-weight: 700; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease;
+}
+.close:hover { background: #e74c3c; color: #ffffff; border-color: #e74c3c; transform: none; }
+
+.form-group { margin-bottom: 18px; padding: 0 24px; }
+.form-group:first-of-type { padding-top: 20px; }
+.form-group label { display: block; margin-bottom: 8px; color: #445565; font-size: 14.5px; font-weight: 600; }
+.form-group label strong { color: #5b4397; }
+.form-control {
+    width: 100%; padding: 11px 15px;
+    font-size: 15px; font-family: inherit; color: #1f2d3d;
+    background: #ffffff; border: 1.5px solid #dbe1e8; border-radius: 10px;
+    box-sizing: border-box; resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-control:focus { outline: none; border-color: #764ba2; box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.16); }
+
+.modal-footer {
+    display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;
+    padding: 18px 24px; border-top: 1px solid #eef1f5;
+}
+.modal-footer .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 22px; border-radius: 10px;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; border: 1.5px solid #dbe1e8; background: #ffffff; color: #5b6b7c;
+    transition: all 0.2s ease;
+}
+.btn-modal-ghost:hover { background: #f2f5f8; color: #1f2d3d; }
+.btn-modal-solid {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #ffffff !important; border-color: transparent !important;
+    box-shadow: 0 5px 14px rgba(118, 75, 162, 0.3);
+}
+.btn-modal-solid:hover { transform: translateY(-1px); box-shadow: 0 9px 20px rgba(118, 75, 162, 0.42); }
+
+@media (max-width: 1100px) {
+    .stat-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 768px) {
-    .manual-content { grid-template-columns: 1fr; }
-    .controller-title { font-size: 1.2em; }
-    .notification-float { max-width: 95%; left: 2.5%; right: auto; top: 10px; }
-    .notification-content { flex-wrap: wrap; }
-    .notification-actions { margin-left: 65px; margin-top: 10px; width: calc(100% - 65px); }
-    .notification-btn { flex: 1; text-align: center; }
-    .btn { width: 100%; justify-content: center; }
-}
-@media (max-width: 480px) {
-    .controller-title { font-size: 1em; }
+    .controller-welcome { padding: 24px 20px; }
+    .controller-title { font-size: 25px; }
+    .welcome-text p { font-size: 14.5px; }
+    .welcome-actions { width: 100%; }
+    .action-btn { flex: 1 1 45%; padding: 12px 16px; font-size: 14px; }
+    .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .manual-content { grid-template-columns: minmax(0, 1fr); }
+    .user-manual { padding: 20px 18px; }
+    .notification-float { top: 80px; right: 12px; left: 12px; max-width: none; }
 }
 </style>
 
@@ -407,5 +489,4 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkForNewBills, 30000);
 });
 </script>
-
 {% endblock %}

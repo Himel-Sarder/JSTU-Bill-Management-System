@@ -1,274 +1,1062 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}প্রোফাইল{% endblock %}
+
 {% block content %}
 <div class="container">
-    <div class="glass-card">
-        <div class="profile-header">
-            <div class="profile-picture-wrapper">
-                <div class="profile-picture">
-                    {% if user.profile.profile_picture %}
-                        <img src="{{ user.profile.profile_picture.url }}?v={{ user.profile.updated_at|date:'U' }}" alt="Profile Picture" id="profile-preview">
+
+    <!-- ── Identity banner ────────────────────────────────────── -->
+    <div class="profile-banner">
+        <div class="avatar-block">
+            <div class="avatar" id="avatar">
+                {% if profile_obj.has_picture %}
+                    <img src="{{ profile_obj.profile_picture.url }}?v={{ profile_obj.updated_at|date:'U' }}"
+                         alt="প্রোফাইল ছবি" id="avatar-img">
+                    <div class="avatar-initials" id="avatar-initials" hidden>{{ profile_obj.initials }}</div>
+                {% else %}
+                    <img src="" alt="প্রোফাইল ছবি" id="avatar-img" hidden>
+                    <div class="avatar-initials" id="avatar-initials">{{ profile_obj.initials }}</div>
+                {% endif %}
+                <div class="avatar-busy" id="avatar-busy" hidden><span class="spinner"></span></div>
+            </div>
+
+            <!-- The camera button is the only way to change the picture, and it
+                 saves as soon as a file is chosen. -->
+            <input type="file" id="picture-input" accept="image/jpeg,image/png,image/webp" hidden>
+            <button type="button" class="camera-btn" id="camera-btn"
+                    title="প্রোফাইল ছবি পরিবর্তন করুন" aria-label="প্রোফাইল ছবি পরিবর্তন করুন">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+            </button>
+
+            {% if profile_obj.has_picture %}
+                <button type="button" class="remove-btn" id="remove-btn"
+                        title="ছবি মুছে ফেলুন" aria-label="ছবি মুছে ফেলুন">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            {% else %}
+                <button type="button" class="remove-btn" id="remove-btn" hidden></button>
+            {% endif %}
+        </div>
+
+        <div class="identity">
+            <h1 class="display-name">{{ profile_obj.display_name }}</h1>
+            <div class="handle">@{{ user.username }}</div>
+            <div class="picture-hint" id="picture-hint">ছবি পরিবর্তন করতে ক্যামেরা আইকনে চাপুন</div>
+        </div>
+
+        <!-- Read-only institutional details. These are set by the admin, which
+             is why they sit here rather than in the editable form below. -->
+        <div class="banner-info">
+            <div class="info-row">
+                <span class="info-label">পদবী</span>
+                <span class="info-value">{{ profile_obj.user_type|default:"নির্ধারিত হয়নি" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">বিভাগ</span>
+                <span class="info-value">{{ profile_obj.department|default:"নির্ধারিত হয়নি" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">বিশ্ববিদ্যালয়</span>
+                <span class="info-value">জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">যোগদানের তারিখ</span>
+                <span class="info-value">
+                    {% if profile_obj.joining_date %}
+                        {{ profile_obj.joining_date|date:"d M Y" }}
                     {% else %}
-                        <img src="{% static 'images/default_profile.png' %}" alt="Profile Picture" id="profile-preview">
+                        নির্ধারিত হয়নি
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline feedback for picture actions -->
+    <div class="inline-alert" id="picture-alert" hidden></div>
+
+    <div class="profile-grid">
+
+        <!-- ── Personal details ───────────────────────────────── -->
+        <section class="card {% if active_panel == 'profile' and profile_form.errors %}card-error{% endif %}">
+            <header class="card-head">
+                <h2>ব্যক্তিগত তথ্য</h2>
+                <p>আপনার নাম ও যোগাযোগের তথ্য</p>
+            </header>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="profile_update" value="1">
+
+                {% if profile_form.non_field_errors %}
+                    <div class="form-alert">
+                        {% for error in profile_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="{{ profile_form.first_name.id_for_label }}">
+                            নামের প্রথম অংশ <span class="req">*</span>
+                        </label>
+                        {{ profile_form.first_name }}
+                        {% for error in profile_form.first_name.errors %}
+                            <span class="field-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="field">
+                        <label for="{{ profile_form.last_name.id_for_label }}">নামের শেষ অংশ</label>
+                        {{ profile_form.last_name }}
+                        {% for error in profile_form.last_name.errors %}
+                            <span class="field-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="{{ profile_form.email.id_for_label }}">
+                        ইমেইল <span class="req">*</span>
+                    </label>
+                    {{ profile_form.email }}
+                    {% for error in profile_form.email.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="field">
+                    <label for="{{ profile_form.phone_number.id_for_label }}">ফোন নম্বর</label>
+                    {{ profile_form.phone_number }}
+                    {% for error in profile_form.phone_number.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-primary">পরিবর্তন সংরক্ষণ করুন</button>
+            </form>
+        </section>
+
+        <!-- ── Password ───────────────────────────────────────── -->
+        <section class="card {% if active_panel == 'password' and password_form.errors %}card-error{% endif %}">
+            <header class="card-head">
+                <h2>পাসওয়ার্ড পরিবর্তন</h2>
+                <p>নিরাপত্তার জন্য নিয়মিত পাসওয়ার্ড পরিবর্তন করুন</p>
+            </header>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="password_change" value="1">
+
+                {% if password_form.non_field_errors %}
+                    <div class="form-alert">
+                        {% for error in password_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="field">
+                    <label for="{{ password_form.old_password.id_for_label }}">পুরানো পাসওয়ার্ড</label>
+                    {{ password_form.old_password }}
+                    {% for error in password_form.old_password.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="field">
+                    <label for="{{ password_form.new_password1.id_for_label }}">নতুন পাসওয়ার্ড</label>
+                    {{ password_form.new_password1 }}
+                    {% for error in password_form.new_password1.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                    {% if password_form.new_password1.help_text %}
+                        <small class="field-help">{{ password_form.new_password1.help_text|safe }}</small>
                     {% endif %}
                 </div>
-                <label for="id_profile_picture_trigger" class="camera-btn" title="প্রোফাইল ছবি পরিবর্তন করুন">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                </label>
-            </div>
-            <h2 style="color: white; text-align: center; margin-top: 12px;">প্রোফাইল</h2>
-        </div>
 
-        <div class="profile-content">
-            <!-- Profile Update Form -->
-            <div class="form-section">
-                <h3 style="color: white; margin-bottom: 20px;">প্রোফাইল আপডেট</h3>
-                <form method="post" enctype="multipart/form-data" class="profile-form" id="profile-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="profile_update" value="1">
-                    
-                    <!-- Hidden file input for camera button -->
-                    <input type="file" name="profile_picture" id="id_profile_picture_trigger"
-                           accept="image/jpeg,image/png,image/jpg"
-                           style="display:none;">
+                <div class="field">
+                    <label for="{{ password_form.new_password2.id_for_label }}">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                    {{ password_form.new_password2 }}
+                    {% for error in password_form.new_password2.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>নাম</label>
-                            {{ profile_form.first_name }}
-                            {% if profile_form.first_name.errors %}
-                                <span class="field-error">{{ profile_form.first_name.errors.0 }}</span>
-                            {% endif %}
+                <button type="submit" class="btn btn-primary">পাসওয়ার্ড পরিবর্তন করুন</button>
+            </form>
+        </section>
+
+        <!-- ── Activity charts (fills the third column) ───────── -->
+        <section class="card card-charts">
+        {% if controller_charts %}
+            <!-- The controller reviews bills rather than creating them, so this
+                 column shows their decisions for the month instead. -->
+            <div class="chart-block">
+                <header class="card-head">
+                    <h2>অনুমোদন ও বাতিল</h2>
+                    <p>{{ controller_charts.month_label }} মাসে সিদ্ধান্ত: {{ controller_charts.decided_display }} টি</p>
+                </header>
+
+                {% if controller_charts.decided %}
+                    <div class="pie-wrap">
+                        <div class="pie"
+                             style="background: conic-gradient(#22c55e 0 {{ controller_charts.accepted_pct }}%, #ef4444 {{ controller_charts.accepted_pct }}% 100%);">
+                            <div class="pie-hole">
+                                <span class="pie-total">{{ controller_charts.decided_display }}</span>
+                                <span class="pie-caption">মোট</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>ইমেইল</label>
-                            {{ profile_form.email }}
-                            {% if profile_form.email.errors %}
-                                <span class="field-error">{{ profile_form.email.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="form-group">
-                            <label>ফোন নম্বর</label>
-                            {{ profile_form.phone_number }}
-                            {% if profile_form.phone_number.errors %}
-                                <span class="field-error">{{ profile_form.phone_number.errors.0 }}</span>
-                            {% endif %}
-                        </div>
+                        <ul class="pie-legend">
+                            <li>
+                                <span class="dot dot-accept"></span>
+                                <span class="legend-name">অনুমোদিত</span>
+                                <span class="legend-value">{{ controller_charts.accepted_display }} ({{ controller_charts.accepted_pct_display }}%)</span>
+                            </li>
+                            <li>
+                                <span class="dot dot-reject"></span>
+                                <span class="legend-name">বাতিল</span>
+                                <span class="legend-value">{{ controller_charts.rejected_display }} ({{ controller_charts.rejected_pct_display }}%)</span>
+                            </li>
+                        </ul>
                     </div>
-                    <button type="submit" class="btn btn-primary">আপডেট করুন</button>
-                </form>
+                {% else %}
+                    <div class="chart-empty">এই মাসে কোনো সিদ্ধান্ত নেওয়া হয়নি।</div>
+                {% endif %}
             </div>
 
-            <!-- Password Change Form -->
-            <div class="form-section">
-                <h3 style="color: white; margin-bottom: 20px;">পাসওয়ার্ড পরিবর্তন</h3>
-                <form method="post" class="password-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="password_change" value="1">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>পুরানো পাসওয়ার্ড</label>
-                            {{ password_form.old_password }}
-                            {% if password_form.old_password.errors %}
-                                <span class="field-error">{{ password_form.old_password.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="form-group">
-                            <label>নতুন পাসওয়ার্ড</label>
-                            {{ password_form.new_password1 }}
-                            {% if password_form.new_password1.errors %}
-                                <span class="field-error">{{ password_form.new_password1.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="form-group">
-                            <label>নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
-                            {{ password_form.new_password2 }}
-                            {% if password_form.new_password2.errors %}
-                                <span class="field-error">{{ password_form.new_password2.errors.0 }}</span>
-                            {% endif %}
-                        </div>
+            <div class="chart-divider"></div>
+
+            <div class="chart-block">
+                <header class="card-head">
+                    <h2>শীর্ষ ৫ বিভাগ</h2>
+                    <p>{{ controller_charts.month_label }} মাসে অনুমোদিত বিল</p>
+                </header>
+
+                {% if controller_charts.departments %}
+                    <div class="chart chart-dept">
+                        {% for point in controller_charts.departments %}
+                            <div class="bar-col" title="{{ point.title }}">
+                                <div class="bar-value">{{ point.display }}</div>
+                                <div class="bar-track">
+                                    <div class="bar bar-accent" style="height: {{ point.height }}%;"></div>
+                                </div>
+                                <div class="bar-label">{{ point.label }}</div>
+                            </div>
+                        {% endfor %}
                     </div>
-                    <button type="submit" class="btn btn-primary">পাসওয়ার্ড পরিবর্তন</button>
-                </form>
+                {% else %}
+                    <div class="chart-empty">এই মাসে কোনো বিল অনুমোদিত হয়নি।</div>
+                {% endif %}
             </div>
-        </div>
+        {% elif chairman_charts %}
+            <!-- A chairman forwards bills rather than creating them: this shows
+                 what the controller decided, and how much work is arriving. -->
+            <div class="chart-block">
+                <header class="card-head">
+                    <h2>কন্ট্রোলারের সিদ্ধান্ত</h2>
+                    {% comment %} <p>শেষ ৫ মাসে: {{ chairman_charts.decided_display }} টি</p> {% endcomment %}
+                </header>
+
+                {% if chairman_charts.decided %}
+                    <div class="pie-wrap">
+                        <div class="pie"
+                             style="background: conic-gradient(#22c55e 0 {{ chairman_charts.accepted_pct }}%, #ef4444 {{ chairman_charts.accepted_pct }}% 100%);">
+                            <div class="pie-hole">
+                                <span class="pie-total">{{ chairman_charts.decided_display }}</span>
+                                <span class="pie-caption">মোট</span>
+                            </div>
+                        </div>
+                        <ul class="pie-legend">
+                            <li>
+                                <span class="dot dot-accept"></span>
+                                <span class="legend-name">অনুমোদিত</span>
+                                <span class="legend-value">{{ chairman_charts.accepted_display }} ({{ chairman_charts.accepted_pct_display }}%)</span>
+                            </li>
+                            <li>
+                                <span class="dot dot-reject"></span>
+                                <span class="legend-name">বাতিল</span>
+                                <span class="legend-value">{{ chairman_charts.rejected_display }} ({{ chairman_charts.rejected_pct_display }}%)</span>
+                            </li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="chart-empty">কন্ট্রোলার এখনো কোনো সিদ্ধান্ত দেননি।</div>
+                {% endif %}
+            </div>
+
+            <div class="chart-divider"></div>
+
+            <div class="chart-block">
+                <header class="card-head">
+                    <h2>প্রাপ্ত বিল</h2>
+                    {% comment %} <p>শেষ ৫ মাসে ব্যবহারকারীদের পাঠানো বিল — মোট {{ chairman_charts.received_total }} টি</p> {% endcomment %}
+                </header>
+                <div class="chart chart-received">
+                    {% for point in chairman_charts.received %}
+                        <div class="bar-col">
+                            <div class="bar-value">{{ point.display }}</div>
+                            <div class="bar-track">
+                                <div class="bar bar-accent" style="height: {{ point.height }}%;"></div>
+                            </div>
+                            <div class="bar-label">{{ point.label }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        {% else %}
+            <div class="chart-block">
+                <header class="card-head">
+                    <h2>মাসভিত্তিক বিল সংখ্যা</h2>
+                    {% comment %} <p>শেষ ৫ মাসে তৈরি করা বিল — মোট {{ bill_count_total }} টি</p> {% endcomment %}
+                </header>
+                <div class="chart chart-count">
+                    {% for point in bill_count_chart %}
+                        <div class="bar-col">
+                            <div class="bar-value">{{ point.display }}</div>
+                            <div class="bar-track">
+                                <div class="bar bar-primary" style="height: {{ point.height }}%;"></div>
+                            </div>
+                            <div class="bar-label">{{ point.label }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="chart-divider"></div>
+
+            <div class="chart-block">
+                <header class="card-head">
+                    <h2>মাসভিত্তিক মোট টাকা</h2>
+                    {% comment %} <p>শেষ ৫ মাসের বিলের পরিমাণ — মোট ৳ {{ bill_amount_total }}</p> {% endcomment %}
+                </header>
+                <div class="chart chart-amount">
+                    {% for point in bill_amount_chart %}
+                        <div class="bar-col">
+                            <div class="bar-value">{{ point.display }}</div>
+                            <div class="bar-track">
+                                <div class="bar bar-accent" style="height: {{ point.height }}%;"></div>
+                            </div>
+                            <div class="bar-label">{{ point.label }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        </section>
+
+        <!-- ── Signatures ─────────────────────────────────────── -->
+
+        {% comment %} <section class="card card-wide">
+            <header class="card-head">
+                <h2>স্বাক্ষর</h2>
+                <p>বিলে ব্যবহৃত স্বাক্ষর</p>
+            </header>
+
+            <div class="signature-grid">
+                {% for slot in signature_slots %}
+                    <div class="signature-card">
+                        <div class="signature-label">{{ slot.label }}</div>
+                        <div class="signature-preview">
+                            {% if slot.file %}
+                                <img src="{{ slot.file.url }}?v={{ profile_obj.updated_at|date:'U' }}"
+                                     alt="{{ slot.label }}">
+                            {% else %}
+                                <span class="signature-empty">কোনো স্বাক্ষর নেই</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url slot.upload_url %}" class="btn btn-ghost btn-block">
+                            {% if slot.file %}পরিবর্তন করুন{% else %}আপলোড করুন{% endif %}
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </section> {% endcomment %}
+
     </div>
 </div>
 
 <style>
-.profile-header {
-    text-align: center;
-    margin-bottom: 30px;
+/* ── Palette ────────────────────────────────────────────────
+   Built around #764ba2. One place to change the whole page. */
+:root {
+    --brand:        #764ba2;
+    --brand-soft:   #764ba280;   /* 50% — panels and the banner */
+    --brand-faint:  #764ba226;    /* 15% — card backgrounds */
+    --brand-line:   #764ba2b3;    /* 70% — borders */
+    --brand-deep:   #4a2d6b;      /* darker end of gradients */
+    --brand-light:  #a273d6;      /* focus rings, bar tops */
 }
 
-.profile-picture-wrapper {
+/* ── Layout ─────────────────────────────────────────────── */
+.profile-banner {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    background: var(--brand-soft);
+    border: 1px solid var(--brand-line);
+    border-radius: 18px;
+    padding: 26px 30px;
+    margin-bottom: 22px;
+    backdrop-filter: blur(12px);
+}
+
+.avatar-block {
     position: relative;
-    width: 150px;
-    margin: 0 auto 10px;
-    display: inline-block;
+    width: 118px;
+    height: 118px;
+    flex-shrink: 0;
 }
 
-.profile-picture {
-    width: 150px;
-    height: 150px;
+.avatar {
+    width: 118px;
+    height: 118px;
     border-radius: 50%;
     overflow: hidden;
-    border: 4px solid rgba(15, 32, 190, 0.54);
-    background: rgba(0,0,0,0.2);
+    border: 3px solid var(--brand-line);
+    background: rgba(0,0,0,0.25);
+    position: relative;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.30);
 }
 
-.profile-picture img {
+.avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.camera-btn {
+.avatar img[hidden] { display: none; }
+
+/* Pure-CSS fallback avatar: no image file that could 404 */
+.avatar-initials {
     position: absolute;
-    bottom: 6px;
-    right: 6px;
-    width: 38px;
-    height: 38px;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.92);
+    background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+    user-select: none;
+}
+
+.avatar-initials[hidden] { display: none; }
+
+.avatar-busy {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-busy[hidden] { display: none; }
+
+.spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid rgba(255, 255, 255, 0.46);
+    border-top-color: #fff;
     border-radius: 50%;
-    background: linear-gradient(45deg, #4144e3, #1f1663);
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.camera-btn, .remove-btn {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    z-index: 10;
+    border: 2px solid rgba(255,255,255,0.9);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    padding: 0;
 }
 
-.camera-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+.camera-btn {
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--brand), var(--brand-deep));
 }
 
-.profile-content {
+.remove-btn {
+    bottom: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #E74C3C, #a93226);
+}
+
+.remove-btn[hidden] { display: none; }
+
+.camera-btn:hover, .remove-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 5px 14px rgba(0,0,0,0.5);
+}
+
+.camera-btn:disabled, .remove-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+}
+
+.identity { min-width: 0; }
+
+.display-name {
+    color: #fff;
+    font-size: 1.65rem;
+    margin: 0 0 4px 0;
+    word-break: break-word;
+}
+
+.handle {
+    color: rgba(255,255,255,0.60);
+    font-size: 0.92rem;
+    margin-bottom: 10px;
+}
+
+.picture-hint {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.8rem;
+}
+
+/* ── Institutional details in the banner ────────────────── */
+.banner-info {
+    margin-left: auto;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px 18px;
+    align-items: baseline;
+    background: rgba(0,0,0,0.16);
+    border: 1px solid var(--brand-line);
+    border-radius: 14px;
+    padding: 18px 22px;
+    min-width: 300px;
+    max-width: 430px;
+}
+
+.info-row {
+    display: contents;
+}
+
+.info-label {
+    color: rgba(255,255,255,0.58);
+    font-size: 0.79rem;
+    white-space: nowrap;
+}
+
+.info-value {
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+    gap: 22px;
+    align-items: start;
+}
+
+.card {
+    background: var(--brand-faint);
+    border: 1px solid var(--brand-line);
+    border-radius: 16px;
+    padding: 26px;
+    backdrop-filter: blur(12px);
+}
+
+.card-wide { grid-column: 1 / -1; }
+
+.card-error {
+    border-color: rgba(255,107,107,0.55);
+    box-shadow: 0 0 0 3px rgba(255,107,107,0.12);
+}
+
+.card-head { margin-bottom: 22px; }
+
+.card-head h2 {
+    color: #fff;
+    font-size: 1.12rem;
+    margin: 0 0 4px 0;
+}
+
+.card-head p {
+    color: rgba(255,255,255,0.50);
+    font-size: 0.82rem;
+    margin: 0;
+}
+
+/* ── Fields ─────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; margin-bottom: 18px; }
+
+.field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    
-
+    gap: 16px;
 }
 
-.form-section {
-    background: rgba(255,255,255,0.1);
-    padding: 25px;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
+.field label {
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 7px;
+    font-size: 0.86rem;
+    font-weight: 500;
 }
 
-.form-grid {
+.req { color: #ff9f9f; }
+
+.card input[type="text"],
+.card input[type="email"],
+.card input[type="password"],
+.card input[type="tel"] {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.20);
+    border-radius: 10px;
+    padding: 11px 13px;
+    color: #fff;
+    font-size: 0.92rem;
+    width: 100%;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.card input:focus {
+    outline: none;
+    border-color: var(--brand-light);
+    background: rgba(0,0,0,0.32);
+}
+
+.card input::placeholder { color: rgba(255,255,255,0.35); }
+
+.field-error { color: #ff8080; font-size: 0.79rem; margin-top: 5px; }
+
+.field-help {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.76rem;
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+.field-help ul { margin: 4px 0 0 16px; padding: 0; }
+
+.form-alert, .inline-alert {
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.86rem;
+    color: #fff;
+    margin-bottom: 18px;
+}
+
+.form-alert {
+    background: rgba(244,67,54,0.16);
+    border-left: 3px solid #F44336;
+}
+
+.inline-alert {
+    background: rgba(46,204,113,0.16);
+    border-left: 3px solid #2ECC71;
+}
+
+.inline-alert.is-error {
+    background: rgba(244,67,54,0.16);
+    border-left-color: #F44336;
+}
+
+.inline-alert[hidden] { display: none; }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn {
+    border: none;
+    border-radius: 26px;
+    padding: 12px 28px;
+    font-size: 0.94rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+    color: #fff;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.btn-ghost {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid var(--brand-line);
+    color: #fff;
+    padding: 9px 20px;
+    font-size: 0.86rem;
+}
+
+.btn-block { display: block; margin-top: 12px; }
+
+.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.32); }
+
+/* ── Signatures ─────────────────────────────────────────── */
+/* auto-fill (not auto-fit) keeps the cards at a sensible size instead of
+   stretching two of them across the whole width of the section. */
+.signature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 280px));
+    gap: 18px;
+    justify-content: start;
+}
+
+.signature-card {
+    background: linear-gradient(160deg, rgba(118, 75, 162, 0.30), rgba(74, 45, 107, 0.42));
+    border: 1px solid var(--brand-line);
+    border-radius: 12px;
+    padding: 16px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.signature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.signature-label {
+    color: #fff;
+    font-size: 0.86rem;
+    font-weight: 600;
+    margin-bottom: 11px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.signature-preview {
+    background: #ffffff;
+    border-radius: 9px;
+    height: 92px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 6px;
+}
+
+.signature-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.signature-empty { color: #999; font-size: 0.78rem; }
+
+@media (max-width: 980px) {
+    .profile-banner { flex-wrap: wrap; }
+    .banner-info { margin-left: 0; width: 100%; max-width: none; }
+}
+
+@media (max-width: 720px) {
+    .profile-banner { flex-direction: column; text-align: center; gap: 18px; }
+    .banner-info { text-align: left; min-width: 0; }
+    .field-row { grid-template-columns: 1fr; }
+    .display-name { font-size: 1.35rem; }
+}
+
+/* ── Activity charts ────────────────────────────────────── */
+.card-charts {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.form-group {
+.chart-block { display: flex; flex-direction: column; }
+
+.chart-block .card-head { margin-bottom: 16px; }
+
+.chart-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    height: 132px;
+    /* White plotting area so the bars read clearly against it */
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 14px 10px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.bar-col {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    height: 100%;
+    min-width: 0;
 }
 
-.form-group label {
-    color: white;
-    margin-bottom: 8px;
-    font-weight: 500;
+.bar-value {
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
 }
 
-.field-error {
-    color: #ff6b6b;
-    font-size: 0.82rem;
-    margin-top: 4px;
-}
-
-.form-group input {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 8px;
-    padding: 10px 12px;
-    color: white;
-    font-size: 14px;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: #4144e3;
-    background: rgba(255,255,255,0.2);
-}
-
-.form-group input::placeholder {
-    color: rgba(255,255,255,0.6);
-}
-
-/* Hide the default file input */
-#id_profile_picture {
-    display: none !important;
-}
-
-.btn-primary {
-    background: linear-gradient(45deg, #4144e3be, #1f1663ff);
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 15px;
+/* The track owns the height so a 0-value bar still lines up on the baseline */
+.bar-track {
+    flex: 1;
     width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.16);
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+.bar {
+    width: 70%;
+    max-width: 32px;
+    min-height: 4px;
+    border-radius: 7px 7px 2px 2px;
+    transition: height 0.45s ease, filter 0.2s ease;
+    /* Subtle depth against the white panel */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-@media (max-width: 768px) {
-    .profile-content {
-        grid-template-columns: 1fr;
-    }
+.bar-col:hover .bar { filter: brightness(1.12); }
+
+/* Two shades of green so the count and amount charts stay distinguishable */
+.bar-primary { background: linear-gradient(180deg, #e76e6e 0%, #c52222 55%, #801515 100%); }
+.bar-accent  { background: linear-gradient(180deg, #a7f3d0 0%, #34d399 55%, #0f766e 100%); }
+
+.bar-label {
+    color: #475569;
+    font-size: 0.7rem;
+    margin-top: 6px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+@media (max-width: 720px) {
+    .signature-grid { grid-template-columns: 1fr; }
+    .chart { height: 116px; }
+    .bar-label { font-size: 0.64rem; }
+}
+
+/* ── Controller: donut + legend ─────────────────────────── */
+.pie-wrap {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px 14px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+/* conic-gradient draws the slices; the hole makes it a donut */
+.pie {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.pie-hole {
+    position: absolute;
+    inset: 26%;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+}
+
+.pie-total { color: #1e293b; font-size: 1.05rem; font-weight: 700; }
+
+.pie-caption { color: #64748b; font-size: 0.66rem; }
+
+.pie-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; }
+
+.pie-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 0.79rem;
+}
+
+.dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.dot-accept { background: #22c55e; }
+.dot-reject { background: #ef4444; }
+
+.legend-name { color: #475569; }
+
+.legend-value { margin-left: auto; color: #1e293b; font-weight: 600; white-space: nowrap; }
+
+.chart-empty {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 28px 14px;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.82rem;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
+}
+
+/* Department codes can be longer than a month name */
+.chart-dept .bar-label { font-size: 0.66rem; }
+
+@media (max-width: 400px) {
+    .pie-wrap { flex-direction: column; }
+    .legend-value { margin-left: 8px; }
 }
 </style>
 
 <script>
 (function () {
-    const trigger = document.getElementById('id_profile_picture_trigger');
-    const preview = document.getElementById('profile-preview');
+    const input    = document.getElementById('picture-input');
+    const cameraBtn= document.getElementById('camera-btn');
+    const removeBtn= document.getElementById('remove-btn');
+    const img      = document.getElementById('avatar-img');
+    const initials = document.getElementById('avatar-initials');
+    const busy     = document.getElementById('avatar-busy');
+    const alertBox = document.getElementById('picture-alert');
+    const hint     = document.getElementById('picture-hint');
+    if (!input || !cameraBtn) return;
 
-    trigger.addEventListener('change', function () {
+    const ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const MAX_MB = 2;
+
+    function csrf() {
+        const el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+    }
+
+    function say(message, isError) {
+        alertBox.textContent = message;
+        alertBox.classList.toggle('is-error', !!isError);
+        alertBox.hidden = false;
+        clearTimeout(say._t);
+        say._t = setTimeout(() => { alertBox.hidden = true; }, 4000);
+    }
+
+    function working(on) {
+        busy.hidden = !on;
+        cameraBtn.disabled = on;
+        removeBtn.disabled = on;
+    }
+
+    cameraBtn.addEventListener('click', () => input.click());
+
+    // The picture uploads as soon as it is chosen. It used to wait for the
+    // details form to be submitted, so picking an image and then clicking a
+    // navbar link threw it away.
+    input.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
-        
-        // Validate file type
-        if (!file.type.match('image.*')) {
-            alert('শুধুমাত্র ছবি ফাইল আপলোড করুন (JPEG, PNG)');
+
+        if (ALLOWED.indexOf(file.type) === -1) {
+            say('শুধুমাত্র JPEG, PNG অথবা WebP ছবি আপলোড করুন।', true);
+            this.value = '';
             return;
         }
-        
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            alert('ছবির সাইজ ২MB এর কম হতে হবে');
+        if (file.size > MAX_MB * 1024 * 1024) {
+            say('ছবির সাইজ ' + MAX_MB + 'MB এর কম হতে হবে।', true);
+            this.value = '';
             return;
         }
-        
-        // Preview the image
+
+        // Show it straight away, then confirm from the server response
         const reader = new FileReader();
-        reader.onload = function (e) { 
-            preview.src = e.target.result; 
+        reader.onload = e => {
+            img.src = e.target.result;
+            img.hidden = false;
+            if (initials) initials.hidden = true;
         };
         reader.readAsDataURL(file);
-        
-        // Submit the form
-        this.form.submit();
+
+        const data = new FormData();
+        data.append('profile_picture', file);
+
+        working(true);
+        fetch("{% url 'profile_picture_upload' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf() },
+            body: data,
+        })
+        .then(r => r.json().then(j => ({ ok: r.ok, body: j })))
+        .then(({ ok, body }) => {
+            if (!ok || !body.ok) throw new Error(body.error || 'আপলোড ব্যর্থ হয়েছে।');
+            img.src = body.url + '?v=' + Date.now();
+            img.hidden = false;
+            if (initials) initials.hidden = true;
+            removeBtn.hidden = false;
+            if (hint) hint.textContent = 'ছবি সংরক্ষিত হয়েছে';
+            say(body.message);
+        })
+        .catch(err => {
+            say(err.message, true);
+            location.reload();   // put the avatar back to whatever is stored
+        })
+        .finally(() => { working(false); input.value = ''; });
+    });
+
+    removeBtn.addEventListener('click', function () {
+        if (!confirm('প্রোফাইল ছবি মুছে ফেলতে চান?')) return;
+        working(true);
+        fetch("{% url 'profile_picture_delete' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf() },
+        })
+        .then(r => r.json().then(j => ({ ok: r.ok, body: j })))
+        .then(({ ok, body }) => {
+            if (!ok || !body.ok) throw new Error(body.error || 'মুছে ফেলা যায়নি।');
+            img.hidden = true;
+            img.src = '';
+            if (initials) {
+                initials.textContent = body.initials;
+                initials.hidden = false;
+            }
+            removeBtn.hidden = true;
+            if (hint) hint.textContent = 'ছবি পরিবর্তন করতে ক্যামেরা আইকনে চাপুন';
+            say(body.message);
+        })
+        .catch(err => say(err.message, true))
+        .finally(() => working(false));
     });
 })();
 </script>

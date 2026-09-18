@@ -1,6 +1,8 @@
 FROM python:3.11
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 RUN apt-get update --allow-releaseinfo-change \
  && apt-get install -y --no-install-recommends \
@@ -23,6 +25,7 @@ RUN apt-get update --allow-releaseinfo-change \
     ca-certificates \
     fonts-dejavu-core \
     fonts-freefont-ttf \
+    netcat-openbsd \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /core
@@ -40,6 +43,8 @@ RUN mkdir -p /usr/local/share/fonts/custom \
 RUN ls -lah /core/static/fonts/ && fc-list | grep -i kalpurush || true
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+
+EXPOSE 8000
 
 CMD ["/entrypoint.sh"]

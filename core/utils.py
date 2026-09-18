@@ -241,72 +241,93 @@ def render_bills_report_pdf(context):
         logger.error(f"Error in render_bills_report_pdf: {e}")
         return None
 
-def get_chairman_signature_for_bill(bill):
-    """Get the appropriate chairman signature as base64 - checks both remarks AND stored chairman info"""
-    logger.info(f"=== Getting signature for bill {bill.bill_number} ===")
-    logger.info(f"Bill remarks: {bill.remarks}")
-    logger.info(f"Chairman signature added flag: {bill.chairman_signature_added}")
-    
-    # First try to get chairman info from stored remarks (if available)
-    chairman_username = None
-    
-    # Check remarks for chairman info
-    if bill.remarks:
-        if 'JSTUChairman1' in bill.remarks or '১ম বর্ষ' in bill.remarks:
-            chairman_username = 'JSTUChairman1'
-        elif 'JSTUChairman2' in bill.remarks or '২য় বর্ষ' in bill.remarks:
-            chairman_username = 'JSTUChairman2'
-        elif 'JSTUChairman3' in bill.remarks or '৩য় বর্ষ' in bill.remarks:
-            chairman_username = 'JSTUChairman3'
-        elif 'JSTUChairman4' in bill.remarks or '৪র্থ বর্ষ' in bill.remarks:
-            chairman_username = 'JSTUChairman4'
-    
-    # Also check if the bill has a stored chairman_username (you may want to add this field to Bill model)
-    # For now, if we can't determine from remarks, try to find from bill's approval history
-    if not chairman_username and bill.approved_by:
-        # Check if approved_by is one of the chairmen
-        if bill.approved_by.username == 'JSTUChairman1':
-            chairman_username = 'JSTUChairman1'
-        elif bill.approved_by.username == 'JSTUChairman2':
-            chairman_username = 'JSTUChairman2'
-        elif bill.approved_by.username == 'JSTUChairman3':
-            chairman_username = 'JSTUChairman3'
-        elif bill.approved_by.username == 'JSTUChairman4':
-            chairman_username = 'JSTUChairman4'
-    
-    if not chairman_username:
-        logger.info(f"No chairman username found for bill {bill.bill_number}")
-        return None
-    
+def render_accepted_summary_pdf(context):
+    """Render the consolidated accepted-bills report (landscape A4).
+
+    Reuses the same Bangla font setup as the other reports; the layout lives in
+    accepted_bills_report_pdf.html.
+    """
     try:
-        chairman = User.objects.get(username=chairman_username)
-        
-        # Get signature field
-        signature_field = None
-        if chairman_username == 'JSTUChairman1':
-            signature_field = chairman.profile.signature_chairman1
-        elif chairman_username == 'JSTUChairman2':
-            signature_field = chairman.profile.signature_chairman2
-        elif chairman_username == 'JSTUChairman3':
-            signature_field = chairman.profile.signature_chairman3
-        elif chairman_username == 'JSTUChairman4':
-            signature_field = chairman.profile.signature_chairman4
-        
-        if signature_field:
-            data_url = field_to_base64(signature_field)
-            if data_url:
-                logger.info(f"Signature converted to base64 for {chairman_username}, length: {len(data_url)}")
-                return data_url
-            else:
-                logger.warning(f"Could not read signature file for {chairman_username}")
-                return None
-        else:
-            logger.warning(f"No signature file for {chairman_username}")
-            return None
-            
+        template = get_template('core/accepted_bills_report_pdf.html')
+        html_content = template.render(context)
+
+        font_config, font_css = get_bangla_font_config()
+
+        pdf_css = CSS(string=f"""
+            {font_css}
+            body {{
+                font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', 'Arial Unicode MS', sans-serif;
+                line-height: 1.35;
+                color: #000;
+                margin: 0;
+                padding: 0;
+            }}
+            .bangla-text {{
+                font-family: 'BanglaFont', 'SolaimanLipi', 'Kalpurush', 'Arial Unicode MS', sans-serif;
+            }}
+        """, font_config=font_config)
+
+        html = HTML(string=html_content, base_url=settings.WEASYPRINT_BASEURL)
+        pdf_file = html.write_pdf(stylesheets=[pdf_css], font_config=font_config)
+
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="accepted-bills-summary.pdf"'
+        return response
+
     except Exception as e:
-        logger.error(f"Error getting signature: {e}")
+        logger.error(f"Error in render_accepted_summary_pdf: {e}")
+        return HttpResponse('PDF তৈরি করা যায়নি।', status=500)
+
+
+def get_chairman_signature_for_bill(bill):
+    """The signature of the chairman who owns this bill, as a base64 data URL.
+
+    Resolution order:
+      1. whoever actually approved the bill, if they are a chairman
+      2. otherwise the chairman for the bill's academic year AND department
+
+    The previous version parsed a hardcoded username (JSTUChairman1..4) out of
+    bill.remarks. That could only ever name four people university-wide, and
+    with several departments it would hand one department's signature to
+    another department's bill. Year plus department is now the key.
+    """
+    logger.info(f"=== Getting signature for bill {bill.bill_number} ===")
+
+    chairman = None
+
+    # 1. The approver, when they are a chairman
+    approver = bill.approved_by
+    if approver is not None:
+        approver_profile = getattr(approver, 'profile', None)
+        if approver_profile is not None and approver_profile.user_type == 'চেয়ারম্যান':
+            chairman = approver
+
+    # 2. Fall back to the chairman for this bill's year and department
+    if chairman is None:
+        chairman = bill.chairman
+
+    if chairman is None:
+        logger.info(f"No chairman resolved for bill {bill.bill_number}")
         return None
+
+    profile = getattr(chairman, 'profile', None)
+    if profile is None:
+        logger.warning(f"Chairman {chairman.username} has no profile")
+        return None
+
+    signature_field = profile.active_chairman_signature
+    if not signature_field:
+        logger.warning(f"No signature file for chairman {chairman.username}")
+        return None
+
+    data_url = field_to_base64(signature_field)
+    if not data_url:
+        logger.warning(f"Could not read signature file for {chairman.username}")
+        return None
+
+    logger.info(f"Signature resolved for {chairman.username}, length: {len(data_url)}")
+    return data_url
+
 
 def generate_bill_pdf_chairman(bill, inline=False):
     """Generate PDF for chairman with signature"""

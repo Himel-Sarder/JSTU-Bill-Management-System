@@ -4,8 +4,9 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.db.models import Q, Sum, Count, Case, When, IntegerField
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -14,11 +15,13 @@ from django.shortcuts import reverse
 import json
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
-from .models import SliderImage, Bill, Task, Profile, ActivityLog, SystemSetting, WorkType, Benefit
-from .forms import CustomUserCreationForm, ProfileUpdateForm, CustomPasswordChangeForm, BillForm, BillStatusForm
+from .models import (SliderImage, Bill, Task, Profile, ActivityLog, SystemSetting,
+                     WorkType, Benefit, ChairmanDocument, Department, TaxSetting)
+from .forms import CustomUserCreationForm, ProfileUpdateForm, CustomPasswordChangeForm, BillForm, BillStatusForm, ChairmanDocumentForm
 from .utils import (
     generate_bill_pdf, generate_bill_pdf_download, generate_bill_pdf_view, generate_bill_pdf_chairman,
-    render_bills_report_pdf, convert_to_bangla_digits, format_bangla_number,
+    render_bills_report_pdf, render_accepted_summary_pdf,
+    convert_to_bangla_digits, format_bangla_number,
 )
 
 
@@ -26,9 +29,115 @@ from .utils import (
 # Helper Functions
 # --------------------------
 
+def is_chairman(user):
+    """Chairman by role.
+
+    Deliberately not tied to any username: with several departments there are
+    many chairmen, and which academic year each one serves comes from
+    profile.chairman_year.
+    """
+    return (user.is_authenticated and hasattr(user, 'profile')
+            and user.profile.user_type == 'চেয়ারম্যান')
+
+
 def is_admin(user):
     """Check if user has admin privileges"""
     return user.is_authenticated and user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']
+
+
+# Legacy 1st..8th semester values that belong to each academic year, so counts
+# and filters still see bills created before the year/semester split.
+# Bengali year label -> the suffix used in the dashboard context keys
+BENGALI_MONTHS = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+                  'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর']
+
+YEAR_SUFFIX = {'১ম বর্ষ': '1st', '২য় বর্ষ': '2nd', '৩য় বর্ষ': '3rd',
+               '৪র্থ বর্ষ': '4th', 'মাস্টার্স': 'masters'}
+
+# Sections shown on the controller's bills page, in order.
+CONTROLLER_YEAR_GROUPS = [
+    ('1st', '১ম বর্ষ', '1st Year', 'year-1'),
+    ('2nd', '২য় বর্ষ', '2nd Year', 'year-2'),
+    ('3rd', '৩য় বর্ষ', '3rd Year', 'year-3'),
+    ('4th', '৪র্থ বর্ষ', '4th Year', 'year-4'),
+    ('masters', 'মাস্টার্স', 'Masters', 'year-5'),
+]
+
+
+def bill_year_suffix(bill):
+    """'1st'..'4th' for a bill, or '' when the year is unknown.
+
+    Reads the academic_year field (falling back to the legacy semester) rather
+    than scanning bill.remarks for a chairman username, which broke as soon as
+    more than one department had a chairman for the same year.
+    """
+    return YEAR_SUFFIX.get(bill.resolved_academic_year or '', '')
+
+
+LEGACY_SEMESTERS_BY_YEAR = {
+    '১ম বর্ষ': ['১ম সেমিস্টার', '২য় সেমিস্টার'],
+    '২য় বর্ষ': ['৩য় সেমিস্টার', '৪র্থ সেমিস্টার'],
+    '৩য় বর্ষ': ['৫ম সেমিস্টার', '৬ষ্ঠ সেমিস্টার'],
+    '৪র্থ বর্ষ': ['৭ম সেমিস্টার', '৮ম সেমিস্টার'],
+    'মাস্টার্স': ['মাস্টার্স'],
+}
+
+
+def year_bills_q(year_label):
+    """Q() matching bills in an academic year, new field or legacy value."""
+    return (Q(academic_year=year_label) |
+            Q(academic_year__isnull=True,
+              semester__in=LEGACY_SEMESTERS_BY_YEAR.get(year_label, [])))
+
+
+def user_department(user):
+    """The department a user belongs to, or None if none is set."""
+    profile = getattr(user, 'profile', None)
+    return profile.department if profile and profile.department_id else None
+
+
+def scope_to_department(queryset, user):
+    """Limit a Bill queryset to the user's own department.
+
+    Applied to chairman-facing views: an exam committee chairman approves
+    bills for their own department, not the whole university. The controller
+    is deliberately NOT scoped - Controller of Examinations is a
+    university-wide office - and gets a department filter instead.
+
+    A user with no department set sees nothing rather than everything, so a
+    half-configured account can't quietly leak another department's bills.
+    """
+    dept = user_department(user)
+    if dept is None:
+        return queryset.none()
+    return queryset.filter(department=dept)
+
+
+def scope_bills_for_role(queryset, user):
+    """Department scoping that depends on the role.
+
+    Chairman and office assistant work inside one department, so they only
+    ever see their own. The controller is university-wide and sees every
+    department, with a filter to narrow it down instead.
+    """
+    profile = getattr(user, 'profile', None)
+    if profile and profile.user_type == 'কন্ট্রোলার':
+        return queryset
+    return scope_to_department(queryset, user)
+
+
+def department_work_types_q(user):
+    """Work types available to a user: shared ones plus their department's.
+
+    A WorkType with department=NULL applies everywhere, which is how all the
+    existing work types are stored, so nothing changes for a single-department
+    setup. Setting a department makes that work type exclusive to it.
+    """
+    dept = user_department(user)
+    if dept is None:
+        return Q(department__isnull=True)
+    return Q(department__isnull=True) | Q(department=dept)
+
 
 
 def log_activity(user, action, details='', ip_address=None):
@@ -44,6 +153,17 @@ def log_activity(user, action, details='', ip_address=None):
 # --------------------------
 # Public Views
 # --------------------------
+
+# Statuses a bill can only hold once the chairman has forwarded it, i.e. the
+# controller's own workload. Anything before this is still with the chairman.
+CONTROLLER_STATUSES = [
+    'sent_to_controller',
+    'approved_by_controller',
+    'rejected_by_controller',
+    'controller_returned',
+    'paid',
+]
+
 
 def home(request):
     from django.conf import settings
@@ -68,17 +188,19 @@ def home(request):
             if status_filter:
                 bills_list = bills_list.filter(status=status_filter)
 
-            # CORRECTED COUNTS - using controller-specific statuses
-            pending_count = Bill.objects.exclude(status='draft').filter(status='pending').count()
-            approved_count = Bill.objects.exclude(status='draft').filter(status='approved_by_controller').count()  # Controller approved
-            rejected_count = Bill.objects.exclude(status='draft').filter(status='rejected_by_controller').count()  # Controller rejected
-            paid_count = Bill.objects.exclude(status='draft').filter(status='paid').count()
-            sent_to_controller_count = Bill.objects.exclude(status='draft').filter(status='sent_to_controller').count()
-            
-            con_total = Bill.objects.exclude(status='draft').count()
-            con_amount = Bill.objects.exclude(status='draft').aggregate(
-                total=Sum('total_amount')
-            )['total'] or 0
+            # Counts are scoped to the bills that actually reached the
+            # controller. Counting every non-draft bill made the panel claim
+            # bills that are still sitting with a chairman.
+            reached = Bill.objects.filter(status__in=CONTROLLER_STATUSES)
+
+            pending_count = reached.filter(status='sent_to_controller').count()   # awaiting the controller
+            approved_count = reached.filter(status='approved_by_controller').count()
+            rejected_count = reached.filter(status='rejected_by_controller').count()
+            paid_count = reached.filter(status='paid').count()
+            sent_to_controller_count = pending_count
+
+            con_total = reached.count()
+            con_amount = reached.aggregate(total=Sum('total_amount'))['total'] or 0
 
             paginator = Paginator(bills_list, 10)
             page_number = request.GET.get('page')
@@ -100,148 +222,41 @@ def home(request):
  
         # ── Chairman ────────────────────────────────────────────────
         elif user_type == 'চেয়ারম্যান':
+            dept_bills = scope_to_department(Bill.objects.all(), request.user)
             context = {
                 'slider_images': slider_images,
                 'total_bills':   total_bills,
                 'total_users':   total_users,
                 'total_amount':  total_amount,
                 'MEDIA_URL':     settings.MEDIA_URL,
-                'pending_count':  Bill.objects.filter(status='pending').count(),
-                'approved_count': Bill.objects.filter(status='approved').count(),
-                'rejected_count': Bill.objects.filter(status='rejected').count(),
-                'paid_count':     Bill.objects.filter(status='paid').count(),
-                'controller_returned_count': Bill.objects.filter(status='controller_returned').count(),
+                'pending_count':  dept_bills.filter(status='pending').count(),
+                'approved_count': dept_bills.filter(status='approved').count(),
+                'rejected_count': dept_bills.filter(status='rejected').count(),
+                'paid_count':     dept_bills.filter(status='paid').count(),
+                'controller_returned_count': dept_bills.filter(status='controller_returned').count(),
+                'user_department': user_department(request.user),
             }
  
-            if request.user.username == 'JSTUChairman1':
-                context['total_bills_1st_year'] = Bill.objects.filter(
-                    Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                    Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                    Q(semester__icontains='1st') | Q(semester__icontains='2nd')
-                ).count()
-                context['pending_bills_1st_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
-                    status='pending'
-                ).count()
-                context['approved_bills_1st_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
-                    status='approved'
-                ).count()
-                context['rejected_bills_1st_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
-                    status='rejected'
-                ).count()
-                context['paid_bills_1st_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='১ম') | Q(semester__icontains='১ম সেমিস্টার') |
-                     Q(semester__icontains='২য়') | Q(semester__icontains='২য় সেমিস্টার') |
-                     Q(semester__icontains='1st') | Q(semester__icontains='2nd')),
-                    status='paid'
-                ).count()
- 
-            elif request.user.username == 'JSTUChairman2':
-                context['total_bills_2nd_year'] = Bill.objects.filter(
-                    Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                    Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                    Q(semester__icontains='3rd') | Q(semester__icontains='4th')
-                ).count()
-                context['pending_bills_2nd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
-                    status='pending'
-                ).count()
-                context['approved_bills_2nd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
-                    status='approved'
-                ).count()
-                context['rejected_bills_2nd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
-                    status='rejected'
-                ).count()
-                context['paid_bills_2nd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৩য়') | Q(semester__icontains='৩য় সেমিস্টার') |
-                     Q(semester__icontains='৪র্থ') | Q(semester__icontains='৪র্থ সেমিস্টার') |
-                     Q(semester__icontains='3rd') | Q(semester__icontains='4th')),
-                    status='paid'
-                ).count()
- 
-            elif request.user.username == 'JSTUChairman3':
-                context['total_bills_3rd_year'] = Bill.objects.filter(
-                    Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                    Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                    Q(semester__icontains='5th') | Q(semester__icontains='6th')
-                ).count()
-                context['pending_bills_3rd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
-                    status='pending'
-                ).count()
-                context['approved_bills_3rd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
-                    status='approved'
-                ).count()
-                context['rejected_bills_3rd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
-                    status='rejected'
-                ).count()
-                context['paid_bills_3rd_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৫ম') | Q(semester__icontains='৫ম সেমিস্টার') |
-                     Q(semester__icontains='৬ষ্ঠ') | Q(semester__icontains='৬ষ্ঠ সেমিস্টার') |
-                     Q(semester__icontains='5th') | Q(semester__icontains='6th')),
-                    status='paid'
-                ).count()
- 
-            elif request.user.username == 'JSTUChairman4':
-                context['total_bills_4th_year'] = Bill.objects.filter(
-                    Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                    Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                    Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                    Q(semester__icontains='মাস্টার্স')
-                ).count()
-                context['pending_bills_4th_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                     Q(semester__icontains='মাস্টার্স')),
-                    status='pending'
-                ).count()
-                context['approved_bills_4th_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                     Q(semester__icontains='মাস্টার্স')),
-                    status='approved'
-                ).count()
-                context['rejected_bills_4th_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                     Q(semester__icontains='মাস্টার্স')),
-                    status='rejected'
-                ).count()
-                context['paid_bills_4th_year'] = Bill.objects.filter(
-                    (Q(semester__icontains='৭ম') | Q(semester__icontains='৭ম সেমিস্টার') |
-                     Q(semester__icontains='৮ম') | Q(semester__icontains='৮ম সেমিস্টার') |
-                     Q(semester__icontains='7th') | Q(semester__icontains='8th') |
-                     Q(semester__icontains='মাস্টার্স')),
-                    status='paid'
-                ).count()
- 
+            # Each chairman account owns one academic year. The counts below
+            # used to be ~130 lines of Q(semester__icontains=...) chains; the
+            # explicit academic_year field makes that a single helper call,
+            # and year_bills_q() still matches pre-split bills via their
+            # legacy semester value.
+            # The chairman's year is stored on their profile, so any number of
+            # chairmen can exist across departments.
+            year_label = getattr(request.user.profile, 'chairman_year', None)
+            suffix = YEAR_SUFFIX.get(year_label)
+
+            if year_label and suffix:
+                year_q = year_bills_q(year_label)
+                # Counts are limited to the chairman's own department
+                own = scope_to_department(Bill.objects.all(), request.user)
+                context[f'total_bills_{suffix}_year'] = own.filter(year_q).count()
+                for status in ('pending', 'approved', 'rejected', 'paid'):
+                    context[f'{status}_bills_{suffix}_year'] = own.filter(
+                        year_q, status=status
+                    ).count()
+
             return render(request, 'core/home_c.html', context)
  
     # ── Everyone else (including unauthenticated) ────────────────────
@@ -346,60 +361,285 @@ def custom_logout(request):
 
 @login_required
 def profile(request):
-    """User profile management view"""
-    if request.method == 'POST':
-        if 'profile_update' in request.POST:
-            # Create form with POST data and FILES
-            profile_form = ProfileUpdateForm(
-                request.POST,
-                request.FILES,  # Important: include FILES for image upload
-                instance=request.user.profile
-            )
-            password_form = CustomPasswordChangeForm(request.user)
+    """User profile management: details, picture, and password.
 
-            if profile_form.is_valid():
-                # Update user fields
-                user = request.user
-                user.first_name = profile_form.cleaned_data['first_name']
-                user.email = profile_form.cleaned_data['email']
-                user.save()
-                
-                # Save profile (this will handle the profile picture)
+    Two independent forms POST to this one view and are told apart by a hidden
+    marker field. Whichever one was submitted keeps its bound data (and errors)
+    on re-render; the other is rebuilt clean so it does not show stale errors.
+    """
+    profile_obj = request.user.profile
+    profile_form = None
+    password_form = None
+    active_panel = 'profile'
+
+    if request.method == 'POST' and 'profile_update' in request.POST:
+        active_panel = 'profile'
+        profile_form = ProfileUpdateForm(
+            request.POST,
+            request.FILES,
+            instance=profile_obj,
+        )
+        if profile_form.is_valid():
+            # User and Profile are written together, so a failure on either
+            # one cannot leave the account half-updated.
+            with transaction.atomic():
                 profile_form.save()
-                
-                log_activity(request.user, 'Profile updated', 'User updated their profile')
-                messages.success(request, 'আপনার প্রোফাইল সফলভাবে আপডেট করা হয়েছে!')
-                return redirect('profile')
-            else:
-                messages.error(request, 'দয়া করে আপনার তথ্য সঠিকভাবে পূরণ করুন।')
+            log_activity(request.user, 'Profile updated', 'User updated their profile')
+            messages.success(request, 'আপনার প্রোফাইল সফলভাবে আপডেট করা হয়েছে!')
+            return redirect('profile')
+        messages.error(request, 'দয়া করে নিচের ভুলগুলো ঠিক করুন।')
 
-        elif 'password_change' in request.POST:
-            profile_form = ProfileUpdateForm(instance=request.user.profile)
-            password_form = CustomPasswordChangeForm(request.user, request.POST)
+    elif request.method == 'POST' and 'password_change' in request.POST:
+        active_panel = 'password'
+        password_form = CustomPasswordChangeForm(request.user, request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            update_session_auth_hash(request, user)
+            log_activity(request.user, 'Password changed', 'User changed their password')
+            messages.success(request, 'আপনার পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!')
+            return redirect('profile')
+        messages.error(request, 'পাসওয়ার্ড পরিবর্তন করা যায়নি। দয়া করে নিচের ভুলগুলো ঠিক করুন।')
 
-            if password_form.is_valid():
-                user = password_form.save()
-                update_session_auth_hash(request, user)
-                log_activity(request.user, 'Password changed', 'User changed their password')
-                messages.success(request, 'আপনার পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!')
-                return redirect('profile')
-            else:
-                messages.error(request, 'দয়া করে আপনার তথ্য সঠিকভাবে পূরণ করুন।')
-        else:
-            profile_form = ProfileUpdateForm(instance=request.user.profile)
-            password_form = CustomPasswordChangeForm(request.user)
-    else:
-        profile_form = ProfileUpdateForm(instance=request.user.profile)
+    # Unbound instances for whichever form was not submitted
+    if profile_form is None:
+        profile_form = ProfileUpdateForm(instance=profile_obj)
+    if password_form is None:
         password_form = CustomPasswordChangeForm(request.user)
 
+    # Last five months of the user's own activity, for the two charts on the
+    # profile page. Computed here rather than in the template so the bar
+    # heights are plain numbers the template just prints.
+    today = timezone.now()
+    months = []
+    year, month = today.year, today.month
+    for _ in range(5):
+        months.append((year, month))
+        month -= 1
+        if month == 0:
+            year, month = year - 1, 12
+    months.reverse()
+
+    own_bills = Bill.objects.filter(user=request.user)
+    count_points, amount_points = [], []
+    for year, month in months:
+        in_month = own_bills.filter(created_at__year=year, created_at__month=month)
+        count = in_month.count()
+        amount = in_month.aggregate(total=Sum('total_amount'))['total'] or 0
+        label = BENGALI_MONTHS[month - 1]
+        count_points.append({'label': label, 'value': count})
+        amount_points.append({'label': label, 'value': float(amount)})
+
+    max_count = max((p['value'] for p in count_points), default=0)
+    max_amount = max((p['value'] for p in amount_points), default=0)
+    for point in count_points:
+        point['height'] = round(point['value'] / max_count * 100) if max_count else 0
+        point['display'] = convert_to_bangla_digits(point['value'])
+    for point in amount_points:
+        point['height'] = round(point['value'] / max_amount * 100) if max_amount else 0
+        point['display'] = convert_to_bangla_digits(f'{point["value"]:,.0f}')
+
+    # Signature slots this user can actually reach.
+
+    #
+    # Every user gets a general signature. A chairman additionally gets one
+    # chairman signature, for whichever year their profile says they serve --
+    # no longer four numbered slots tied to four fixed usernames.
+    signature_slots = [{
+        'label': 'আপনার স্বাক্ষর',
+        'file': profile_obj.signature_general,
+        'upload_url': 'signature_upload_general',
+    }]
+
+    if profile_obj.is_chairman:
+        year = profile_obj.chairman_year
+        signature_slots.append({
+            'label': f'{year} চেয়ারম্যান' if year else 'চেয়ারম্যান স্বাক্ষর',
+            'file': profile_obj.active_chairman_signature,
+            'upload_url': 'signature_upload_chairman',
+        })
+
+    # The controller does not create bills, so the personal charts above mean
+    # nothing to them. They get their own review summary for the current month
+    # instead: how the month's decisions split, and which departments are
+    # sending the most work through.
+    controller_charts = None
+    if is_controller(request.user):
+        month_bills = Bill.objects.filter(
+            controller_approved_at__year=today.year,
+            controller_approved_at__month=today.month,
+        )
+        accepted = month_bills.filter(status='approved_by_controller').count()
+        rejected = month_bills.filter(status='rejected_by_controller').count()
+        decided = accepted + rejected
+
+        # conic-gradient needs the accepted share as a percentage
+        accepted_pct = round(accepted / decided * 100, 1) if decided else 0
+
+        top_departments = list(
+            month_bills.filter(status='approved_by_controller')
+            .exclude(department__isnull=True)
+            .values('department__name', 'department__short_name')
+            .annotate(total=Count('id'))
+            .order_by('-total')[:5]
+        )
+        busiest = max((d['total'] for d in top_departments), default=0)
+        department_points = [{
+            'label': d['department__short_name'] or d['department__name'],
+            'title': d['department__name'],
+            'value': d['total'],
+            'display': convert_to_bangla_digits(d['total']),
+            'height': round(d['total'] / busiest * 100) if busiest else 0,
+        } for d in top_departments]
+
+        controller_charts = {
+            'month_label': BENGALI_MONTHS[today.month - 1],
+            'accepted': accepted,
+            'rejected': rejected,
+            'decided': decided,
+            'accepted_display': convert_to_bangla_digits(accepted),
+            'rejected_display': convert_to_bangla_digits(rejected),
+            'decided_display': convert_to_bangla_digits(decided),
+            'accepted_pct': accepted_pct,
+            'accepted_pct_display': convert_to_bangla_digits(f'{accepted_pct:g}'),
+            'rejected_pct_display': convert_to_bangla_digits(
+                f'{round(100 - accepted_pct, 1):g}') if decided else convert_to_bangla_digits(0),
+            'departments': department_points,
+        }
+
+    # A chairman receives bills and forwards them; the personal "bills I
+    # created" charts are meaningless for them too. They get the outcome of
+    # what they forwarded, plus how much work is arriving.
+    chairman_charts = None
+    if profile_obj.is_chairman:
+        scoped = scope_bills_for_role(Bill.objects.all(), request.user)
+        if profile_obj.chairman_year:
+            scoped = scoped.filter(year_bills_q(profile_obj.chairman_year))
+
+        # Same five-month window as the bar chart below, so both agree
+        first_year, first_month = months[0]
+        window_start = timezone.make_aware(datetime(first_year, first_month, 1)) \
+            if timezone.is_aware(today) else datetime(first_year, first_month, 1)
+
+        decided_qs = scoped.filter(controller_approved_at__gte=window_start)
+        ch_accepted = decided_qs.filter(status='approved_by_controller').count()
+        ch_rejected = decided_qs.filter(status='rejected_by_controller').count()
+        ch_decided = ch_accepted + ch_rejected
+        ch_pct = round(ch_accepted / ch_decided * 100, 1) if ch_decided else 0
+
+        # Bills users have sent up to this chairman, month by month
+        received_points = []
+        for year, month in months:
+            received = scoped.filter(sent_at__year=year, sent_at__month=month).count()
+            received_points.append({
+                'label': BENGALI_MONTHS[month - 1],
+                'value': received,
+                'display': convert_to_bangla_digits(received),
+            })
+        busiest_month = max((p['value'] for p in received_points), default=0)
+        for point in received_points:
+            point['height'] = round(point['value'] / busiest_month * 100) if busiest_month else 0
+
+        chairman_charts = {
+            'accepted': ch_accepted,
+            'rejected': ch_rejected,
+            'decided': ch_decided,
+            'accepted_display': convert_to_bangla_digits(ch_accepted),
+            'rejected_display': convert_to_bangla_digits(ch_rejected),
+            'decided_display': convert_to_bangla_digits(ch_decided),
+            'accepted_pct': ch_pct,
+            'accepted_pct_display': convert_to_bangla_digits(f'{ch_pct:g}'),
+            'rejected_pct_display': convert_to_bangla_digits(
+                f'{round(100 - ch_pct, 1):g}') if ch_decided else convert_to_bangla_digits(0),
+            'received': received_points,
+            'received_total': convert_to_bangla_digits(
+                sum(p['value'] for p in received_points)),
+        }
+
     context = {
+
         'profile_form': profile_form,
-        'password_form': password_form
+        'password_form': password_form,
+        'profile_obj': profile_obj,
+        'signature_slots': signature_slots,
+        'active_panel': active_panel,
+        'controller_charts': controller_charts,
+        'chairman_charts': chairman_charts,
+        'bill_count_chart': count_points,
+        'bill_amount_chart': amount_points,
+        'bill_count_total': convert_to_bangla_digits(sum(p['value'] for p in count_points)),
+        'bill_amount_total': convert_to_bangla_digits(f"{sum(p['value'] for p in amount_points):,.0f}"),
     }
     return render(request, 'core/profile.html', context)
 
 
 # --------------------------
+# Profile picture (saved immediately, independent of the details form)
+# --------------------------
+
+PROFILE_PICTURE_TYPES = ('image/jpeg', 'image/jpg', 'image/png', 'image/webp')
+PROFILE_PICTURE_MAX_MB = 2
+
+
+@login_required
+@require_POST
+def profile_picture_upload(request):
+    """Store a new profile picture and return the new URL as JSON.
+
+    Deliberately separate from the details form. Previously the picture was
+    only written when the whole form was submitted, so choosing an image and
+    then navigating away silently discarded it. Saving on selection means the
+    camera button always sticks, and it cannot wipe unsaved edits to the name
+    or phone fields either.
+    """
+    upload = request.FILES.get('profile_picture')
+    if not upload:
+        return JsonResponse({'ok': False, 'error': 'কোনো ছবি পাওয়া যায়নি।'}, status=400)
+
+    if getattr(upload, 'content_type', '') not in PROFILE_PICTURE_TYPES:
+        return JsonResponse(
+            {'ok': False, 'error': 'শুধুমাত্র JPEG, PNG অথবা WebP ছবি আপলোড করুন।'}, status=400)
+
+    if upload.size > PROFILE_PICTURE_MAX_MB * 1024 * 1024:
+        return JsonResponse(
+            {'ok': False, 'error': f'ছবির সাইজ {PROFILE_PICTURE_MAX_MB}MB এর কম হতে হবে।'},
+            status=400)
+
+    profile = request.user.profile
+    if profile.profile_picture:
+        profile.profile_picture.delete(save=False)
+    profile.profile_picture = upload
+    profile.save()
+
+    log_activity(request.user, 'Profile picture updated', 'User changed their profile picture')
+    return JsonResponse({
+        'ok': True,
+        'url': profile.profile_picture.url,
+        'message': 'প্রোফাইল ছবি আপডেট করা হয়েছে।',
+    })
+
+
+@login_required
+@require_POST
+def profile_picture_delete(request):
+    """Remove the current profile picture; the initials avatar takes over."""
+    profile = request.user.profile
+    if not profile.profile_picture:
+        return JsonResponse({'ok': False, 'error': 'কোনো ছবি নেই।'}, status=400)
+
+    profile.profile_picture.delete(save=False)
+    profile.profile_picture = None
+    profile.save()
+
+    log_activity(request.user, 'Profile picture removed', 'User removed their profile picture')
+    return JsonResponse({
+        'ok': True,
+        'initials': profile.initials,
+        'message': 'প্রোফাইল ছবি মুছে ফেলা হয়েছে।',
+    })
+
+
+# --------------------------
+
 # Signature Upload Views (Legacy Chairman)
 # --------------------------
 
@@ -463,6 +703,8 @@ def bill_create(request):
         if form.is_valid():
             bill = form.save(commit=False)
             bill.user = request.user
+            # A bill belongs to the department of whoever created it
+            bill.department = user_department(request.user)
 
             if action == 'send':
                 bill.status = 'pending'
@@ -502,7 +744,10 @@ def bill_create(request):
     else:
         form = BillForm()
 
-    return render(request, 'core/bill_create.html', {'form': form})
+    return render(request, 'core/bill_create.html', {
+        'form': form,
+        'user_department': user_department(request.user),
+    })
 
 
 @login_required
@@ -629,28 +874,69 @@ def view_bill_pdf(request, bill_id):
     
 @login_required
 def bill_status(request):
-    """View for displaying the logged-in user's own bill status with filtering.
+    """Bill status page with per-status counts.
 
-    This is a personal 'my bill status' page (mirrors my_bills) — it must never
-    show another user's bills. Chairman/Controller have their own dedicated
-    review pages (all_bills / cont_bills / accepted_bills / rejected_bills) for
-    seeing everyone's bills, so no role is given a combined view here.
+    Admin-role users see the bills they are responsible for; everyone else
+    sees their own. Crucially this now goes through scope_bills_for_role, so a
+    chairman or office assistant only sees their own department. Before the
+    multi-department change this returned every bill in the system, which
+    would have leaked one department's bills to another.
     """
-    bills_list = Bill.objects.filter(user=request.user).exclude(status='draft').order_by('-created_at')
+    is_admin_role = request.user.profile.user_type in ['চেয়ারম্যান', 'অফিস সহকারী', 'কন্ট্রোলার']
 
-    pending_count = Bill.objects.filter(user=request.user, status='pending').count()
-    approved_count = Bill.objects.filter(user=request.user, status='approved').count()
-    rejected_count = Bill.objects.filter(user=request.user, status='rejected').count()
-    paid_count = Bill.objects.filter(user=request.user, status='paid').count()
-    approved_by_controller_count = Bill.objects.filter(user=request.user, status='approved_by_controller').count()
-    rejected_by_controller_count = Bill.objects.filter(user=request.user, status='rejected_by_controller').count()
-    controller_returned_count = Bill.objects.filter(user=request.user, status='controller_returned').count()
-    returned_to_user_count = Bill.objects.filter(user=request.user, status='returned_to_user').count()
-    sent_to_controller_count = Bill.objects.filter(user=request.user, status='sent_to_controller').count()
+    if is_admin_role:
+        visible = scope_bills_for_role(
+            Bill.objects.exclude(is_hidden_from_chairman=True), request.user)
+    else:
+        visible = Bill.objects.filter(user=request.user)
+
+    # Free-text search. Applied before the counts are taken so the filter
+    # buttons can never advertise more bills than the search actually shows.
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        # Bill numbers are stored with English digits but rendered in Bengali,
+        # so a term copied off the page has to be normalised before matching.
+        term = search_query.translate(str.maketrans('০১২৩৪৫৬৭৮৯', '0123456789'))
+        lookup = (
+            Q(bill_number__icontains=term)
+            | Q(controller_bill_number__icontains=term)
+            | Q(voucher_number__icontains=term)
+            | Q(bangla_date__icontains=search_query)
+            | Q(user__username__icontains=search_query)
+            | Q(user__first_name__icontains=search_query)
+            | Q(user__last_name__icontains=search_query)
+            | Q(department__name__icontains=search_query)
+            | Q(academic_year__icontains=search_query)
+            | Q(exam_semester__icontains=search_query)
+            | Q(semester__icontains=search_query)
+        )
+        if term.replace('.', '', 1).isdigit():
+            lookup |= Q(total_amount__icontains=term)
+            lookup |= Q(session__start_year__icontains=term)
+            lookup |= Q(session__end_year__icontains=term)
+        visible = visible.filter(lookup).distinct()
+
+    bills_list = visible.exclude(status='draft').order_by('-created_at')
+
+    # Counts come off the same queryset, so they can never disagree with the list
+    def count(status):
+        return visible.filter(status=status).count()
+
+    pending_count = count('pending')
+    approved_count = count('approved')
+    rejected_count = count('rejected')
+    paid_count = count('paid')
+    approved_by_controller_count = count('approved_by_controller')
+    rejected_by_controller_count = count('rejected_by_controller')
+    controller_returned_count = count('controller_returned')
+    returned_to_user_count = count('returned_to_user')
+    sent_to_controller_count = count('sent_to_controller')
 
     status_filter = request.GET.get('status', '')
     if status_filter:
         bills_list = bills_list.filter(status=status_filter)
+
+    result_count = bills_list.count()
 
     paginator = Paginator(bills_list, 10)
     page_number = request.GET.get('page')
@@ -668,6 +954,8 @@ def bill_status(request):
         'returned_to_user_count': returned_to_user_count,
         'sent_to_controller_count': sent_to_controller_count,
         'current_filter': status_filter,
+        'search_query': search_query,
+        'result_count': result_count,
     }
     return render(request, 'core/status.html', context)
 
@@ -707,38 +995,37 @@ def send_bill_with_year(request, bill_id):
         messages.error(request, 'দয়া করে বর্ষ নির্বাচন করুন।')
         return redirect('my_bills')
     
-    chairman_map = {
-        '1st': 'JSTUChairman1',
-        '2nd': 'JSTUChairman2',
-        '3rd': 'JSTUChairman3',
-        '4th': 'JSTUChairman4',
-    }
-    
-    chairman_username = chairman_map.get(selected_year)
-    
-    if not chairman_username:
+    year_text = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ',
+                 '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}.get(selected_year)
+
+    if not year_text:
         messages.error(request, 'অবৈধ বর্ষ নির্বাচন।')
         return redirect('my_bills')
-    
-    year_text = ''
-    if selected_year == '1st':
-        year_text = '১ম বর্ষ'
-    elif selected_year == '2nd':
-        year_text = '২য় বর্ষ'
-    elif selected_year == '3rd':
-        year_text = '৩য় বর্ষ'
-    elif selected_year == '4th':
-        year_text = '৪র্থ বর্ষ'
-    
+
+    # Keep the bill's own year in step with what was chosen, then resolve the
+    # chairman by year AND department rather than a hardcoded username.
+    if bill.academic_year != year_text:
+        bill.academic_year = year_text
+
     bill.status = 'pending'
     bill.sent_at = timezone.now()
-    bill.remarks = f"বর্ষ: {year_text} | চেয়ারম্যান: {chairman_username} | {bill.remarks or ''}"
+
+    chairman = bill.chairman
+    if chairman is None:
+        dept_name = bill.department.name if bill.department_id else 'আপনার বিভাগ'
+        messages.error(
+            request,
+            f'{dept_name}-এ {year_text}-এর জন্য কোনো চেয়ারম্যান নির্ধারণ করা নেই। '
+            'অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।')
+        return redirect('my_bills')
+
+    bill.remarks = f"বর্ষ: {year_text} | চেয়ারম্যান: {chairman.username} | {bill.remarks or ''}"
     bill.save()
-    
-    log_activity(request.user, 'Bill sent', 
-                f'Bill {bill.bill_number} sent to {chairman_username} ({year_text})')
+
+    log_activity(request.user, 'Bill sent',
+                 f'Bill {bill.bill_number} sent to {chairman.username} ({year_text})')
     messages.success(request, f'বিল সফলভাবে {year_text} চেয়ারম্যানের কাছে পাঠানো হয়েছে!')
-    
+
     return redirect('bill_status')
 
 
@@ -781,16 +1068,8 @@ def add_user_signature_to_bill(request, bill_id):
 
 def _base_admin_bills_queryset(request):
     """Bills queryset scoped to the logged-in admin/chairman, before any user-chosen filters."""
-    chairman_username = request.user.username
-
-    year_map = {
-        'JSTUChairman1': '১ম বর্ষ',
-        'JSTUChairman2': '২য় বর্ষ',
-        'JSTUChairman3': '৩য় বর্ষ',
-        'JSTUChairman4': '৪র্থ বর্ষ',
-    }
-
-    year_text = year_map.get(chairman_username, '')
+    # Which year this chairman handles now comes from their profile.
+    year_text = getattr(request.user.profile, 'chairman_year', '') or ''
 
     if year_text:
         bills = Bill.objects.exclude(status='draft').exclude(
@@ -798,7 +1077,9 @@ def _base_admin_bills_queryset(request):
         ).exclude(
             status='returned_to_user'  # Exclude returned_to_user bills
         ).filter(
-            remarks__icontains=year_text
+            # academic_year is an explicit field now; year_bills_q also matches
+            # bills created before the year/semester split.
+            year_bills_q(year_text)
         ).select_related('user').order_by('-sent_at', '-created_at')
     else:
         bills = Bill.objects.exclude(status='draft').exclude(
@@ -807,7 +1088,16 @@ def _base_admin_bills_queryset(request):
             status='returned_to_user'  # Exclude returned_to_user bills
         ).select_related('user').order_by('-sent_at', '-created_at')
 
-    return bills
+    # A chairman whose year has not been assigned yet sees nothing rather than
+    # every bill in the department -- same fail-closed rule used for a user
+    # with no department. Office assistants and the controller have no year by
+    # design, so this only applies to the chairman role.
+    if is_chairman(request.user) and not year_text:
+        return bills.none()
+
+    # Chairman/office assistant see only their own department;
+    # the controller is university-wide.
+    return scope_bills_for_role(bills, request.user)
 
 
 def apply_bill_filters(request, bills):
@@ -833,11 +1123,14 @@ def apply_bill_filters(request, bills):
     if user_filter:
         bills = bills.filter(user__username__icontains=user_filter)
     if semester_filter:
-        bills = bills.filter(semester=semester_filter)
+        # The dropdown now offers academic years; year_bills_q also
+        # catches bills created before the year/semester split.
+        bills = bills.filter(year_bills_q(semester_filter))
     if degree_filter:
         bills = bills.filter(degree_type=degree_filter)
     if department_filter:
-        bills = bills.filter(department__icontains=department_filter)
+        # department is a FK now, so match on its name
+        bills = bills.filter(department__name__icontains=department_filter)
     if bank_filter:
         bills = bills.filter(bank_name=bank_filter)
     if bill_number_filter:
@@ -929,7 +1222,8 @@ def all_bills(request):
         'approved_by_controller_count': approved_by_controller_count,
         'rejected_by_controller_count': rejected_by_controller_count,
         'controller_returned_count': controller_returned_count,
-        'semester_choices': Bill.SEMESTER_CHOICES,
+        'semester_choices': Bill.ACADEMIC_YEAR_CHOICES,
+        'department_choices': Department.objects.filter(is_active=True),
         'degree_choices': Bill.DEGREE_CHOICES,
         'bank_choices': Bill.BANK_CHOICES,
         'status_choices': Bill.STATUS_CHOICES,
@@ -1047,7 +1341,7 @@ def user_management(request):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_authenticated and u.username in ['JSTUChairman1', 'JSTUChairman2', 'JSTUChairman3', 'JSTUChairman4'])
+@user_passes_test(is_chairman)
 def add_signature_to_bill_chairman(request, bill_id):
     """Add chairman's signature to approved bill based on chairman type - PERMANENT"""
     bill = get_object_or_404(Bill, id=bill_id)
@@ -1066,18 +1360,9 @@ def add_signature_to_bill_chairman(request, bill_id):
         return redirect('view_bill_pdf', bill_id=bill.id)
     
     if request.method == 'POST':
-        chairman_username = request.user.username
-        signature_added = False
-        
-        # Determine which signature field to check
-        if chairman_username == 'JSTUChairman1' and request.user.profile.signature_chairman1:
-            signature_added = True
-        elif chairman_username == 'JSTUChairman2' and request.user.profile.signature_chairman2:
-            signature_added = True
-        elif chairman_username == 'JSTUChairman3' and request.user.profile.signature_chairman3:
-            signature_added = True
-        elif chairman_username == 'JSTUChairman4' and request.user.profile.signature_chairman4:
-            signature_added = True
+        profile = request.user.profile
+        # One signature per chairman, whichever year and department they serve
+        signature_added = bool(profile.active_chairman_signature)
         
         if signature_added:
             # Mark signature as added - THIS FLAG MAKES THE SIGNATURE PERMANENT
@@ -1086,17 +1371,9 @@ def add_signature_to_bill_chairman(request, bill_id):
             # Also store the chairman username in a dedicated field for easier lookup
             # (You may want to add a chairman_username field to Bill model)
             # For now, store it clearly in remarks
-            year_text = ''
-            if chairman_username == 'JSTUChairman1':
-                year_text = '১ম বর্ষ'
-            elif chairman_username == 'JSTUChairman2':
-                year_text = '২য় বর্ষ'
-            elif chairman_username == 'JSTUChairman3':
-                year_text = '৩য় বর্ষ'
-            elif chairman_username == 'JSTUChairman4':
-                year_text = '৪র্থ বর্ষ'
+            year_text = profile.chairman_year or ''
             
-            signature_note = f"\nচেয়ারম্যানের স্বাক্ষর যুক্ত: {timezone.now().strftime('%d-%m-%Y %H:%M:%S')} ({chairman_username} - {year_text})"
+            signature_note = f"\nচেয়ারম্যানের স্বাক্ষর যুক্ত: {timezone.now().strftime('%d-%m-%Y %H:%M:%S')} ({request.user.username} - {year_text})"
             bill.remarks = (bill.remarks or '') + signature_note
             bill.save()
             
@@ -1108,14 +1385,7 @@ def add_signature_to_bill_chairman(request, bill_id):
             return redirect('view_bill_pdf', bill_id=bill.id)
         else:
             messages.error(request, 'আপনার স্বাক্ষর আপলোড করা হয়নি। দয়া করে প্রথমে স্বাক্ষর আপলোড করুন।')
-            if chairman_username == 'JSTUChairman1':
-                return redirect('signature_upload_chairman1')
-            elif chairman_username == 'JSTUChairman2':
-                return redirect('signature_upload_chairman2')
-            elif chairman_username == 'JSTUChairman3':
-                return redirect('signature_upload_chairman3')
-            elif chairman_username == 'JSTUChairman4':
-                return redirect('signature_upload_chairman4')
+            return redirect('signature_upload_chairman')
 
     if is_rollback_bill:
         return redirect('chairman_returned_bills')
@@ -1560,15 +1830,18 @@ def get_work_types_by_degree(request):
     if degree_type == 'honors':
         work_types = WorkType.objects.filter(
             Q(degree_type='honors') | Q(degree_type='both'),
+            department_work_types_q(request.user),
             is_active=True
         ).order_by('order')
     elif degree_type == 'masters':
         work_types = WorkType.objects.filter(
             Q(degree_type='masters') | Q(degree_type='both'),
+            department_work_types_q(request.user),
             is_active=True
         ).order_by('order')
     else:
-        work_types = WorkType.objects.filter(is_active=True).order_by('order')
+        work_types = WorkType.objects.filter(
+            department_work_types_q(request.user), is_active=True).order_by('order')
 
     work_type_list = []
     for wt in work_types:
@@ -1592,6 +1865,7 @@ def get_benefit_choices_by_degree(request):
             work_type = WorkType.objects.filter(
                 Q(name=work_type_name),
                 Q(degree_type=degree_type) | Q(degree_type='both'),
+                department_work_types_q(request.user),
                 is_active=True
             ).order_by(
                 # exact degree match (honors/masters) first, 'both' as fallback
@@ -1646,6 +1920,7 @@ def get_work_type_amount(request):
         work_type = WorkType.objects.filter(
             Q(name=work_type_name),
             Q(degree_type=degree_type) | Q(degree_type='both'),
+            department_work_types_q(request.user),
             is_active=True
         ).order_by(
             # exact degree match (honors/masters) first, 'both' as fallback
@@ -1727,32 +2002,35 @@ def debug_bill_signature(request, bill_id):
     from .utils import get_chairman_signature_for_bill
     signature_url = get_chairman_signature_for_bill(bill)
     
-    # Also check the chairman user directly
+    # Resolve the chairman the same way the PDF does: year + department
     chairman_info = {}
-    if 'JSTUChairman1' in bill.remarks:
-        try:
-            chairman = User.objects.get(username='JSTUChairman1')
-            sig_field = chairman.profile.signature_chairman1
-            chairman_info = {
-                'username': chairman.username,
-                'has_signature': bool(sig_field),
-                'signature_name': sig_field.name if sig_field else None,
-                'file_exists': sig_field.storage.exists(sig_field.name) if sig_field else False,
-            }
-        except:
-            chairman_info = {'error': 'Chairman not found'}
+    chairman = bill.chairman
+    if chairman is None:
+        chairman_info = {'error': 'No chairman matches this bill\'s year and department'}
+    else:
+        sig_field = chairman.profile.active_chairman_signature
+        chairman_info = {
+            'username': chairman.username,
+            'chairman_year': chairman.profile.chairman_year,
+            'department': str(chairman.profile.department) if chairman.profile.department_id else None,
+            'has_signature': bool(sig_field),
+            'signature_name': sig_field.name if sig_field else None,
+            'file_exists': sig_field.storage.exists(sig_field.name) if sig_field else False,
+        }
     
     debug_data = {
         'bill_id': bill.id,
         'bill_number': bill.bill_number,
         'bill_status': bill.status,
         'bill_remarks': bill.remarks,
+        'academic_year': bill.resolved_academic_year,
         'signature_found': bool(signature_url),
         'signature_length': len(signature_url) if signature_url else 0,
         'chairman_info': chairman_info,
     }
     
     return JsonResponse(debug_data)
+
 
 # --------------------------
 # Error Handlers
@@ -1981,49 +2259,80 @@ def send_bill_to_controller(request, bill_id):
 @login_required
 @user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
 def cont_bills(request):
-    """Controller bills view with year-wise sections"""
-    # Get all bills sent from chairman (status = 'sent_to_controller')
-    all_bills = Bill.objects.filter(status='sent_to_controller').order_by('-sent_to_controller_at')
-    
-    # Helper function to determine year from remarks
-    def get_bill_year(bill):
-        if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
-            return '1st'
-        elif '২য় বর্ষ' in bill.remarks or 'JSTUChairman2' in bill.remarks:
-            return '2nd'
-        elif '৩য় বর্ষ' in bill.remarks or 'JSTUChairman3' in bill.remarks:
-            return '3rd'
-        elif '৪র্থ বর্ষ' in bill.remarks or 'JSTUChairman4' in bill.remarks:
-            return '4th'
-        return None
-    
-    # Separate bills by year
-    first_year_bills = []
-    second_year_bills = []
-    third_year_bills = []
-    fourth_year_bills = []
-    
-    for bill in all_bills:
-        year = get_bill_year(bill)
-        if year == '1st':
-            first_year_bills.append(bill)
-        elif year == '2nd':
-            second_year_bills.append(bill)
-        elif year == '3rd':
-            third_year_bills.append(bill)
-        elif year == '4th':
-            fourth_year_bills.append(bill)
-    
-    # CORRECTED COUNTS - using controller-specific statuses
+    """Controller bills, split by department and then by academic year.
+
+    Departments come from the admin, so the tabs are built from the database
+    rather than hardcoded. ?department=<id> narrows the whole page to one
+    department; no parameter means every department.
+    """
+    pending_all = Bill.objects.filter(status='sent_to_controller')
+
+    departments = Department.objects.filter(is_active=True).order_by('order', 'name')
+
+    # Validate the tab selection instead of trusting the query string
+    selected_id = (request.GET.get('department') or '').strip()
+    selected_dept = None
+    if selected_id.isdigit():
+        selected_dept = departments.filter(pk=int(selected_id)).first()
+
+    # Tabs, each with its own pending count so the controller can see at a
+    # glance where the work is. Counts ignore the current selection.
+    department_tabs = [{
+        'id': '',
+        'label': 'সব বিভাগ',
+        'title': 'সব বিভাগ',
+        'count': pending_all.count(),
+        'is_active': selected_dept is None,
+    }]
+    for dept in departments:
+        department_tabs.append({
+            'id': dept.pk,
+            'label': dept.short_name or dept.name,
+            'title': dept.name,
+            'count': pending_all.filter(department=dept).count(),
+            'is_active': selected_dept is not None and dept.pk == selected_dept.pk,
+        })
+
+    bills = pending_all.select_related('user', 'department', 'session')
+    approved = Bill.objects.filter(status='approved_by_controller')
+    rejected = Bill.objects.filter(status='rejected_by_controller')
+    if selected_dept is not None:
+        bills = bills.filter(department=selected_dept)
+        approved = approved.filter(department=selected_dept)
+        rejected = rejected.filter(department=selected_dept)
+
+    bills = bills.order_by('-sent_to_controller_at')
+
+    # Year buckets, built as data so the template loops once instead of
+    # repeating a near-identical block per year. 'masters' is included -- it
+    # used to fall through every branch and its bills were invisible here.
+    buckets = {key: [] for key, _bn, _en, _css in CONTROLLER_YEAR_GROUPS}
+    for bill in bills:
+        key = bill_year_suffix(bill)
+        if key in buckets:
+            buckets[key].append(bill)
+
+    year_groups = [{
+        'key': key,
+        'label_bn': label_bn,
+        'label_en': label_en,
+        'css': css,
+        'bills': buckets[key],
+    } for key, label_bn, label_en, css in CONTROLLER_YEAR_GROUPS]
+
     context = {
-        'total_bills': all_bills.count(),
-        'pending_count': all_bills.count(),
-        'approved_count': Bill.objects.filter(status='approved_by_controller').count(),  # Controller approved
-        'rejected_count': Bill.objects.filter(status='rejected_by_controller').count(),  # Controller rejected
-        'first_year_bills': first_year_bills,
-        'second_year_bills': second_year_bills,
-        'third_year_bills': third_year_bills,
-        'fourth_year_bills': fourth_year_bills,
+        'total_bills': bills.count(),
+        'pending_count': bills.count(),
+        'approved_count': approved.count(),
+        'rejected_count': rejected.count(),
+        'department_tabs': department_tabs,
+        'selected_department': selected_dept,
+        'year_groups': year_groups,
+        # Kept so anything still referencing the old names keeps working
+        'first_year_bills': buckets['1st'],
+        'second_year_bills': buckets['2nd'],
+        'third_year_bills': buckets['3rd'],
+        'fourth_year_bills': buckets['4th'],
     }
     return render(request, 'core/cont_bills.html', context)
 
@@ -2045,12 +2354,30 @@ def controller_update_bill_status(request, bill_id):
         bill.controller_approved_at = timezone.now()
         bill.controller_approved_by = request.user
         bill.save()
-        
-        log_activity(request.user, f'Bill {status} by controller', 
-                    f'Bill {bill.bill_number} {status} by controller')
-        
+
+        # Approval is what mints the controller bill number. Rejected bills
+        # never get one, and an already-numbered bill keeps its number.
+        assigned = None
+        if status == 'approved_by_controller':
+            assigned = bill.assign_controller_bill_number()
+            if assigned is None:
+                messages.warning(
+                    request,
+                    f'বিল {bill.bill_number} অনুমোদিত হয়েছে, তবে সেশন/বর্ষ না থাকায় '
+                    'কন্ট্রোলার বিল নম্বর তৈরি করা যায়নি। বিলটি সম্পাদনা করে সেশন নির্ধারণ করুন।')
+
+        log_activity(request.user, f'Bill {status} by controller',
+                     f'Bill {bill.bill_number} {status} by controller'
+                     + (f' (controller no. {assigned})' if assigned else ''))
+
         status_text = 'অনুমোদিত' if status == 'approved_by_controller' else 'বাতিল'
-        messages.success(request, f'বিল {bill.bill_number} {status_text} করা হয়েছে!')
+        if assigned:
+            messages.success(
+                request,
+                f'বিল {bill.bill_number} {status_text} করা হয়েছে! '
+                f'কন্ট্রোলার বিল নম্বর: {assigned}')
+        else:
+            messages.success(request, f'বিল {bill.bill_number} {status_text} করা হয়েছে!')
     
     return redirect('cont_bills')
 
@@ -2094,11 +2421,14 @@ def apply_accepted_bill_filters(request, bills):
     if user_filter:
         bills = bills.filter(user__username__icontains=user_filter)
     if semester_filter:
-        bills = bills.filter(semester=semester_filter)
+        # The dropdown now offers academic years; year_bills_q also
+        # catches bills created before the year/semester split.
+        bills = bills.filter(year_bills_q(semester_filter))
     if degree_filter:
         bills = bills.filter(degree_type=degree_filter)
     if department_filter:
-        bills = bills.filter(department__icontains=department_filter)
+        # department is a FK now, so match on its name
+        bills = bills.filter(department__name__icontains=department_filter)
     if bank_filter:
         bills = bills.filter(bank_name=bank_filter)
     if bill_number_filter:
@@ -2158,16 +2488,7 @@ def accepted_bills(request):
 
     # Calculate year for each bill
     for bill in accepted_bills_list:
-        if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
-            bill.year = '1st'
-        elif '২য় বর্ষ' in bill.remarks or 'JSTUChairman2' in bill.remarks:
-            bill.year = '2nd'
-        elif '৩য় বর্ষ' in bill.remarks or 'JSTUChairman3' in bill.remarks:
-            bill.year = '3rd'
-        elif '৪র্থ বর্ষ' in bill.remarks or 'JSTUChairman4' in bill.remarks:
-            bill.year = '4th'
-        else:
-            bill.year = ''
+        bill.year = bill_year_suffix(bill)
 
     # Pagination
     paginator = Paginator(accepted_bills_list, 20)
@@ -2193,7 +2514,8 @@ def accepted_bills(request):
         'total_amount': total_amount,
         'pending_count': accepted_bills_list.filter(status='sent_to_controller').count(),  # Filtered
         'rejected_count': accepted_bills_list.filter(status='rejected_by_controller').count(),  # Filtered
-        'semester_choices': Bill.SEMESTER_CHOICES,
+        'semester_choices': Bill.ACADEMIC_YEAR_CHOICES,
+        'department_choices': Department.objects.filter(is_active=True),
         'degree_choices': Bill.DEGREE_CHOICES,
         'bank_choices': Bill.BANK_CHOICES,
         'filter_querystring': filter_querystring,
@@ -2202,38 +2524,137 @@ def accepted_bills(request):
     return render(request, 'core/accepted_bills.html', context)
 
 
+# Degree suffixes that WorkType.__str__ appends. Older bills stored the
+# displayed string ("প্রশ্নপত্র প্রণয়ন (অনার্স)") in Task.work_type instead of the
+# plain name, so matching has to ignore the suffix or those amounts would not
+# line up with their column.
+_DEGREE_SUFFIXES = (' (অনার্স)', ' (মাস্টার্স)', ' (উভয়)')
+
+
+def normalise_work_type(name):
+    """'প্রশ্নপত্র প্রণয়ন (অনার্স)' -> 'প্রশ্নপত্র প্রণয়ন'."""
+    value = (name or '').strip()
+    for suffix in _DEGREE_SUFFIXES:
+        if value.endswith(suffix):
+            return value[:-len(suffix)].strip()
+    return value
+
+
 @login_required
 @user_passes_test(lambda u: u.is_authenticated and u.profile.user_type == 'কন্ট্রোলার')
 def export_accepted_bills_pdf(request):
-    """Generate a PDF report of the currently filtered controller-approved bills."""
-    accepted_bills_list = Bill.objects.filter(status='approved_by_controller').select_related('user').order_by('-controller_approved_at')
-    accepted_bills_list, filters = apply_accepted_bill_filters(request, accepted_bills_list)
+    """Consolidated PDF of controller-approved bills.
 
-    total_amount = accepted_bills_list.aggregate(total=Sum('total_amount'))['total'] or 0
-    total_count = accepted_bills_list.count()
+    One row per bill creator, one column per work type, then মোট টাকা, কর and
+    পরিশোধিত টাকা, with a column-wise totals row at the bottom.
 
-    year_labels = {'1st': '১ম বর্ষ', '2nd': '২য় বর্ষ', '3rd': '৩য় বর্ষ', '4th': '৪র্থ বর্ষ'}
+    EVERY work type gets its own column: the ones defined in the admin, plus
+    any name that appears in the data but is no longer defined. Nothing is
+    lumped into a catch-all, and the page is widened to fit however many
+    columns that turns out to be.
+    """
+    bills = (Bill.objects.filter(status='approved_by_controller')
+             .select_related('user', 'department', 'session')
+             .prefetch_related('tasks')
+             .order_by('-controller_approved_at'))
+    bills, filters = apply_accepted_bill_filters(request, bills)
+    bills = list(bills)
+
+    # Resolve the department so the header can name it and so department
+    # specific work types are included
+    department = None
+    dept_name = (filters.get('department_filter') or '').strip()
+    if dept_name:
+        department = Department.objects.filter(name__icontains=dept_name).first()
+    if department is None:
+        dept_ids = {b.department_id for b in bills if b.department_id}
+        if len(dept_ids) == 1:
+            department = Department.objects.filter(pk=dept_ids.pop()).first()
+
+    # 1. Every work type the admin has defined, in admin order
+    work_types = WorkType.objects.filter(is_active=True)
+    if department is not None:
+        work_types = work_types.filter(
+            Q(department__isnull=True) | Q(department=department))
+    columns = list(dict.fromkeys(
+        normalise_work_type(n)
+        for n in work_types.order_by('order', 'name').values_list('name', flat=True)))
+
+    # 2. Plus anything present in the data that is no longer defined, so it
+    #    still gets a named column of its own rather than a catch-all
+    extra = sorted({
+        normalise_work_type(task.work_type)
+        for bill in bills for task in bill.tasks.all()
+        if normalise_work_type(task.work_type) not in columns
+    })
+    columns.extend(extra)
+
+    rate = TaxSetting.current_rate()
+
+    rows = {}
+    for bill in bills:
+        row = rows.setdefault(bill.user_id, {
+            'user': bill.user,
+            'cells': {name: Decimal('0') for name in columns},
+            'total': Decimal('0'),
+        })
+        row['total'] += Decimal(str(bill.total_amount or 0))
+        for task in bill.tasks.all():
+            key = normalise_work_type(task.work_type)
+            if key in row['cells']:
+                row['cells'][key] += Decimal(str(task.amount or 0))
+
+    report_rows = []
+    for row in sorted(rows.values(),
+                      key=lambda r: (r['user'].get_full_name() or r['user'].username)):
+        tax = TaxSetting.tax_on(row['total'], rate)
+        report_rows.append({
+            'user': row['user'],
+            'name': row['user'].get_full_name() or row['user'].username,
+            'values': [row['cells'][name] for name in columns],
+            'total': row['total'],
+            'tax': tax,
+            'net': row['total'] - tax,
+        })
+
+    column_totals = [
+        sum((r['values'][i] for r in report_rows), Decimal('0'))
+        for i in range(len(columns))
+    ]
+    grand_total = sum((r['total'] for r in report_rows), Decimal('0'))
+    grand_tax = sum((r['tax'] for r in report_rows), Decimal('0'))
+    grand_net = sum((r['net'] for r in report_rows), Decimal('0'))
+
+    # Widen the page instead of squeezing columns. A4 landscape is the floor;
+    # past that the sheet grows by a fixed amount per extra work column.
+    FIXED_MM = 118          # serial + name + মোট + কর + পরিশোধিত + margins
+    PER_COLUMN_MM = 26
+    page_width = max(297, FIXED_MM + PER_COLUMN_MM * len(columns))
+    page_height = 210
+
+    exam_titles = {b.exam_title for b in bills}
+    exam_heading = exam_titles.pop() if len(exam_titles) == 1 else ''
 
     context = {
-        'bills': accepted_bills_list,
+        'columns': columns,
+        'rows': report_rows,
+        'column_totals': column_totals,
+        'grand_total': grand_total,
+        'grand_tax': grand_tax,
+        'grand_net': grand_net,
+        'tax_rate': rate,
+        'department': department,
+        'exam_heading': exam_heading,
         'filters': filters,
-        'status_label': 'কন্ট্রোলার কর্তৃক অনুমোদিত',
-        'year_label': year_labels.get(filters['year_filter'], filters['year_filter']),
-        'total_amount': total_amount,
-        'total_count': total_count,
+        'total_count': len(bills),
+        'page_width': page_width,
+        'page_height': page_height,
         'generated_at': timezone.now(),
         'generated_by': request.user,
-        'report_title': 'অনুমোদিত বিল রিপোর্ট',
-        'report_subtitle': 'কন্ট্রোলার প্যানেল',
-        'convert_to_bangla_digits': convert_to_bangla_digits,
-        'format_bangla_number': format_bangla_number,
+        'report_title': 'অনুমোদিত বিলের সমন্বিত বিবরণী',
     }
+    return render_accepted_summary_pdf(context)
 
-    pdf_content = render_bills_report_pdf(context)
-
-    if not pdf_content:
-        messages.error(request, 'পিডিএফ রিপোর্ট তৈরি করতে সমস্যা হয়েছে।')
-        return redirect('accepted_bills')
 
     response = HttpResponse(pdf_content, content_type='application/pdf')
     filename = f"accepted_bills_report_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -2259,7 +2680,9 @@ def bill_details_api(request, bill_id):
         'bill_number': bill.bill_number,
         'user_name': bill.user.get_full_name() or bill.user.username,
         'user_type': bill.user.profile.user_type if hasattr(bill.user, 'profile') else '',
-        'semester': bill.semester,
+        'semester': bill.year_semester,
+        'exam_title': bill.exam_title,
+        'session': bill.session.label_bn if bill.session_id else '',
         'total_amount': f"{bill.total_amount:,.2f}",
         'approved_date': bill.controller_approved_at.strftime('%d-%m-%Y %I:%M %p') if bill.controller_approved_at else '',
         'approved_by': bill.controller_approved_by.get_full_name() or bill.controller_approved_by.username if bill.controller_approved_by else '',
@@ -2299,16 +2722,7 @@ def rejected_bills(request):
     
     # Calculate year for each bill
     for bill in rejected_bills_list:
-        if '১ম বর্ষ' in bill.remarks or 'JSTUChairman1' in bill.remarks:
-            bill.year = '1st'
-        elif '২য় বর্ষ' in bill.remarks or 'JSTUChairman2' in bill.remarks:
-            bill.year = '2nd'
-        elif '৩য় বর্ষ' in bill.remarks or 'JSTUChairman3' in bill.remarks:
-            bill.year = '3rd'
-        elif '৪র্থ বর্ষ' in bill.remarks or 'JSTUChairman4' in bill.remarks:
-            bill.year = '4th'
-        else:
-            bill.year = ''
+        bill.year = bill_year_suffix(bill)
     
     # Pagination
     paginator = Paginator(rejected_bills_list, 20)
@@ -2357,18 +2771,15 @@ def controller_return_bill_to_chairman(request, bill_id):
 
 
 def _chairman_scoped_queryset(request, base_qs):
-    """Scope a bill queryset to the logged-in chairman's year, same convention used elsewhere
-    (a chairman only sees bills whose remarks mention their year)."""
-    chairman_username = request.user.username
-    year_map = {
-        'JSTUChairman1': '১ম বর্ষ',
-        'JSTUChairman2': '২য় বর্ষ',
-        'JSTUChairman3': '৩য় বর্ষ',
-        'JSTUChairman4': '৪র্থ বর্ষ',
-    }
-    year_text = year_map.get(chairman_username, '')
+    """Scope a bill queryset to the logged-in chairman's academic year.
+
+    The year is read from their profile, and matched against the bill's
+    academic_year field (with a fallback for pre-split bills) instead of
+    scanning remarks for a hardcoded username.
+    """
+    year_text = getattr(request.user.profile, 'chairman_year', '') or ''
     if year_text:
-        return base_qs.filter(remarks__icontains=year_text)
+        return base_qs.filter(year_bills_q(year_text))
     return base_qs
 
 
@@ -2379,7 +2790,7 @@ def chairman_returned_bills(request):
     From here the chairman can view/download the bill, read the controller's comment,
     add their signature, and forward the bill on to the original creator (ফেরত বিল)."""
     # Only show controller_returned bills that are NOT hidden and NOT already returned to user
-    bills_list = Bill.objects.filter(
+    bills_list = scope_bills_for_role(Bill.objects.all(), request.user).filter(
         status='controller_returned',
         is_hidden_from_chairman=False
     ).select_related('user', 'user__profile')
@@ -2433,15 +2844,19 @@ def bill_counts_api(request):
     if not (hasattr(request.user, 'profile') and
              request.user.profile.user_type == 'কন্ট্রোলার'):
          return JsonResponse({'error': 'Forbidden'}, status=403)
-    """API endpoint for bill counts - used by JavaScript notification"""
-    from django.db.models import Sum, Count
-    all_non_draft = Bill.objects.exclude(status='draft')
+    """API endpoint for bill counts - used by JavaScript notification.
+
+    Same scope as the controller home page: only bills that have reached the
+    controller, so the polled numbers match what was rendered server-side.
+    """
+    reached = Bill.objects.filter(status__in=CONTROLLER_STATUSES)
+    sent = reached.filter(status='sent_to_controller').count()
     return JsonResponse({
-        'total_bills': all_non_draft.count(),
-        'pending_count': all_non_draft.filter(status='pending').count(),
-        'approved_count': all_non_draft.filter(status='approved').count(),
-        'rejected_count': all_non_draft.filter(status='rejected').count(),
-        'sent_to_controller_count': Bill.objects.filter(status='sent_to_controller').count(),
+        'total_bills': reached.count(),
+        'pending_count': sent,
+        'approved_count': reached.filter(status='approved_by_controller').count(),
+        'rejected_count': reached.filter(status='rejected_by_controller').count(),
+        'sent_to_controller_count': sent,
     })
 
 
@@ -2524,3 +2939,224 @@ def send_returned_bill(request, bill_id):
     messages.success(request, f'বিল {bill.bill_number} সফলভাবে চেয়ারম্যানের কাছে পুনরায় পাঠানো হয়েছে!')
     
     return redirect('my_bills')
+
+
+# --------------------------
+# Chairman Document Upload / Send to Controller
+# --------------------------
+
+@login_required
+@user_passes_test(is_chairman)
+def chairman_documents(request):
+    """Chairman panel: upload files and forward them to the controller."""
+    if request.method == 'POST':
+        form = ChairmanDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.uploaded_by = request.user
+            doc.save()
+
+            # "Upload and send" does both in one step
+            if request.POST.get('action') == 'upload_and_send':
+                doc.mark_sent()
+                log_activity(request.user, 'Document sent',
+                             f'Document "{doc.title}" uploaded and sent to controller')
+                messages.success(request, f'"{doc.title}" আপলোড করে কন্ট্রোলারের কাছে পাঠানো হয়েছে!')
+            else:
+                log_activity(request.user, 'Document uploaded',
+                             f'Document "{doc.title}" uploaded')
+                messages.success(request, f'"{doc.title}" সফলভাবে আপলোড করা হয়েছে!')
+            return redirect('chairman_documents')
+        messages.error(request, 'দয়া করে নিচের ভুলগুলো ঠিক করুন।')
+    else:
+        form = ChairmanDocumentForm()
+
+    documents = ChairmanDocument.objects.filter(uploaded_by=request.user)
+
+    return render(request, 'core/chairman_documents.html', {
+        'form': form,
+        'documents': documents,
+        'sent_count': documents.filter(is_sent=True).count(),
+        'pending_count': documents.filter(is_sent=False).count(),
+        'max_size_mb': ChairmanDocument.MAX_SIZE_MB,
+        'allowed_extensions': ', '.join(e.upper() for e in ChairmanDocument.ALLOWED_EXTENSIONS),
+    })
+
+
+@login_required
+@user_passes_test(is_chairman)
+@require_POST
+def chairman_document_send(request, doc_id):
+    """Forward one already-uploaded file to the controller."""
+    doc = get_object_or_404(ChairmanDocument, id=doc_id, uploaded_by=request.user)
+
+    if doc.is_sent:
+        messages.info(request, f'"{doc.title}" ইতিমধ্যে কন্ট্রোলারের কাছে পাঠানো হয়েছে।')
+    else:
+        doc.mark_sent()
+        log_activity(request.user, 'Document sent',
+                     f'Document "{doc.title}" sent to controller')
+        messages.success(request, f'"{doc.title}" কন্ট্রোলারের কাছে পাঠানো হয়েছে!')
+    return redirect('chairman_documents')
+
+
+@login_required
+@user_passes_test(is_chairman)
+@require_POST
+def chairman_document_delete(request, doc_id):
+    """Delete one of your own uploads, removing the stored file too."""
+    doc = get_object_or_404(ChairmanDocument, id=doc_id, uploaded_by=request.user)
+    title = doc.title
+    if doc.file:
+        doc.file.delete(save=False)
+    doc.delete()
+    log_activity(request.user, 'Document deleted', f'Document "{title}" deleted')
+    messages.success(request, f'"{title}" মুছে ফেলা হয়েছে।')
+    return redirect('chairman_documents')
+
+
+@login_required
+@user_passes_test(is_controller)
+def controller_documents(request):
+    """Controller inbox: everything chairmen have sent."""
+    documents = ChairmanDocument.objects.filter(is_sent=True).select_related('uploaded_by')
+
+    chairman_filter = request.GET.get('chairman', '').strip()
+    if chairman_filter:
+        documents = documents.filter(uploaded_by__username=chairman_filter)
+
+    search = request.GET.get('q', '').strip()
+    if search:
+        documents = documents.filter(title__icontains=search)
+
+    documents = documents.order_by('-sent_at', '-uploaded_at')
+
+    # Only chairmen who have actually sent something appear in the filter
+    senders = User.objects.filter(
+        chairman_documents__is_sent=True
+    ).distinct().order_by('first_name', 'username')
+
+    return render(request, 'core/controller_documents.html', {
+        'documents': documents,
+        'senders': senders,
+        'chairman_filter': chairman_filter,
+        'search': search,
+        'total_count': ChairmanDocument.objects.filter(is_sent=True).count(),
+    })
+
+
+@login_required
+def chairman_document_download(request, doc_id):
+    """Serve an uploaded file with a permission check.
+
+    Files deliberately do NOT go out over MEDIA_URL: that would make every
+    upload readable by anyone who guessed the path. can_be_viewed_by() limits
+    it to the uploader and, once sent, the controller.
+
+    ?inline=1 renders a PDF in the browser; anything else downloads.
+    """
+    doc = get_object_or_404(ChairmanDocument, id=doc_id)
+
+    if not doc.can_be_viewed_by(request.user):
+        raise Http404('ফাইলটি পাওয়া যায়নি।')
+
+    if not doc.exists_on_disk:
+        messages.error(request, f'"{doc.title}" ফাইলটি সার্ভারে পাওয়া যায়নি।')
+        return redirect('controller_documents' if is_controller(request.user)
+                        else 'chairman_documents')
+
+    # Opening it as the controller counts as reading it, so the chairman can
+    # see whether their file was actually looked at.
+    if is_controller(request.user) and doc.is_sent:
+        doc.mark_read()
+
+    inline = request.GET.get('inline') == '1' and doc.is_pdf
+    response = FileResponse(
+        doc.file.open('rb'),
+        as_attachment=not inline,
+        filename=doc.filename,
+    )
+    if inline:
+        response['Content-Type'] = 'application/pdf'
+    return response
+
+
+# --------------------------
+# Chairman Signature (year-based, replaces the four username-gated views)
+# --------------------------
+
+@login_required
+@user_passes_test(is_chairman)
+def signature_upload_chairman(request):
+    """One signature-upload page for every chairman.
+
+    The old design had four separate views, each locked to a hardcoded
+    username (JSTUChairman1..4) and writing to its own numbered field. That
+    capped the university at four chairmen. Now any chairman uploads their own
+    signature, and which year it applies to comes from their profile.
+    """
+    profile = request.user.profile
+
+    if request.method == 'POST':
+        signature_file = request.FILES.get('signature')
+        if not signature_file:
+            messages.error(request, 'দয়া করে একটি ছবি নির্বাচন করুন।')
+            return redirect('signature_upload_chairman')
+
+        if signature_file.content_type not in ('image/jpeg', 'image/png', 'image/jpg'):
+            messages.error(request, 'শুধুমাত্র JPEG বা PNG ফরম্যাটের ছবি আপলোড করুন।')
+            return redirect('signature_upload_chairman')
+
+        if signature_file.size > 2 * 1024 * 1024:
+            messages.error(request, 'ছবির সাইজ ২MB এর কম হতে হবে।')
+            return redirect('signature_upload_chairman')
+
+        profile.signature_chairman = signature_file
+        profile.save()
+        log_activity(request.user, 'Signature uploaded',
+                     f'Chairman ({profile.chairman_year or "no year"}) uploaded signature')
+        messages.success(request, 'আপনার স্বাক্ষর সফলভাবে আপলোড করা হয়েছে!')
+        return redirect('signature_upload_chairman')
+
+    return render(request, 'core/signature_upload_chairman.html', {
+        'signature': profile.active_chairman_signature,
+        'chairman_year': profile.chairman_year,
+        'department': profile.department,
+    })
+
+
+@login_required
+@user_passes_test(is_chairman)
+@require_POST
+def delete_signature_chairman(request):
+    """Remove this chairman's signature (both new and legacy fields)."""
+    profile = request.user.profile
+    removed = False
+
+    if profile.signature_chairman:
+        profile.signature_chairman.delete(save=False)
+        profile.signature_chairman = None
+        removed = True
+
+    # Also clear whichever legacy numbered field backs their year, otherwise
+    # active_chairman_signature would keep returning the old image.
+    legacy_field = {
+        '১ম বর্ষ': 'signature_chairman1',
+        '২য় বর্ষ': 'signature_chairman2',
+        '৩য় বর্ষ': 'signature_chairman3',
+        '৪র্থ বর্ষ': 'signature_chairman4',
+    }.get(profile.chairman_year or '')
+    if legacy_field:
+        legacy_value = getattr(profile, legacy_field)
+        if legacy_value:
+            legacy_value.delete(save=False)
+            setattr(profile, legacy_field, None)
+            removed = True
+
+    profile.save()
+    if removed:
+        log_activity(request.user, 'Signature deleted', 'Chairman deleted signature')
+        messages.success(request, 'আপনার স্বাক্ষর সফলভাবে ডিলিট করা হয়েছে!')
+    else:
+        messages.info(request, 'কোনো স্বাক্ষর পাওয়া যায়নি।')
+    return redirect('signature_upload_chairman')

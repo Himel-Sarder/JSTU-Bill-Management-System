@@ -70,9 +70,9 @@
                     <input type="text" name="user" class="form-control" placeholder="ইউজারনেম" value="{{ user_filter }}">
                 </div>
                 <div class="form-group">
-                    <label>সেমিস্টার</label>
+                    <label>বর্ষ</label>
                     <select name="semester" class="form-control">
-                        <option value="">সব সেমিস্টার</option>
+                        <option value="">সব বর্ষ</option>
                         {% for value, label in semester_choices %}
                         <option value="{{ value }}" {% if semester_filter == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
@@ -89,7 +89,12 @@
                 </div>
                 <div class="form-group">
                     <label>বিভাগ</label>
-                    <input type="text" name="department" class="form-control" placeholder="বিভাগের নাম" value="{{ department_filter }}">
+                    <select name="department" class="form-control">
+                        <option value="">সব বিভাগ</option>
+                        {% for dept in department_choices %}
+                        <option value="{{ dept.name }}" {% if department_filter == dept.name %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>ব্যাংক</label>
@@ -165,7 +170,7 @@
                         {% for bill in accepted_bills %}
                         <tr>
                             <td>{{ forloop.counter|bangla_number }}</td>
-                            <td class="bill-number">{{ bill.bill_number|bangla_number }}</td>
+                            <td class="bill-number">{{ bill.bill_number|bangla_number }}{% if bill.controller_bill_number %}<span class="ctrl-billno" title="কন্ট্রোলার অনুমোদিত বিল নম্বর">কন্ট্রোলার নং: {{ bill.controller_bill_number_bn }}</span>{% endif %}</td>
                             <td>
                                 <div class="user-info">
                                     <strong>{{ bill.user.get_full_name|default:bill.user.username }}</strong>
@@ -183,7 +188,7 @@
                                     {% else %}{{ bill.year }}{% endif %}
                                 </span>
                             </td>
-                            <td>{{ bill.semester }}</td>
+                            <td>{{ bill.year_semester }}</td>
                             <td class="amount">৳ {{ bill.total_amount|bangla_number }}</td>
                             <td>{{ bill.controller_approved_at|date:"d/m/Y h:i A"|bangla_number }}</td>
                             <td>
@@ -936,4 +941,18 @@ window.onclick = function(event) {
     }
 }
 </script>
+
+<style>
+.ctrl-billno {
+    display: inline-block;
+    background: rgba(46,204,113,0.22);
+    border: 1px solid rgba(46,204,113,0.45);
+    color: #7ee2a8;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+</style>
 {% endblock %}

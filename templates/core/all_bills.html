@@ -6,60 +6,61 @@
 {% block content %}
 <div class="container">
     <div class="glass-card">
-        <h2 style="color: white; margin-bottom: 20px;">
-            <i class="fas fa-file-invoice"></i> সকল বিল - চেয়ারম্যান প্যানেল
-        </h2>
-        
-        <!-- Quick Filter Buttons (Clickable) -->
-        <div style="margin-bottom: 20px;">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <a href="?status=" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}" 
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-list"></i> সব ({{ total_bills }})
-                </a>
-                <a href="?status=pending" class="btn {% if status_filter == 'pending' %}btn-warning{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-clock"></i> অপেক্ষা ({{ pending_count }})
-                </a>
-                <a href="?status=approved" class="btn {% if status_filter == 'approved' %}btn-success{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-check-circle"></i> অনুমোদিত ({{ approved_count }})
-                </a>
-                <a href="?status=rejected" class="btn {% if status_filter == 'rejected' %}btn-danger{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-times-circle"></i> বাতিল ({{ rejected_count }})
-                </a>
-                <a href="?status=paid" class="btn {% if status_filter == 'paid' %}btn-info{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-money-bill-wave"></i> পরিশোধিত ({{ paid_count }})
-                </a>
-                <a href="?status=sent_to_controller" class="btn {% if status_filter == 'sent_to_controller' %}btn-primary{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-paper-plane"></i> কন্ট্রোলারে প্রেরিত ({{ sent_to_controller_count|default:0 }})
-                </a>
-                <a href="?status=approved_by_controller" class="btn {% if status_filter == 'approved_by_controller' %}btn-purple{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-check-double"></i> কন্ট্রোলার অনুমোদিত ({{ approved_by_controller_count|default:0 }})
-                </a>
-                <a href="?status=rejected_by_controller" class="btn {% if status_filter == 'rejected_by_controller' %}btn-orange{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-ban"></i> কন্ট্রোলার বাতিল ({{ rejected_by_controller_count|default:0 }})
-                </a>
-                <a href="?status=controller_returned" class="btn {% if status_filter == 'controller_returned' %}btn-warning{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px;">
-                    <i class="fas fa-undo-alt"></i> কন্ট্রোলার ফেরত ({{ controller_returned_count|default:0 }})
-                </a>
-                <a href="?status=returned_to_user" class="btn {% if status_filter == 'returned_to_user' %}btn-success{% else %}btn-secondary{% endif %}"
-                   style="padding: 8px 20px; background: linear-gradient(45deg, #4CAF50, #388E3C);">
-                    <i class="fas fa-share"></i> প্রস্তুতকারীর কাছে ফেরত ({{ returned_to_user_count|default:0 }})
-                </a>
+
+        <!-- Page header -->
+        <div class="sheet-head">
+            <div class="sheet-head-main">
+                <div>
+                    <h2>সকল বিল</h2>
+                    <p>চেয়ারম্যান প্যানেল — বিল পর্যালোচনা, অনুমোদন ও প্রেরণ</p>
+                </div>
+            </div>
+            <div class="sheet-head-meta">
+                <span class="meta-chip">মোট {{ total_bills|bangla_number }} টি বিল</span>
+                {% if filtered_amount %}
+                <span class="meta-chip">ফিল্টারকৃত পরিমাণ: {{ filtered_amount|floatformat:0|bangla_number }} টাকা</span>
+                {% endif %}
             </div>
         </div>
-        
+
+        <!-- Quick Filter Buttons (Clickable) -->
+        <div class="filter-bar">
+            <a href="?status=" class="filter-pill {% if not status_filter %}active{% endif %}">
+                সব <span class="filter-count">{{ total_bills|bangla_number }}</span>
+            </a>
+            <a href="?status=pending" class="filter-pill {% if status_filter == 'pending' %}active{% endif %}">
+                অপেক্ষা <span class="filter-count">{{ pending_count|bangla_number }}</span>
+            </a>
+            <a href="?status=approved" class="filter-pill {% if status_filter == 'approved' %}active{% endif %}">
+                অনুমোদিত <span class="filter-count">{{ approved_count|bangla_number }}</span>
+            </a>
+            <a href="?status=rejected" class="filter-pill {% if status_filter == 'rejected' %}active{% endif %}">
+                বাতিল <span class="filter-count">{{ rejected_count|bangla_number }}</span>
+            </a>
+            <a href="?status=paid" class="filter-pill {% if status_filter == 'paid' %}active{% endif %}">
+                পরিশোধিত <span class="filter-count">{{ paid_count|bangla_number }}</span>
+            </a>
+            <a href="?status=sent_to_controller" class="filter-pill {% if status_filter == 'sent_to_controller' %}active{% endif %}">
+                কন্ট্রোলারে প্রেরিত <span class="filter-count">{{ sent_to_controller_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=approved_by_controller" class="filter-pill {% if status_filter == 'approved_by_controller' %}active{% endif %}">
+                কন্ট্রোলার অনুমোদিত <span class="filter-count">{{ approved_by_controller_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=rejected_by_controller" class="filter-pill {% if status_filter == 'rejected_by_controller' %}active{% endif %}">
+                কন্ট্রোলার বাতিল <span class="filter-count">{{ rejected_by_controller_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=controller_returned" class="filter-pill {% if status_filter == 'controller_returned' %}active{% endif %}">
+                কন্ট্রোলার ফেরত <span class="filter-count">{{ controller_returned_count|default:0|bangla_number }}</span>
+            </a>
+            <a href="?status=returned_to_user" class="filter-pill {% if status_filter == 'returned_to_user' %}active{% endif %}">
+                প্রস্তুতকারীর কাছে ফেরত <span class="filter-count">{{ returned_to_user_count|default:0|bangla_number }}</span>
+            </a>
+        </div>
+
         <!-- Filter Section -->
-        <div style="margin-bottom: 20px;">
-            <form method="get" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                <select name="status" class="form-control" style="width: auto; min-width: 150px;">
+        <div class="filter-card">
+            <form method="get" class="filter-form">
+                <select name="status" class="form-control">
                     <option value="">সব স্ট্যাটাস</option>
                     <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>অপেক্ষা</option>
                     <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>অনুমোদিত</option>
@@ -71,294 +72,466 @@
                     <option value="controller_returned" {% if status_filter == 'controller_returned' %}selected{% endif %}>কন্ট্রোলার ফেরত</option>
                     <option value="returned_to_user" {% if status_filter == 'returned_to_user' %}selected{% endif %}>প্রস্তুতকারীর কাছে ফেরত</option>
                 </select>
-                
-                <input type="text" name="user" class="form-control" placeholder="ব্যবহারকারীর নাম" 
-                       value="{{ user_filter }}" style="width: auto; min-width: 200px;">
-                
-                <button type="submit" class="btn btn-info">
-                    <i class="fas fa-search"></i> অনুসন্ধান
-                </button>
-                
-                <a href="{% url 'all_bills' %}" class="btn btn-secondary">
-                    <i class="fas fa-redo"></i> রিসেট
-                </a>
+
+                <input type="text" name="user" class="form-control" placeholder="ব্যবহারকারীর নাম"
+                       value="{{ user_filter }}">
+
+                <button type="submit" class="btn btn-solid">অনুসন্ধান</button>
+
+                <a href="{% url 'all_bills' %}" class="btn btn-ghost">রিসেট</a>
             </form>
         </div>
-        
+
         <!-- Bills Table -->
         {% if bills %}
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; color: white;">
-                <thead>
-                    <tr style="background: rgba(255,255,255,0.1); border-bottom: 2px solid rgba(255,255,255,0.2);">
-                        <th style="padding: 12px; text-align: left;">বিল নম্বর</th>
-                        <th style="padding: 12px; text-align: left;">ব্যবহারকারী</th>
-                        <th style="padding: 12px; text-align: left;">সেমিস্টার</th>
-                        <th style="padding: 12px; text-align: right;">পরিমাণ (টাকা)</th>
-                        <th style="padding: 12px; text-align: center;">স্ট্যাটাস</th>
-                        <th style="padding: 12px; text-align: left;">পাঠানোর তারিখ</th>
-                        <th style="padding: 12px; text-align: center;">অ্যাকশন</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for bill in bills %}
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 12px;">
-                            <strong>{{ bill.bill_number|bangla_number }}</strong>
-                        </td>
-                        <td style="padding: 12px;">
-                            {{ bill.user.get_full_name|default:bill.user.username }}
-                        </td>
-                        <td style="padding: 12px;">
-                            {{ bill.semester }}
-                        </td>
-                        <td style="padding: 12px; text-align: right;">
-                            <strong>{{ bill.total_amount|floatformat:2|bangla_number }} টাকা</strong>
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
-                            {% if bill.status == 'pending' %}
-                                <span class="status-badge status-pending">অপেক্ষা</span>
-                            {% elif bill.status == 'approved' %}
-                                <span class="status-badge status-approved">অনুমোদিত</span>
-                            {% elif bill.status == 'rejected' %}
-                                <span class="status-badge status-rejected">বাতিল</span>
-                            {% elif bill.status == 'paid' %}
-                                <span class="status-badge status-paid">পরিশোধিত</span>
-                            {% elif bill.status == 'sent_to_controller' %}
-                                <span class="status-badge status-sent-to-controller">কন্ট্রোলারে প্রেরিত</span>
-                            {% elif bill.status == 'approved_by_controller' %}
-                                <span class="status-badge status-approved-by-controller">✓ কন্ট্রোলার কর্তৃক অনুমোদিত</span>
-                            {% elif bill.status == 'rejected_by_controller' %}
-                                <span class="status-badge status-rejected-by-controller">✗ কন্ট্রোলার কর্তৃক বাতিল</span>
-                            {% elif bill.status == 'controller_returned' %}
-                                <span class="status-badge status-controller-returned">↺ কন্ট্রোলার ফেরত</span>
-                            {% elif bill.status == 'returned_to_user' %}
-                                <span class="status-badge status-returned-to-user">↺ প্রস্তুতকারীর কাছে ফেরত</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding: 12px;">
-                            {% if bill.sent_at %}
-                                {{ bill.sent_at|date:"d-m-Y"|bangla_number }}
-                            {% else %}
-                                {{ bill.created_at|date:"d-m-Y"|bangla_number }}
-                            {% endif %}
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
-                            <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
-                                <a href="{% url 'view_bill_pdf' bill.id %}" target="_blank" 
-                                   class="btn btn-info" style="padding: 5px 10px; font-size: 12px;">
-                                    <i class="fas fa-eye"></i> দেখুন
-                                </a>
-                                <a href="{% url 'download_bill' bill.id %}" 
-                                   class="btn btn-success" style="padding: 5px 10px; font-size: 12px;">
-                                    <i class="fas fa-download"></i> ডাউনলোড
-                                </a>
-                                
-                                <!-- Show different actions based on status -->
+        <div class="table-card">
+            <div class="table-scroll">
+                <table class="bills-table">
+                    <thead>
+                        <tr>
+                            <th>বিল নম্বর</th>
+                            <th>ব্যবহারকারী</th>
+                            <th>সেমিস্টার</th>
+                            <th class="num">পরিমাণ (টাকা)</th>
+                            <th class="center">স্ট্যাটাস</th>
+                            <th>পাঠানোর তারিখ</th>
+                            <th class="center">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in bills %}
+                        <tr>
+                            <td>
+                                <strong>{{ bill.bill_number|bangla_number }}</strong>{% if bill.controller_bill_number %}<span class="ctrl-billno" title="কন্ট্রোলার অনুমোদিত বিল নম্বর">কন্ট্রোলার নং: {{ bill.controller_bill_number_bn }}</span>{% endif %}
+                            </td>
+                            <td>
+                                {{ bill.user.get_full_name|default:bill.user.username }}
+                            </td>
+                            <td>
+                                {{ bill.year_semester }}
+                            </td>
+                            <td class="num">
+                                <strong>{{ bill.total_amount|floatformat:2|bangla_number }}</strong>
+                            </td>
+                            <td class="center">
                                 {% if bill.status == 'pending' %}
-                                    <a href="{% url 'update_bill_status' bill.id %}" 
-                                       class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">
-                                        <i class="fas fa-edit"></i> রিভিউ
-                                    </a>
-                                    <!-- Reject & Return Button for pending bills -->
-                                    <button onclick="openReturnToUserModal('{{ bill.id }}', '{{ bill.bill_number }}', 'pending')" 
-                                            class="btn btn-return-user" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #FF9800, #F57C00); color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                        <i class="fas fa-times-circle"></i> বাতিল করে ফেরত
-                                    </button>
+                                    <span class="status-badge status-pending">অপেক্ষা</span>
                                 {% elif bill.status == 'approved' %}
-                                    <!-- Send to Controller Button -->
-                                    <button onclick="openSendToControllerModal('{{ bill.id }}', '{{ bill.bill_number }}')" 
-                                            class="btn btn-primary" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #2196F3, #1976D2);">
-                                        <i class="fas fa-paper-plane"></i> কন্ট্রোলারে পাঠান
-                                    </button>
-                                    <!-- Reject & Return Button for approved bills -->
-                                    <button onclick="openReturnToUserModal('{{ bill.id }}', '{{ bill.bill_number }}', 'approved')" 
-                                            class="btn btn-return-user" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #FF9800, #F57C00); color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                        <i class="fas fa-times-circle"></i> বাতিল করে ফেরত
-                                    </button>
+                                    <span class="status-badge status-approved">অনুমোদিত</span>
+                                {% elif bill.status == 'rejected' %}
+                                    <span class="status-badge status-rejected">বাতিল</span>
+                                {% elif bill.status == 'paid' %}
+                                    <span class="status-badge status-paid">পরিশোধিত</span>
+                                {% elif bill.status == 'sent_to_controller' %}
+                                    <span class="status-badge status-sent-to-controller">কন্ট্রোলারে প্রেরিত</span>
+                                {% elif bill.status == 'approved_by_controller' %}
+                                    <span class="status-badge status-approved-by-controller">✓ কন্ট্রোলার কর্তৃক অনুমোদিত</span>
+                                {% elif bill.status == 'rejected_by_controller' %}
+                                    <span class="status-badge status-rejected-by-controller">✗ কন্ট্রোলার কর্তৃক বাতিল</span>
                                 {% elif bill.status == 'controller_returned' %}
-                                    <!-- View/Process Returned Bill Button -->
-                                    <a href="{% url 'chairman_returned_bills' %}" 
-                                       class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">
-                                        <i class="fas fa-undo-alt"></i> বিস্তারিত দেখুন
-                                    </a>
+                                    <span class="status-badge status-controller-returned">↺ কন্ট্রোলার ফেরত</span>
                                 {% elif bill.status == 'returned_to_user' %}
-                                    <!-- Already returned to user - show info -->
-                                    <span class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px; opacity: 0.7; cursor: default;">
-                                        <i class="fas fa-check-circle"></i> ফেরত পাঠানো হয়েছে
-                                    </span>
+                                    <span class="status-badge status-returned-to-user">↺ প্রস্তুতকারীর কাছে ফেরত</span>
                                 {% endif %}
-                                
-                                <!-- Signature Button for Approved Bills -->
-                                {% if bill.status == 'approved' and request.user.profile.user_type == 'চেয়ারম্যান' %}
-                                <a href="{% url 'add_signature_to_bill_chairman' bill.id %}" 
-                                   class="btn btn-primary" style="padding: 5px 10px; font-size: 12px; background: linear-gradient(45deg, #4ECDC4, #44A08D);">
-                                    <i class="fas fa-signature"></i> সাক্ষর
-                                </a>
+                            </td>
+                            <td>
+                                {% if bill.sent_at %}
+                                    {{ bill.sent_at|date:"d-m-Y"|bangla_number }}
+                                {% else %}
+                                    {{ bill.created_at|date:"d-m-Y"|bangla_number }}
                                 {% endif %}
-                                
-                                <!-- Delete Button for Chairman -->
-                                <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}')" 
-                                        class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">
-                                    <i class="fas fa-trash"></i> ডিলিট
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td class="center">
+                                <div class="row-actions">
+                                    <a href="{% url 'view_bill_pdf' bill.id %}" target="_blank" class="btn btn-row">দেখুন</a>
+                                    <a href="{% url 'download_bill' bill.id %}" class="btn btn-row">ডাউনলোড</a>
+
+                                    <!-- Show different actions based on status -->
+                                    {% if bill.status == 'pending' %}
+                                        <a href="{% url 'update_bill_status' bill.id %}" class="btn btn-row btn-row-solid">রিভিউ</a>
+                                        <!-- Reject & Return Button for pending bills -->
+                                        <button onclick="openReturnToUserModal('{{ bill.id }}', '{{ bill.bill_number }}', 'pending')"
+                                                class="btn btn-row btn-return-user">বাতিল করে ফেরত</button>
+                                    {% elif bill.status == 'approved' %}
+                                        <!-- Send to Controller Button -->
+                                        <button onclick="openSendToControllerModal('{{ bill.id }}', '{{ bill.bill_number }}')"
+                                                class="btn btn-row btn-row-solid">কন্ট্রোলারে পাঠান</button>
+                                        <!-- Reject & Return Button for approved bills -->
+                                        <button onclick="openReturnToUserModal('{{ bill.id }}', '{{ bill.bill_number }}', 'approved')"
+                                                class="btn btn-row btn-return-user">বাতিল করে ফেরত</button>
+                                    {% elif bill.status == 'controller_returned' %}
+                                        <!-- View/Process Returned Bill Button -->
+                                        <a href="{% url 'chairman_returned_bills' %}" class="btn btn-row btn-row-solid">বিস্তারিত দেখুন</a>
+                                    {% elif bill.status == 'returned_to_user' %}
+                                        <!-- Already returned to user - show info -->
+                                        <span class="btn btn-row is-static">ফেরত পাঠানো হয়েছে</span>
+                                    {% endif %}
+
+                                    <!-- Signature Button for Approved Bills -->
+                                    {% if bill.status == 'approved' and request.user.profile.user_type == 'চেয়ারম্যান' %}
+                                    <a href="{% url 'add_signature_to_bill_chairman' bill.id %}" class="btn btn-row btn-row-outline">সাক্ষর</a>
+                                    {% endif %}
+
+                                    <!-- Delete Button for Chairman -->
+                                    <button onclick="confirmDelete('{{ bill.id }}', '{{ bill.bill_number }}', '{{ bill.status }}')"
+                                            class="btn btn-row btn-row-danger">ডিলিট</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
+
         <!-- Pagination -->
         {% if bills.has_other_pages %}
-        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 30px;">
+        <div class="pagination">
             {% if bills.has_previous %}
-                <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
-                   class="btn btn-secondary">প্রথম</a>
-                <a href="?page={{ bills.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
-                   class="btn btn-secondary">পূর্ববর্তী</a>
+                <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}"
+                   class="pagination-btn">প্রথম</a>
+                <a href="?page={{ bills.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}"
+                   class="pagination-btn">পূর্ববর্তী</a>
             {% endif %}
-            
-            <span style="color: white; padding: 8px 16px;">
-                পৃষ্ঠা {{ bills.number }} / {{ bills.paginator.num_pages }}
+
+            <span class="pagination-info">
+                পৃষ্ঠা {{ bills.number|bangla_number }} / {{ bills.paginator.num_pages|bangla_number }}
             </span>
-            
+
             {% if bills.has_next %}
-                <a href="?page={{ bills.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
-                   class="btn btn-secondary">পরবর্তী</a>
-                <a href="?page={{ bills.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}" 
-                   class="btn btn-secondary">শেষ</a>
+                <a href="?page={{ bills.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}"
+                   class="pagination-btn">পরবর্তী</a>
+                <a href="?page={{ bills.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}"
+                   class="pagination-btn">শেষ</a>
             {% endif %}
         </div>
         {% endif %}
-        
+
         {% else %}
-        <div style="text-align: center; padding: 50px;">
-            <i class="fas fa-inbox" style="font-size: 64px; color: rgba(255,255,255,0.5);"></i>
-            <p style="color: white; margin-top: 20px;">কোনো বিল পাওয়া যায়নি।</p>
+        <div class="empty-card">
+            <h3>কোনো বিল পাওয়া যায়নি।</h3>
+            <p>ফিল্টার পরিবর্তন করে আবার চেষ্টা করুন।</p>
         </div>
         {% endif %}
     </div>
 </div>
 
 <!-- Send to Controller Modal -->
-<div id="sendToControllerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-    <div class="glass-card" style="max-width: 500px; margin: 20px; text-align: center;">
-        <i class="fas fa-paper-plane" style="font-size: 64px; color: #2196F3; margin-bottom: 20px;"></i>
-        <h3 style="color: white; margin-bottom: 15px;">কন্ট্রোলারে পাঠান</h3>
-        <p id="sendBillInfo" style="color: #FFC107; margin-bottom: 15px; font-size: 16px; font-weight: bold;"></p>
-        <div style="background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33,150,243,0.4); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-            <i class="fas fa-info-circle" style="color: #2196F3;"></i>
-            <p style="color: white; margin: 6px 0 0; font-size: 14px;">
-                এই বিলটি কন্ট্রোলারের অনুমোদনের জন্য প্রেরণ করা হবে।<br>
-                কন্ট্রোলার অনুমোদন দিলে বিলটি পরিশোধযোগ্য হবে।
-            </p>
+<div id="sendToControllerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(23,20,45,0.6); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="modal-sheet">
+        <h3>কন্ট্রোলারে পাঠান</h3>
+        <p id="sendBillInfo" class="modal-billinfo"></p>
+        <div class="modal-note">
+            এই বিলটি কন্ট্রোলারের অনুমোদনের জন্য প্রেরণ করা হবে।<br>
+            কন্ট্রোলার অনুমোদন দিলে বিলটি পরিশোধযোগ্য হবে।
         </div>
-        <div style="display: flex; gap: 10px; justify-content: center;">
-            <button onclick="closeSendToControllerModal()" class="btn btn-secondary">
-                <i class="fas fa-times"></i> বাতিল
-            </button>
-            <form id="sendToControllerForm" method="post" style="display: inline;">
+        <div class="modal-buttons">
+            <button onclick="closeSendToControllerModal()" class="btn btn-ghost">বাতিল</button>
+            <form id="sendToControllerForm" method="post">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary" style="background: linear-gradient(45deg, #2196F3, #1976D2);">
-                    <i class="fas fa-paper-plane"></i> নিশ্চিত করুন
-                </button>
+                <button type="submit" class="btn btn-solid">নিশ্চিত করুন</button>
             </form>
         </div>
     </div>
 </div>
 
 <!-- Reject & Return to Prostitukari Modal -->
-<div id="returnToUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-    <div class="glass-card" style="max-width: 500px; margin: 20px; text-align: center;">
-        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #FF9800; margin-bottom: 20px;"></i>
-        <h3 style="color: white; margin-bottom: 15px;">বিল বাতিল করে ফেরত পাঠান</h3>
-        <p id="returnBillInfo" style="color: #FFC107; margin-bottom: 15px; font-size: 16px; font-weight: bold;"></p>
-        <div style="background: rgba(255, 152, 0, 0.15); border: 1px solid rgba(255,152,0,0.4); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-            <i class="fas fa-info-circle" style="color: #FF9800;"></i>
-            <p style="color: white; margin: 6px 0 0; font-size: 14px;">
-                <strong>সতর্কতা:</strong> এই বিলটি <strong style="color: #FF6B6B;">বাতিল (Rejected)</strong> করে প্রস্তুতকারীর কাছে ফেরত পাঠানো হবে।<br>
-                প্রস্তুতকারী বিলটি সংশোধন করে পুনরায় পাঠাতে পারবেন।
-            </p>
+<div id="returnToUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(23,20,45,0.6); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="modal-sheet">
+        <h3>বিল বাতিল করে ফেরত পাঠান</h3>
+        <p id="returnBillInfo" class="modal-billinfo"></p>
+        <div class="modal-note is-warning">
+            <strong>সতর্কতা:</strong> এই বিলটি <strong>বাতিল (Rejected)</strong> করে প্রস্তুতকারীর কাছে ফেরত পাঠানো হবে।<br>
+            প্রস্তুতকারী বিলটি সংশোধন করে পুনরায় পাঠাতে পারবেন।
         </div>
         <form id="returnToUserForm" method="post">
             {% csrf_token %}
-            <div style="text-align: left; margin-bottom: 15px;">
-                <label style="color: white; display: block; margin-bottom: 5px; font-weight: 500;">বাতিলের কারণ / মন্তব্য (ঐচ্ছিক):</label>
-                <textarea name="remarks" rows="3" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; resize: vertical;" placeholder="কেন এই বিলটি বাতিল করে ফেরত পাঠানো হচ্ছে তা জানান..."></textarea>
+            <div class="modal-field">
+                <label>বাতিলের কারণ / মন্তব্য (ঐচ্ছিক):</label>
+                <textarea name="remarks" rows="3" class="form-control" placeholder="কেন এই বিলটি বাতিল করে ফেরত পাঠানো হচ্ছে তা জানান..."></textarea>
             </div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" onclick="closeReturnToUserModal()" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> বাতিল
-                </button>
-                <button type="submit" class="btn btn-return-user" style="background: linear-gradient(45deg, #FF9800, #F57C00); color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer;">
-                    <i class="fas fa-undo-alt"></i> বাতিল করে ফেরত পাঠান
-                </button>
+            <div class="modal-buttons">
+                <button type="button" onclick="closeReturnToUserModal()" class="btn btn-ghost">বাতিল</button>
+                <button type="submit" class="btn btn-solid btn-return-user">বাতিল করে ফেরত পাঠান</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-    <div class="glass-card" style="max-width: 450px; margin: 20px; text-align: center;">
-        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #F44336; margin-bottom: 20px;"></i>
-        <h3 style="color: white; margin-bottom: 15px;">নিশ্চিত করুন</h3>
-        <p id="billInfo" style="color: #FFC107; margin-bottom: 10px; font-size: 16px; font-weight: bold;"></p>
-        <div style="background: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244,67,54,0.4); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-            <i class="fas fa-exclamation-circle" style="color: #F44336;"></i>
-            <p style="color: white; margin: 6px 0 0; font-size: 14px;">
-                এই বিলটি <strong>স্থায়ীভাবে</strong> ডেটাবেস থেকে মুছে ফেলা হবে।<br>
-                এই action পূর্বাবস্থায় ফেরানো <strong>যাবে না।</strong>
-            </p>
+<div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(23,20,45,0.6); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="modal-sheet">
+        <h3>নিশ্চিত করুন</h3>
+        <p id="billInfo" class="modal-billinfo"></p>
+        <div class="modal-note is-danger">
+            এই বিলটি <strong>স্থায়ীভাবে</strong> ডেটাবেস থেকে মুছে ফেলা হবে।<br>
+            এই action পূর্বাবস্থায় ফেরানো <strong>যাবে না।</strong>
         </div>
-        <div style="display: flex; gap: 10px; justify-content: center;">
-            <button onclick="closeDeleteModal()" class="btn btn-secondary">
-                <i class="fas fa-times"></i> বাতিল
-            </button>
-            <form id="deleteForm" method="post" style="display: inline;">
+        <div class="modal-buttons">
+            <button onclick="closeDeleteModal()" class="btn btn-ghost">বাতিল</button>
+            <form id="deleteForm" method="post">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> স্থায়ীভাবে ডিলিট করুন
-                </button>
+                <button type="submit" class="btn btn-solid btn-danger-solid">স্থায়ীভাবে ডিলিট করুন</button>
             </form>
         </div>
     </div>
 </div>
 
 <style>
-    .status-badge {
-        display: inline-block;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-    .status-pending { background: #FFC107; color: #000; }
-    .status-approved { background: #4CAF50; color: white; }
-    .status-rejected { background: #F44336; color: white; }
-    .status-paid { background: #2196F3; color: white; }
-    .status-sent-to-controller { background: #9C27B0; color: white; }
-    .status-approved-by-controller { background: #00ACC1; color: white; }
-    .status-rejected-by-controller { background: #FF5722; color: white; }
-    .status-controller-returned { background: #FF9800; color: white; }
-    .status-returned-to-user { background: #4CAF50; color: white; }
-    
-    .btn-purple { background: linear-gradient(45deg, #9C27B0, #7B1FA2); color: white; }
-    .btn-orange { background: linear-gradient(45deg, #FF5722, #E64A19); color: white; }
-    
-    .btn-return-user {
-        transition: all 0.3s ease;
-    }
-    .btn-return-user:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-    }
-    
-    table { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
-    table tr:hover { background: rgba(255, 255, 255, 0.05); }
-    .btn-primary { background: linear-gradient(45deg, #4ECDC4, #44A08D); }
+/* Single-accent chairman bill register: white sheets on the app background,
+   every control in the site's indigo/purple (#667eea -> #764ba2). */
+.container { max-width: 1400px; }
+.glass-card {
+    background: transparent; border: none; box-shadow: none;
+    backdrop-filter: none; padding: 0; margin: 10px 0 46px 0;
+}
+.glass-card:hover { transform: none; box-shadow: none; }
+
+/* ===== Header ===== */
+.sheet-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    padding: 22px 26px; margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.06);
+}
+.sheet-head-main { display: flex; align-items: center; gap: 16px; }
+.sheet-head h2 { margin: 0; color: #1f2d3d; font-size: 25px; font-weight: 700; letter-spacing: 0.2px; }
+.sheet-head p { margin: 5px 0 0 0; color: #7b8794; font-size: 14.5px; }
+.sheet-head-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+.meta-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 17px; border-radius: 22px;
+    font-size: 14px; font-weight: 600;
+    color: #5b4397; background: #f0ecfa; border: 1px solid #ddd3f2;
+}
+
+/* ===== Quick filters (single accent) ===== */
+.filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 14px;
+    padding: 10px; margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.filter-pill {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 10px 16px; border-radius: 10px;
+    background: #f6f7fa; border: 1px solid #eceff4;
+    color: #5b6b7c; font-size: 14px; font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.filter-pill:hover { background: #f0ecfa; color: #5b4397; border-color: #ddd3f2; }
+.filter-pill.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff; border-color: transparent;
+    box-shadow: 0 6px 16px rgba(118, 75, 162, 0.3);
+}
+.filter-count {
+    min-width: 24px; padding: 1px 9px; border-radius: 20px;
+    font-size: 12.5px; font-weight: 700; text-align: center;
+    color: #5b4397; background: #ffffff; border: 1px solid #e2e7ee;
+}
+.filter-pill.active .filter-count { color: #5b4397; background: #ffffff; border-color: transparent; }
+
+/* ===== Filter form ===== */
+.filter-card {
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.filter-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.filter-card .form-control,
+.modal-sheet .form-control {
+    padding: 11px 15px;
+    font-size: 15px; font-family: inherit; color: #1f2d3d;
+    background: #ffffff; border: 1.5px solid #dbe1e8; border-radius: 10px;
+    box-shadow: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.filter-card .form-control:focus,
+.modal-sheet .form-control:focus {
+    outline: none; border-color: #764ba2;
+    box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.16);
+}
+.filter-card select.form-control { width: auto; min-width: 210px; cursor: pointer; }
+.filter-card input.form-control { width: auto; min-width: 230px; flex: 1; }
+.filter-card .form-control::placeholder { color: #a3aeb9; }
+
+/* ===== Buttons (one accent) ===== */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 22px; border-radius: 10px;
+    border: 1.5px solid #dbe1e8; background: #ffffff; color: #5b6b7c;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    text-decoration: none; cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16, 24, 40, 0.12); }
+.btn-solid {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff; border-color: transparent;
+    box-shadow: 0 5px 14px rgba(118, 75, 162, 0.3);
+}
+.btn-solid:hover { box-shadow: 0 9px 20px rgba(118, 75, 162, 0.42); }
+.btn-ghost { background: #ffffff; color: #5b6b7c; border-color: #dbe1e8; }
+.btn-ghost:hover { background: #f2f5f8; color: #1f2d3d; }
+
+/* ===== Table ===== */
+.table-card {
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.table-scroll { overflow-x: auto; }
+.bills-table { width: 100%; border-collapse: collapse; color: #1f2d3d; min-width: 980px; }
+.bills-table thead th {
+    padding: 14px 16px;
+    text-align: left;
+    background: #f7f8fb;
+    border-bottom: 1px solid #e6eaef;
+    color: #6b7885; font-size: 13.5px; font-weight: 700;
+    letter-spacing: 0.3px; white-space: nowrap;
+}
+.bills-table tbody td {
+    padding: 15px 16px;
+    border-bottom: 1px solid #f1f3f7;
+    font-size: 14.5px; color: #44546a; vertical-align: middle;
+}
+.bills-table tbody tr:last-child td { border-bottom: none; }
+.bills-table tbody tr:hover { background: #faf9fe; }
+.bills-table td strong { color: #1f2d3d; font-weight: 700; }
+.bills-table .num { text-align: right; white-space: nowrap; }
+.bills-table .center { text-align: center; }
+
+.ctrl-billno {
+    display: inline-block;
+    background: #f0ecfa; border: 1px solid #ddd3f2; color: #5b4397;
+    padding: 2px 10px; border-radius: 12px;
+    font-size: 12.5px; font-weight: 600;
+    margin-left: 8px; white-space: nowrap;
+}
+
+/* ===== Status labels ===== */
+.status-badge {
+    display: inline-block;
+    padding: 5px 13px; border-radius: 20px;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+    border: 1px solid transparent;
+}
+.status-pending { color: #a67611; background: #fff8e1; border-color: #f6e2b3; }
+.status-approved { color: #2e7d32; background: #e8f5e9; border-color: #c9e7cb; }
+.status-rejected { color: #c62828; background: #ffebee; border-color: #f7ced3; }
+.status-paid { color: #0d47a1; background: #e3f2fd; border-color: #c5e0f7; }
+.status-sent-to-controller { color: #5b4397; background: #f0ecfa; border-color: #ddd3f2; }
+.status-approved-by-controller { color: #00695c; background: #e0f2f1; border-color: #c4e5e1; }
+.status-rejected-by-controller { color: #bf360c; background: #fbe9e7; border-color: #f6d3cb; }
+.status-controller-returned { color: #e65100; background: #fff3e0; border-color: #f8ddb9; }
+.status-returned-to-user { color: #1b5e20; background: #e8f5e9; border-color: #c9e7cb; }
+
+/* ===== Row actions ===== */
+.row-actions { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; }
+.btn-row {
+    padding: 7px 13px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid #e2e7ee; background: #f6f7fa; color: #5b6b7c;
+    white-space: nowrap;
+}
+.btn-row:hover { background: #f0ecfa; color: #5b4397; border-color: #ddd3f2; transform: none; box-shadow: none; }
+.btn-row-solid {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff; border-color: transparent;
+}
+.btn-row-solid:hover { color: #ffffff; box-shadow: 0 6px 14px rgba(118, 75, 162, 0.35); }
+.btn-row-outline { background: #ffffff; color: #5b4397; border-color: #ddd3f2; }
+.btn-row-outline:hover { background: #764ba2; color: #ffffff; border-color: #764ba2; }
+.btn-row-danger { background: #fdecea; color: #c0392b; border-color: #f7d4cf; }
+.btn-row-danger:hover { background: #e74c3c; color: #ffffff; border-color: #e74c3c; }
+.btn-return-user.btn-row { background: #ffffff; color: #6b4ea0; border-color: #ddd3f2; }
+.btn-return-user.btn-row:hover { background: #6b4ea0; color: #ffffff; border-color: #6b4ea0; }
+.btn-row.is-static { opacity: 0.7; cursor: default; }
+.btn-row.is-static:hover { background: #f6f7fa; color: #5b6b7c; border-color: #e2e7ee; }
+
+/* ===== Pagination ===== */
+.pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; flex-wrap: wrap; margin-top: 22px;
+}
+.pagination-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 44px; padding: 10px 16px;
+    border: 1px solid #e6eaef; border-radius: 10px;
+    background: #ffffff; color: #5b6b7c;
+    font-size: 14.5px; font-weight: 600; text-decoration: none;
+    transition: all 0.2s ease;
+}
+.pagination-btn:hover { background: #f0ecfa; color: #5b4397; border-color: #ddd3f2; }
+.pagination-info {
+    padding: 10px 18px; border-radius: 10px;
+    background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff; font-size: 14.5px; font-weight: 600;
+}
+
+/* ===== Empty state ===== */
+.empty-card {
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    padding: 56px 28px; text-align: center;
+    box-shadow: 0 2px 12px rgba(16, 24, 40, 0.05);
+}
+.empty-card h3 { margin: 0 0 8px 0; color: #1f2d3d; font-size: 20px; font-weight: 700; }
+.empty-card p { margin: 0; color: #7b8794; font-size: 15px; }
+
+/* ===== Modals ===== */
+.modal-sheet {
+    width: 100%; max-width: 540px; margin: 20px;
+    background: #ffffff; border: 1px solid #e6eaef; border-radius: 16px;
+    padding: 26px 28px;
+    box-shadow: 0 24px 60px rgba(16, 24, 40, 0.35);
+    max-height: 90vh; overflow-y: auto;
+}
+.modal-sheet h3 { margin: 0 0 10px 0; color: #1f2d3d; font-size: 20px; font-weight: 700; }
+.modal-billinfo {
+    margin: 0 0 16px 0;
+    padding: 9px 14px; border-radius: 10px;
+    background: #f0ecfa; border: 1px solid #ddd3f2;
+    color: #5b4397; font-size: 15px; font-weight: 700;
+}
+.modal-note {
+    padding: 13px 16px; border-radius: 11px; margin-bottom: 20px;
+    background: #f8fafc; border: 1px solid #e6eaef;
+    color: #5b6b7c; font-size: 14px; line-height: 1.75;
+}
+.modal-note strong { color: #1f2d3d; }
+.modal-note.is-warning { background: #fff8ef; border-color: #f6dfc2; color: #8a5a12; }
+.modal-note.is-warning strong { color: #7a4a08; }
+.modal-note.is-danger { background: #fdecea; border-color: #f7d4cf; color: #a5372a; }
+.modal-note.is-danger strong { color: #8f2d22; }
+.modal-field { text-align: left; margin-bottom: 18px; }
+.modal-field label {
+    display: block; margin-bottom: 8px;
+    color: #445565; font-size: 14.5px; font-weight: 600;
+}
+.modal-sheet textarea.form-control { width: 100%; resize: vertical; }
+.modal-buttons { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-buttons form { display: inline; }
+.btn-danger-solid {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #ffffff; border-color: transparent;
+    box-shadow: 0 5px 14px rgba(192, 57, 43, 0.3);
+}
+
+@media (max-width: 768px) {
+    .sheet-head { padding: 18px; }
+    .sheet-head h2 { font-size: 21px; }
+    .filter-form { flex-direction: column; align-items: stretch; }
+    .filter-card select.form-control,
+    .filter-card input.form-control { width: 100%; min-width: 0; }
+    .filter-card .btn { width: 100%; }
+    .filter-pill { flex: 1 1 auto; justify-content: center; font-size: 13.5px; padding: 9px 12px; }
+    .modal-buttons { justify-content: stretch; }
+    .modal-buttons .btn, .modal-buttons form { flex: 1; }
+    .modal-buttons form .btn { width: 100%; }
+}
 </style>
 
 <script>

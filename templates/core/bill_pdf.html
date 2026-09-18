@@ -364,7 +364,7 @@
         <div class="header">
             <div class="header-top-row">
                 <div class="bill-number-box bangla-text">
-                    বিল নং: {{ bill.bill_number|bangla_number }}<br>
+                    বিল নং: {{ bill.display_bill_number }}<br>
                     তারিখ: {{ bill.bangla_date }}
                 </div>
                 <div class="logo">
@@ -376,8 +376,8 @@
                 </div>
             </div>
             <div class="university bangla-text">জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, জামালপুর</div>
-            <div class="department bangla-text">কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ</div>
-            <div class="bangla-text" style="font-size: 12px;">{{ bill.semester }} পরীক্ষা</div>
+            <div class="department bangla-text">{{ bill.department.display_name|default:"" }}</div>
+            <div class="bangla-text" style="font-size: 12px;">{{ bill.exam_title }}</div>
             <div class="title bangla-text">পরীক্ষা সংক্রান্ত পারিশ্রমিকের বিল</div>
             <div class="sub-title bangla-text">(এই বিল পরীক্ষা নিয়ন্ত্রকের নিকট পরীক্ষার ফলাফল প্রকাশের পর পরীক্ষা কমিটির সভাপতির মাধ্যমে দাখিল করতে হবে)</div>
         </div>

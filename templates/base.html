@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/NM2pG3f9/logo.png">
+    <link rel="icon" type="image/png" href="https://jstu.ac.bd/assets/img/logo.png">
     <title>{% block title %}বিল ব্যবস্থাপনা সিস্টেম{% endblock %}</title>
     
     <!-- Bengali Font Support -->
@@ -57,6 +57,26 @@
         .nav-links a:hover,
         .nav-links a.active {
             background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Logout stays red on every page: individual page stylesheets also
+           define .btn-danger, and .nav-links a:hover outranks it, so both are
+           locked out here. Hover only deepens the same red. */
+        .nav-links a.btn-danger,
+        .nav-links a.btn-danger.active,
+        .nav-links a.btn-danger:visited,
+        .nav-links a.btn-danger:focus {
+            background: linear-gradient(45deg, #FF6B6B, #C44D58) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(196, 77, 88, 0.35) !important;
+        }
+
+        .nav-links a.btn-danger:hover {
+            background: linear-gradient(45deg, #F05A5A, #A83F49) !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 16px rgba(196, 77, 88, 0.45) !important;
             transform: translateY(-2px);
         }
         
@@ -130,6 +150,131 @@
 
         .btn-info {
             background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        /* Developer credits: footer button + panel */
+        .dev-credit-btn {
+            margin-top: 12px;
+            padding: 7px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .dev-credit-btn:hover {
+            background: rgba(255, 255, 255, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .dev-credit-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            padding: 20px;
+            background: rgba(23, 20, 45, 0.6);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dev-credit-modal.is-open { display: flex; }
+
+        .dev-credit-sheet {
+            width: 100%;
+            max-width: 460px;
+            background: #ffffff;
+            border: 1px solid #e6eaef;
+            border-radius: 16px;
+            box-shadow: 0 24px 60px rgba(16, 24, 40, 0.35);
+            animation: devCreditIn 0.25s ease;
+        }
+
+        @keyframes devCreditIn {
+            from { opacity: 0; transform: translateY(-14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .dev-credit-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 18px 22px;
+            border-bottom: 1px solid #eef1f5;
+        }
+
+        .dev-credit-head h3 {
+            margin: 0;
+            color: #1f2d3d;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .dev-credit-close {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #e6eaef;
+            border-radius: 9px;
+            background: #f4f6f9;
+            color: #7b8794;
+            font-size: 19px;
+            line-height: 1;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .dev-credit-close:hover {
+            background: #e74c3c;
+            color: #ffffff;
+            border-color: #e74c3c;
+        }
+
+        .dev-credit-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 22px 22px 22px;
+        }
+
+        .dev-credit-card {
+            padding: 15px 17px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #eef1f5;
+            border-left: 4px solid #764ba2;
+        }
+
+        .dev-credit-role {
+            display: block;
+            color: #8794a2;
+            font-size: 12.5px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .dev-credit-name {
+            display: block;
+            margin-top: 3px;
+            color: #1f2d3d;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .dev-credit-meta {
+            display: block;
+            margin-top: 3px;
+            color: #5b6b7c;
+            font-size: 13.5px;
         }
 
         .form-control {
@@ -309,25 +454,12 @@
                     <!-- ── Chairman ── -->
                     <a href="{% url 'home' %}" {% if request.path == '/' %}class="active"{% endif %}>হোম</a>
         
-                    {% if user.username == 'JSTUChairman1' %}
-                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                        <a href="{% url 'signature_upload_chairman1' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                    {% elif user.username == 'JSTUChairman2' %}
-                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                        <a href="{% url 'signature_upload_chairman2' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                    {% elif user.username == 'JSTUChairman3' %}
-                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                        <a href="{% url 'signature_upload_chairman3' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                    {% elif user.username == 'JSTUChairman4' %}
-                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                        <a href="{% url 'signature_upload_chairman4' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                    {% else %}
-                        <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
-                        <a href="{% url 'signature_upload' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
-                    {% endif %}
+                    <a href="{% url 'all_bills' %}" {% if 'all-bills' in request.path %}class="active"{% endif %}>সকল বিল</a>
+                    <a href="{% url 'signature_upload_chairman' %}" {% if 'signature' in request.path %}class="active"{% endif %}>স্বাক্ষর</a>
         
                     <a href="{% url 'chairman_returned_bills' %}" {% if 'returned-bills' in request.path %}class="active"{% endif %}> কন্ট্রোলার ফেরত বিল
                     </a>
+                    <a href="{% url 'chairman_documents' %}" {% if 'chairman/documents' in request.path %}class="active"{% endif %}>ফাইল</a>
                     <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>প্রোফাইল</a>
                     <a href="{% url 'logout' %}" class="btn-danger">লগআউট</a>
         
@@ -341,6 +473,9 @@
                     </a>
                      <a href="{% url 'accepted_bills' %}">অনুমোদিত বিল</a>
                       <a href="{% url 'rejected_bills' %}">বাতিল বিল</a>
+                    <a href="{% url 'controller_documents' %}" {% if 'controller/documents' in request.path %}class="active"{% endif %}>
+                        <i class="fas fa-file-pdf"></i> চেয়ারম্যানের ফাইল
+                    </a>
                     <a href="{% url 'profile' %}" {% if 'profile' in request.path %}class="active"{% endif %}>
                         <i class="fas fa-user-circle"></i> প্রোফাইল
                     </a>
@@ -392,10 +527,33 @@
     </div>
 
     <footer class="footer">
-        <p>কম্পিউটার বিজ্ঞান ও প্রকৌশল বিভাগ</p>
+        <p>{% if user.is_authenticated and user.profile.department %}{{ user.profile.department.display_name }}{% else %}বিল ব্যবস্থাপনা সিস্টেম{% endif %}</p>
         <p>জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়</p>
         <p>&copy; 2024 বিল ব্যবস্থাপনা সিস্টেম। সকল অধিকার সংরক্ষিত।</p>
+        <button type="button" class="dev-credit-btn" onclick="openDevCredits()">Meet with developers</button>
     </footer>
+
+    <!-- Developer credits -->
+    <div id="devCreditsModal" class="dev-credit-modal">
+        <div class="dev-credit-sheet">
+            <div class="dev-credit-head">
+                <h3>Meet with developers</h3>
+                <button type="button" class="dev-credit-close" onclick="closeDevCredits()">&times;</button>
+            </div>
+            <div class="dev-credit-body">
+                <div class="dev-credit-card">
+                    <span class="dev-credit-role">Supervised by</span>
+                    <strong class="dev-credit-name">Mohammad Hasan</strong>
+                    <span class="dev-credit-meta">Assistant Professor, CSE, JSTU</span>
+                </div>
+                <div class="dev-credit-card">
+                    <span class="dev-credit-role">Developed by</span>
+                    <strong class="dev-credit-name">Himel Sarder</strong>
+                    <span class="dev-credit-meta">Session 2021-22, Dept of CSE, JSTU</span>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
         // Mobile menu functionality
@@ -469,6 +627,23 @@
             });
         });
         
+        // Developer credits panel
+        function openDevCredits() {
+            document.getElementById('devCreditsModal').classList.add('is-open');
+        }
+
+        function closeDevCredits() {
+            document.getElementById('devCreditsModal').classList.remove('is-open');
+        }
+
+        document.addEventListener('click', function (e) {
+            if (e.target === document.getElementById('devCreditsModal')) closeDevCredits();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeDevCredits();
+        });
+
         // Utility function to show loading state
         function setLoading(button, isLoading) {
             if (isLoading) {

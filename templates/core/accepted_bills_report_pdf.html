@@ -1,0 +1,216 @@
+{% load bangla_number %}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        /* The sheet grows with the number of work-type columns instead of
+           squeezing them: every work type gets a readable column of its own. */
+        @page {
+            size: {{ page_width }}mm {{ page_height }}mm;
+            margin: 10mm 7mm;
+        }
+
+        body {
+            font-size: 9px;
+            color: #000;
+        }
+
+        /* ── Header ─────────────────────────────────────────── */
+        .report-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .report-header .logo {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            margin-bottom: 4px;
+        }
+
+        .report-header .university {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .report-header .department {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .report-header .exam {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .report-header .title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #b3001b;
+            margin-top: 4px;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        /* ── Table ──────────────────────────────────────────── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #444;
+            padding: 3px 4px;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+
+        thead th {
+            background: #e8e8e8;
+            font-size: 8.5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Work-type headings are rotated when there are many of them so the
+           table still fits the page width. */
+        th.work-col {
+            font-size: 8.5px;
+            line-height: 1.2;
+            min-width: 22mm;
+        }
+
+        td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        td.name {
+            text-align: left;
+        }
+
+        td.serial {
+            text-align: center;
+            width: 22px;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .col-total { background: #f2f7ff; font-weight: bold; }
+        .col-tax   { background: #fff6f0; }
+        .col-net   { background: #f0fff4; font-weight: bold; }
+
+        tfoot td {
+            background: #dfe7ef;
+            font-weight: bold;
+        }
+
+        .zero { color: #aaa; }
+
+        .footer {
+            margin-top: 10px;
+            font-size: 8px;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 24px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Header: logo, university, department, exam ─────────── -->
+    <div class="report-header">
+        <img class="logo" src="https://i.postimg.cc/Kcg8VSMD/JSTU.png" alt="University Logo">
+        <div class="university bangla-text">জামালপুর বিজ্ঞান ও প্রযুক্তি বিশ্ববিদ্যালয়, জামালপুর</div>
+        {% if department %}
+            <div class="department bangla-text">{{ department.display_name }}</div>
+        {% endif %}
+        {% if exam_heading %}
+            <div class="exam bangla-text">{{ exam_heading }}</div>
+        {% endif %}
+        <div class="title bangla-text">{{ report_title }}</div>
+    </div>
+
+    <div class="meta bangla-text">
+        <div>মোট বিল: {{ total_count|bangla_number }} টি</div>
+        <div>করের হার: {{ tax_rate|bangla_number }}%</div>
+        <div>প্রস্তুতকারী: {{ generated_by.get_full_name|default:generated_by.username }}</div>
+    </div>
+
+    {% if rows %}
+    <table>
+        <thead>
+            <tr>
+                <th style="width:22px;">ক্র.</th>
+                <th style="width:110px;">বিল প্রণেতার নাম</th>
+                {% for col in columns %}
+                    <th class="work-col bangla-text">{{ col }}</th>
+                {% endfor %}
+                <th class="col-total" style="width:62px;">মোট টাকা</th>
+                <th class="col-tax" style="width:58px;">কর ({{ tax_rate|bangla_number }}%)</th>
+                <th class="col-net" style="width:66px;">পরিশোধিত টাকা</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td class="serial">{{ forloop.counter|bangla_number }}</td>
+                <td class="name bangla-text">{{ row.name }}</td>
+                {% for value in row.values %}
+                    <td class="num {% if not value %}zero{% endif %}">
+                        {{ value|floatformat:0|bangla_number }}
+                    </td>
+                {% endfor %}
+                <td class="num col-total">{{ row.total|floatformat:0|bangla_number }}</td>
+                <td class="num col-tax">{{ row.tax|floatformat:0|bangla_number }}</td>
+                <td class="num col-net">{{ row.net|floatformat:0|bangla_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+        <!-- Column-wise sums for every person -->
+        <tfoot>
+            <tr>
+                <td colspan="2" class="bangla-text" style="text-align:right;">সর্বমোট</td>
+                {% for value in column_totals %}
+                    <td class="num">{{ value|floatformat:0|bangla_number }}</td>
+                {% endfor %}
+                <td class="num">{{ grand_total|floatformat:0|bangla_number }}</td>
+                <td class="num">{{ grand_tax|floatformat:0|bangla_number }}</td>
+                <td class="num">{{ grand_net|floatformat:0|bangla_number }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% else %}
+        <div class="empty bangla-text">এই ফিল্টারে কোনো অনুমোদিত বিল পাওয়া যায়নি।</div>
+    {% endif %}
+
+    <div class="footer bangla-text">
+        <div>তৈরির সময়: {{ generated_at|date:"d-m-Y H:i" }}</div>
+        <div>পরীক্ষা নিয়ন্ত্রকের কার্যালয়</div>
+    </div>
+
+</body>
+</html>

@@ -111,6 +111,21 @@ urlpatterns = [
     # Notification mark-seen
     path('api/mark-notification-seen/', views.mark_notification_seen, name='mark_notification_seen'),
 
+
+    # ── Chairman file upload / send to controller ──
+    path('chairman/documents/', views.chairman_documents, name='chairman_documents'),
+    path('chairman/documents/<int:doc_id>/send/', views.chairman_document_send, name='chairman_document_send'),
+    path('chairman/documents/<int:doc_id>/delete/', views.chairman_document_delete, name='chairman_document_delete'),
+    path('documents/<int:doc_id>/download/', views.chairman_document_download, name='chairman_document_download'),
+    path('controller/documents/', views.controller_documents, name='controller_documents'),
+
+    # ── Chairman signature (year-based, any number of chairmen) ──
+    path('signature-upload/chairman/', views.signature_upload_chairman, name='signature_upload_chairman'),
+    path('delete-signature/chairman/', views.delete_signature_chairman, name='delete_signature_chairman'),
+
+    # ── Profile picture (saves on selection) ──
+    path('profile/picture/', views.profile_picture_upload, name='profile_picture_upload'),
+    path('profile/picture/delete/', views.profile_picture_delete, name='profile_picture_delete'),
 ]
 
 # Error handlers

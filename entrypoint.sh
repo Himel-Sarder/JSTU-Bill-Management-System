@@ -3,6 +3,4 @@
 python manage.py makemigrations
 python manage.py migrate
 
-exec gunicorn bill_management.wsgi:application \
-    --bind 0.0.0.0:$PORT \
-    --timeout 120
+exec gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3

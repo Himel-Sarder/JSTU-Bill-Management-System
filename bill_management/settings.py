@@ -9,6 +9,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*', 'bms-jstu.203.96.189.222.sslip.io', 'https://bms-jstu.203.96.189.222.sslip.io/']
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://bms-jstu.203.96.189.222.sslip.io",
+]
 
 INSTALLED_APPS = [
     'jazzmin',

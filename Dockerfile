@@ -25,7 +25,7 @@ RUN apt-get update --allow-releaseinfo-change \
     ca-certificates \
     fonts-dejavu-core \
     fonts-freefont-ttf \
-    netcat-openbsd \
+    libpq-dev \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /core
@@ -36,15 +36,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN python manage.py collectstatic --noinput
-RUN mkdir -p /usr/local/share/fonts/custom \
- && cp -f /core/static/fonts/kalpurush.ttf /usr/local/share/fonts/custom/ \
- && fc-cache -f -v
-
-RUN ls -lah /core/static/fonts/ && fc-list | grep -i kalpurush || true
-
-COPY entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["/entrypoint.sh"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn bill_management.wsgi:application --bind 0.0.0.0:8000"]

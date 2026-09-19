@@ -189,6 +189,10 @@ class BillForm(forms.ModelForm):
     year + semester pair plus the academic session. The exam year shown on the
     PDF is derived from the session's end year, so 2021-2022 -> 2022; nobody
     types the exam year by hand.
+
+    bank_name is a free-text field rather than a fixed dropdown, so any
+    bank name can be entered - not just the four that used to be hardcoded
+    in Bill.BANK_CHOICES.
     """
 
     class Meta:
@@ -199,7 +203,7 @@ class BillForm(forms.ModelForm):
             'academic_year': forms.Select(attrs={'class': 'form-control', 'id': 'id_academic_year'}),
             'exam_semester': forms.Select(attrs={'class': 'form-control', 'id': 'id_exam_semester'}),
             'session': forms.Select(attrs={'class': 'form-control', 'id': 'id_session'}),
-            'bank_name': forms.Select(attrs={'class': 'form-control'}),
+            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ব্যাংকের নাম লিখুন'}),
             'bank_branch': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'শাখার নাম'}),
             'account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'একাউন্ট নাম্বার'}),
             'routing_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'রাউটিং নাম্বার'}),
@@ -232,6 +236,9 @@ class BillForm(forms.ModelForm):
         self.fields['bank_branch'].required = False
         self.fields['account_number'].required = False
         self.fields['routing_number'].required = False
+
+    def clean_bank_name(self):
+        return (self.cleaned_data.get('bank_name') or '').strip()
 
 
 class BillStatusForm(forms.ModelForm):

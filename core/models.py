@@ -386,7 +386,7 @@ class Bill(models.Model):
         ('ইসলামী ব্যাংক', 'ইসলামী ব্যাংক'),
     ]
 
-    bank_name = models.CharField(max_length=50, choices=BANK_CHOICES, blank=True, null=True,
+    bank_name = models.CharField(max_length=100, blank=True, null=True,
                                  verbose_name='ব্যাংকের নাম')
     bank_branch = models.CharField(max_length=100, blank=True, null=True, verbose_name='শাখা')
     account_number = models.CharField(max_length=50, blank=True, null=True, verbose_name='একাউন্ট নাম্বার')

@@ -1086,9 +1086,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 // Live preview of the exam heading that will appear on the PDF, e.g.
-// "৩য় বর্ষ ২য় সেমিস্টার পরীক্ষা - ২০২২".
-// The exam year is the SECOND year of the chosen session (2021-2022 -> 2022),
-// mirroring Bill.exam_title on the server so what you see is what gets saved.
+// "৩য় বর্ষ ২য় সেমিস্টার পরীক্ষা - ২০২৪".
+//
+// The exam year is the session's END year (2021-2022 -> 2022), shifted by
+// how far into the programme the selected academic year is: ১ম বর্ষ adds 0,
+// ২য় বর্ষ adds 1, ৩য় বর্ষ adds 2, ৪র্থ বর্ষ adds 3. So for session ২০২১-২০২২:
+// ১ম বর্ষ -> ২০২২, ২য় বর্ষ -> ২০২৩, ৩য় বর্ষ -> ২০২৪, ৪র্থ বর্ষ -> ২০২৫.
+// This mirrors Bill.exam_year on the server (YEAR_EXAM_OFFSET) so what you
+// see here is what gets saved. মাস্টার্স keeps offset 0.
 (function () {
     const yearSel    = document.getElementById('id_academic_year');
     const semSel     = document.getElementById('id_exam_semester');
@@ -1098,13 +1103,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const toBn = s => String(s).replace(/[0-9]/g, d => '\u09e6\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee\u09ef'[d]);
 
+    const YEAR_EXAM_OFFSET = {
+        '১ম বর্ষ': 0,
+        '২য় বর্ষ': 1,
+        '৩য় বর্ষ': 2,
+        '৪র্থ বর্ষ': 3,
+    };
+
     function examYearFromSession() {
         const text = sessionSel.options[sessionSel.selectedIndex]?.text || '';
         // Session labels render in Bengali digits, so read them back out.
         const digits = text.replace(/[\u09e6-\u09ef]/g,
             d => '\u09e6\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee\u09ef'.indexOf(d));
         const parts = digits.match(/\d{4}/g);
-        return parts && parts.length >= 2 ? parts[1] : null;
+        return parts && parts.length >= 2 ? parseInt(parts[1], 10) : null;
     }
 
     function update() {
@@ -1112,8 +1124,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const sem  = semSel.value;
         if (!year || !sem) { preview.value = ''; return; }
         let title = `${year} ${sem} \u09aa\u09b0\u09c0\u0995\u09cd\u09b7\u09be`;
-        const examYear = examYearFromSession();
-        if (examYear) title += ` - ${toBn(examYear)}`;
+        const baseYear = examYearFromSession();
+        if (baseYear !== null) {
+            const offset = YEAR_EXAM_OFFSET.hasOwnProperty(year) ? YEAR_EXAM_OFFSET[year] : 0;
+            title += ` - ${toBn(baseYear + offset)}`;
+        }
         preview.value = title;
     }
 

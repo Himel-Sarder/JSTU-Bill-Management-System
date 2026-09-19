@@ -427,6 +427,12 @@ class Bill(models.Model):
                  '৪র্থ বর্ষ': '4', 'মাস্টার্স': '5'}
     SEMESTER_CODE = {'১ম সেমিস্টার': '1', '২য় সেমিস্টার': '2'}
 
+    # How many years past the session's own end year the exam falls, per
+    # academic year. Session ২০২১-২০২২ (end year ২০২২): ১ম বর্ষ -> ২০২২,
+    # ২য় বর্ষ -> ২০২৩, ৩য় বর্ষ -> ২০২৪, ৪র্থ বর্ষ -> ২০২৫. মাস্টার্স and any
+    # unmapped/legacy value get offset 0 (the session's own end year).
+    YEAR_EXAM_OFFSET = {'১ম বর্ষ': 0, '২য় বর্ষ': 1, '৩য় বর্ষ': 2, '৪র্থ বর্ষ': 3}
+
     LEGACY_SEMESTER_MAP = {
         '১ম সেমিস্টার': ('১ম বর্ষ', '১ম সেমিস্টার'),
         '২য় সেমিস্টার': ('১ম বর্ষ', '২য় সেমিস্টার'),
@@ -739,8 +745,17 @@ class Bill(models.Model):
 
     @property
     def exam_year(self):
-        """Exam year = the session's end year (2021-2022 -> 2022)."""
-        return self.session.exam_year if self.session_id else None
+        """Exam year = the session's end year, shifted by how far into the
+        programme this bill's academic year is.
+
+        Session ২০২১-২০২২ (end year ২০২২): ১ম বর্ষ -> ২০২২, ২য় বর্ষ -> ২০২৩,
+        ৩য় বর্ষ -> ২০২৪, ৪র্থ বর্ষ -> ২০২৫ (see YEAR_EXAM_OFFSET). মাস্টার্স and
+        any unmapped/legacy value keep the session's own end year, unchanged.
+        """
+        if not self.session_id:
+            return None
+        offset = self.YEAR_EXAM_OFFSET.get(self.resolved_academic_year or '', 0)
+        return self.session.exam_year + offset
 
     @property
     def exam_year_bn(self):
